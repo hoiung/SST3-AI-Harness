@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.env
+settings.local.json
+.DS_Store
+Thumbs.db
+*.log
+*.tmp

@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640">
+  <!-- Background -->
+  <rect width="1280" height="640" fill="#0d1117"/>
+
+  <!-- Title -->
+  <text x="640" y="72" font-family="Arial, sans-serif" font-size="42" font-weight="bold" fill="#ffffff" text-anchor="middle">SST3-AI-Harness</text>
+
+  <!-- Subtitle -->
+  <text x="640" y="108" font-family="Arial, sans-serif" font-size="20" fill="#8b949e" text-anchor="middle">AI Agent Orchestration &amp; Governance</text>
+
+  <!-- === Stage Boxes (5 stages, horizontal row) === -->
+  <!-- Box dimensions: 180x90, y=170, spacing=30, arrows between -->
+  <!-- Total width: 5*180 + 4*30 = 1020, start x = (1280-1020)/2 = 130 -->
+
+  <!-- Stage 1: Research -->
+  <rect x="130" y="180" width="180" height="90" rx="10" ry="10" fill="#1f6feb"/>
+  <text x="220" y="216" font-family="Arial, sans-serif" font-size="13" fill="#ffffffaa" text-anchor="middle">Stage 1</text>
+  <text x="220" y="240" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#ffffff" text-anchor="middle">Research</text>
+
+  <!-- Arrow 1→2 -->
+  <line x1="310" y1="225" x2="340" y2="225" stroke="#8b949e" stroke-width="2"/>
+  <polygon points="340,220 350,225 340,230" fill="#8b949e"/>
+
+  <!-- Stage 2: Issue Creation -->
+  <rect x="340" y="180" width="180" height="90" rx="10" ry="10" fill="#1f6feb"/>
+  <text x="430" y="216" font-family="Arial, sans-serif" font-size="13" fill="#ffffffaa" text-anchor="middle">Stage 2</text>
+  <text x="430" y="240" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#ffffff" text-anchor="middle">Issue Creation</text>
+
+  <!-- Arrow 2→3 -->
+  <line x1="520" y1="225" x2="550" y2="225" stroke="#8b949e" stroke-width="2"/>
+  <polygon points="550,220 560,225 550,230" fill="#8b949e"/>
+
+  <!-- Stage 3: Triple-Check -->
+  <rect x="550" y="180" width="180" height="90" rx="10" ry="10" fill="#1f6feb"/>
+  <text x="640" y="216" font-family="Arial, sans-serif" font-size="13" fill="#ffffffaa" text-anchor="middle">Stage 3</text>
+  <text x="640" y="240" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#ffffff" text-anchor="middle">Triple-Check</text>
+
+  <!-- Arrow 3→4 -->
+  <line x1="730" y1="225" x2="760" y2="225" stroke="#8b949e" stroke-width="2"/>
+  <polygon points="760,220 770,225 760,230" fill="#8b949e"/>
+
+  <!-- Stage 4: Implementation -->
+  <rect x="760" y="180" width="180" height="90" rx="10" ry="10" fill="#1f6feb"/>
+  <text x="850" y="216" font-family="Arial, sans-serif" font-size="13" fill="#ffffffaa" text-anchor="middle">Stage 4</text>
+  <text x="850" y="240" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#ffffff" text-anchor="middle">Implementation</text>
+
+  <!-- Arrow 4→5 -->
+  <line x1="940" y1="225" x2="970" y2="225" stroke="#8b949e" stroke-width="2"/>
+  <polygon points="970,220 980,225 970,230" fill="#8b949e"/>
+
+  <!-- Stage 5: Post-Review -->
+  <rect x="970" y="180" width="180" height="90" rx="10" ry="10" fill="#1f6feb"/>
+  <text x="1060" y="216" font-family="Arial, sans-serif" font-size="13" fill="#ffffffaa" text-anchor="middle">Stage 5</text>
+  <text x="1060" y="240" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#ffffff" text-anchor="middle">Post-Review</text>
+
+  <!-- Divider line -->
+  <line x1="200" y1="330" x2="1080" y2="330" stroke="#21262d" stroke-width="1"/>
+
+  <!-- Label -->
+  <text x="640" y="370" font-family="Arial, sans-serif" font-size="15" fill="#8b949e" text-anchor="middle">Key Components</text>
+
+  <!-- === Bottom Row: 3 component boxes === -->
+  <!-- Box dimensions: 280x100, y=395, spacing=40 -->
+  <!-- Total width: 3*280 + 2*40 = 920, start x = (1280-920)/2 = 180 -->
+
+  <!-- Component 1: Ralph Review -->
+  <rect x="180" y="395" width="280" height="100" rx="10" ry="10" fill="#238636"/>
+  <text x="320" y="435" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#ffffff" text-anchor="middle">Ralph Review</text>
+  <text x="320" y="465" font-family="Arial, sans-serif" font-size="15" fill="#ffffffcc" text-anchor="middle">Haiku &#8594; Sonnet &#8594; Opus</text>
+
+  <!-- Component 2: Pre-Commit Hooks -->
+  <rect x="500" y="395" width="280" height="100" rx="10" ry="10" fill="#238636"/>
+  <text x="640" y="435" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#ffffff" text-anchor="middle">14 Pre-Commit Hooks</text>
+  <text x="640" y="465" font-family="Arial, sans-serif" font-size="15" fill="#ffffffcc" text-anchor="middle">Automated Quality Gates</text>
+
+  <!-- Component 3: Automation Scripts -->
+  <rect x="820" y="395" width="280" height="100" rx="10" ry="10" fill="#238636"/>
+  <text x="960" y="435" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#ffffff" text-anchor="middle">23 Automation Scripts</text>
+  <text x="960" y="465" font-family="Arial, sans-serif" font-size="15" fill="#ffffffcc" text-anchor="middle">CI/CD &amp; Governance</text>
+
+  <!-- Bottom right URL -->
+  <text x="1250" y="620" font-family="Arial, sans-serif" font-size="13" fill="#484f58" text-anchor="end">github.com/hoiung/SST3-AI-Harness</text>
+</svg>

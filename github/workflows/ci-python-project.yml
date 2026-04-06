@@ -1,0 +1,68 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+
+    - name: Create virtual environment
+      run: uv venv
+
+    - name: Install dependencies
+      run: |
+        uv pip install ruff black pytest
+        uv pip install pandas numpy matplotlib
+        if [ -f requirements.txt ]; then uv pip install -r requirements.txt; fi
+        if [ -f pyproject.toml ]; then uv pip install -e .; fi
+
+    - name: Lint with Ruff
+      run: |
+        uv run ruff check .
+      continue-on-error: true
+
+    - name: Check formatting with Ruff
+      run: |
+        uv run ruff format --check .
+      continue-on-error: true
+
+    - name: Lint with Black (backup)
+      run: |
+        uv run black --check .
+      continue-on-error: true
+
+    - name: Run tests
+      run: |
+        if [ -d tests ]; then
+          uv run pytest tests/ -v
+        else
+          echo "No tests directory found - skipping tests"
+        fi
+      continue-on-error: true
+
+    - name: Verify component structure
+      run: |
+        echo "Checking component structure..."
+        for dir in stockgrader backtest strategy_tuner strategy_generator batch_processing tradebook alerts data_management reporting ibkr_integration dot_calculator; do
+          if [ -d "$dir" ]; then
+            echo "✓ $dir exists"
+          else
+            echo "✗ $dir missing"
+          fi
+        done
