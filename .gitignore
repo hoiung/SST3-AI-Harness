@@ -1,6 +1,8 @@
 __pycache__/
 *.pyc
 .env
+.env.*
+!.env.example
 settings.local.json
 .DS_Store
 Thumbs.db

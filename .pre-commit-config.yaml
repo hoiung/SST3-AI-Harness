@@ -79,6 +79,27 @@ repos:
         files: ^cv-linkedin/.*\.md$
         pass_filenames: true
 
+      - id: check-public-repo-secrets
+        name: Check for secrets in public repo
+        entry: python scripts/check-public-repo-secrets.py . --staged-only
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      - id: secret-rules-drift
+        name: Secret detection script drift check
+        entry: bash
+        args:
+          - -c
+          - |
+            CANONICAL=../dotfiles/SST3/scripts/check-public-repo-secrets.py
+            LOCAL=scripts/check-public-repo-secrets.py
+            [ -f "$CANONICAL" ] || { echo "SKIP: dotfiles not found — drift check skipped" >&2; exit 0; }
+            cmp -s "$LOCAL" "$CANONICAL" || { echo "ERROR: $LOCAL has drifted. Run: cp $CANONICAL $LOCAL" >&2; exit 1; }
+        language: system
+        pass_filenames: false
+        always_run: true
+
   # Standard file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0

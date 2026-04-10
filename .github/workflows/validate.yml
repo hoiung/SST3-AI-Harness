@@ -47,13 +47,5 @@ jobs:
         markdownlint '**/*.md' --disable MD013 MD041 || echo "✓ Markdown files checked (warnings ignored)"
       continue-on-error: true
 
-    - name: Check for sensitive data
-      run: |
-        echo "Checking for potential secrets..."
-        if grep -r -E "(password|secret|apiKey|api_key)\s*=\s*['\"][^'\"]+['\"]" . --include="*.json" --include="*.js" --exclude-dir=".git" | grep -v -E "(tokenColor|tokenInfo|tokenMatch|TOKEN_LIMIT)"; then
-          echo "⚠️  WARNING: Found potential sensitive data"
-          exit 1
-        else
-          echo "✓ No obvious secrets found"
-        fi
-      continue-on-error: true
+    - name: Secret detection (blocking)
+      run: python3 scripts/check-public-repo-secrets.py .
