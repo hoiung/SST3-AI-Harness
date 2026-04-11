@@ -357,13 +357,16 @@ def is_line_allowlisted(
     return False
 
 
+_GENERIC_VALUE_RE = re.compile(
+    r"(?i)(?:password|passwd|secret|token|api_?key|auth_?key|credential|seller_id|account_id"
+    r"|(?:DB|DATABASE)_(?:PASSWORD|PASS|PWD|SECRET))"
+    r"\s*[=:]\s*['\"]?([^\s'\"]+)"
+)
+
+
 def extract_generic_secret_value(line: str) -> Optional[str]:
     """Extract the value portion from a generic secret assignment for placeholder checking."""
-    match = re.search(
-        r"(?i)(?:password|passwd|secret|token|api_?key|auth_?key|credential|seller_id|account_id)"
-        r"\s*[=:]\s*['\"]?([^\s'\"]+)",
-        line,
-    )
+    match = _GENERIC_VALUE_RE.search(line)
     if match:
         return match.group(1)
     return None
@@ -559,7 +562,7 @@ def main() -> int:
     # Resolve repo root
     try:
         repo_root = get_repo_root()
-    except (SST3UtilError, FileNotFoundError):
+    except (SST3UtilError, FileNotFoundError, subprocess.CalledProcessError):
         if args.staged_only:
             print("Error: --staged-only requires a git repository", file=sys.stderr)
             return 1
@@ -592,10 +595,12 @@ def main() -> int:
             ignore_patterns=IGNORE_PATTERNS,
         )
 
-    # Scan
+    # Scan (ignore-path filtering already done by collect_source_files for dir scans;
+    # staged-only and single-file paths need it here)
     all_findings: Dict[Path, List[Finding]] = {}
+    needs_ignore_check = args.staged_only or scan_path.is_file()
     for file_path in files_to_scan:
-        if should_ignore_path(file_path, IGNORE_PATTERNS):
+        if needs_ignore_check and should_ignore_path(file_path, IGNORE_PATTERNS):
             continue
         findings = scan_file(file_path, blocklist, allowlist)
         if findings:
