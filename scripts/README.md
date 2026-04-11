@@ -16,6 +16,11 @@ Automation scripts for SST3 workflow validation and enforcement.
 | check-issue-checkboxes.py | Parses issue body+comments for checkbox state. Used by Verification Loop and MCP checkbox tools. |
 | quality-audit.py | Runs `quality-check.py` against all SST3 markdown files. Pre-merge validation gate. |
 | check-public-repo-secrets.py | Pre-commit hook + CI. Blocks secrets, business identifiers, and private paths in public repos. BLOCKING. |
+| pre-commit-checks.py | Pre-commit orchestrator. Runs size-limits + Python syntax + observability checks concurrently. BLOCKING. |
+| check-devprojects-clean.py | Pre-commit hook. Validates DevProjects/ contains only allowed repos (from `sst3_utils.KNOWN_REPOS`). BLOCKING. |
+| check-hardcoded-params.py | Pre-commit hook. Detects hardcoded magic values (hex colors, URLs, numeric thresholds). BLOCKING. |
+| check-ai-writing-tells.py | Pre-commit hook + CI. Marker-driven voice guard for operator-voice content. BLOCKING. |
+| no-temp-folder (inline bash) | Pre-commit hook. Prevents temp/ and tmp/ folder commits. BLOCKING. |
 
 ## check-public-repo-secrets.py
 
@@ -42,6 +47,54 @@ python check-public-repo-secrets.py . --allowlist .secret-allowlist
 **Standalone-capable**: Works with or without `sst3_utils` via `try/except ImportError` fallback. Vendored to `ebay-seller-tool`, `SST3-AI-Harness`, and `hoiboy-uk` with drift-check hooks.
 
 **Evidence**: Issue #410. Created after eBay store username and business paths were leaked in ebay-seller-tool (2026-04-11).
+
+## pre-commit-checks.py
+
+**Purpose**: SST3 pre-commit orchestrator. Runs three sub-checks concurrently via `ThreadPoolExecutor`: token budget / size-limits check (`check-size-limits.py`), Python syntax validation (`ast.parse` on all `SST3/scripts/*.py`), and observability check (`check-debug-code.py`). All three must pass for the commit to proceed.
+
+**Usage**: Invoked automatically by the `sst3-pre-commit-checks` pre-commit hook. Not intended for direct CLI use.
+
+**Exit codes**: 0 (all checks pass, commit allowed), 1 (any check fails, commit blocked).
+
+## check-devprojects-clean.py
+
+**Purpose**: Validates that `DevProjects/` root contains only allowed repositories and expected directories. Prevents rogue subagents from creating files or folders directly in DevProjects. Allowed repos sourced from `sst3_utils.KNOWN_REPOS` (single source of truth).
+
+**Usage**: Invoked automatically by the `check-devprojects-clean` pre-commit hook.
+
+**Exit codes**: 0 (clean), 1 (unexpected files/folders found, commit blocked).
+
+## check-hardcoded-params.py
+
+**Purpose**: Scans codebase for hardcoded magic values that should live in config files (hex colors, URLs, numeric thresholds in Python/JS/CSS). Per-repo allowlist via `.hardcoded-allowlist` file (same `path/file` or `path/file:line` format as `.secret-allowlist`).
+
+**Usage**:
+```bash
+python check-hardcoded-params.py <path>
+python check-hardcoded-params.py --allowlist .hardcoded-allowlist <path>
+```
+
+**Exit codes**: 0 (clean or below severity threshold), 1 (violations at/above threshold), 3 (script error).
+
+**Evidence**: Issue #383 identified 309 hardcoded values in frontend code. Referenced in STANDARDS.md "No Hardcoded Settings" section.
+
+## check-ai-writing-tells.py
+
+**Purpose**: Marker-driven voice guard for operator-voice content (CV, LinkedIn, cover letters, blog posts). Scans `<!-- iamhoi -->` ... `<!-- iamhoiend -->` marker regions for AI writing patterns (banned words/phrases from `voice_rules.py`). Default = SKIP untagged content. Files matching `PUBLIC_FACING_GLOBS` get whole-file scan (legacy back-compat, currently empty).
+
+**Usage**: Invoked automatically by the `check-ai-writing-tells` pre-commit hook. Also runs in CI (`validate.yml` voice-tells job, `ci.yml` voice-tells step in hoiboy-uk).
+
+**Exit codes**: 0 (clean), 1 (AI writing tells found, commit blocked).
+
+**Evidence**: dotfiles#404, hoiboy-uk#3. Canonical rules in `voice_rules.py`. Referenced in STANDARDS.md "Voice Content Protection" section.
+
+## no-temp-folder (inline bash hook)
+
+**Purpose**: Prevents commits containing files in `temp/` or `tmp/` directories. Enforces STANDARDS.md rule that temp files belong in `C:/temp/` (outside repos), not committed to git.
+
+**Usage**: Inline bash in `.pre-commit-config.yaml` — no separate script file. Checks `git diff --cached --name-only` for `temp/` or `tmp/` path segments.
+
+**Exit codes**: 0 (no temp files staged), 1 (temp files found, commit blocked with guidance).
 
 ## meta-test-validator.py
 
