@@ -15,6 +15,33 @@ Automation scripts for SST3 workflow validation and enforcement.
 | check-issue-body-vs-comments.py | Detects scope content placed in issue comments instead of issue body. Required by user-review-checklist Section 5. Exit 0 = clean, 1 = violations. |
 | check-issue-checkboxes.py | Parses issue body+comments for checkbox state. Used by Verification Loop and MCP checkbox tools. |
 | quality-audit.py | Runs `quality-check.py` against all SST3 markdown files. Pre-merge validation gate. |
+| check-public-repo-secrets.py | Pre-commit hook + CI. Blocks secrets, business identifiers, and private paths in public repos. BLOCKING. |
+
+## check-public-repo-secrets.py
+
+**Purpose**: Detects secrets, business identifiers, and private filesystem paths in public repositories. Runs as a pre-commit hook (staged files only) and in CI (full repo scan). Only activates when `.public-repo` marker file exists at repo root.
+
+**Pattern categories**: PLATFORM_TOKEN (GitHub PATs, AWS, GCP, Stripe, JWT), PRIVATE_KEY (PEM headers, PGP), GENERIC_SECRET (password/token/credential assignments, connection strings), PRIVATE_PATH (WSL, Windows, UserHome, UserHome), BLOCKLIST (per-repo `.secret-blocklist` terms).
+
+**Per-repo config**: `.secret-blocklist` (terms to block, one per line), `.secret-allowlist` (false positive suppressions, `path/file` or `path/file:line` format).
+
+**Usage**:
+```bash
+# Pre-commit (staged files only)
+python check-public-repo-secrets.py . --staged-only
+
+# CI (full repo scan)
+python check-public-repo-secrets.py .
+
+# With explicit allowlist
+python check-public-repo-secrets.py . --allowlist .secret-allowlist
+```
+
+**Exit codes**: 0 (clean or not a public repo), 1 (violations found or error).
+
+**Standalone-capable**: Works with or without `sst3_utils` via `try/except ImportError` fallback. Vendored to `ebay-seller-tool`, `SST3-AI-Harness`, and `hoiboy-uk` with drift-check hooks.
+
+**Evidence**: Issue #410. Created after eBay store username and business paths were leaked in ebay-seller-tool (2026-04-11).
 
 ## meta-test-validator.py
 

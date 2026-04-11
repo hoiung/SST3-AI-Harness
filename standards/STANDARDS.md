@@ -364,6 +364,20 @@ AP #12 builds the observability surfaces; AP #16 enforces reading them.
 
 ---
 
+### Public Repo Secret Detection
+
+**Principle**: Public repos (`ebay-seller-tool`, `SST3-AI-Harness`, `hoiboy-uk`) must never contain secrets, business identifiers, or private filesystem paths. Repos opt in via `.public-repo` marker file at root.
+
+**What is blocked**: Platform tokens (GitHub PATs, AWS keys, GCP, Stripe, JWT), private key headers (PEM, PGP), generic secret assignments (password/token/credential with non-placeholder values), private paths (`/mnt/c/Users/`, `UserHome/`, `UserHome/`, `UserHome/`), per-repo business terms (from `.secret-blocklist`).
+
+**Per-repo config**: `.secret-blocklist` (business terms, one per line) and `.secret-allowlist` (false positive suppressions, `path/file` or `path/file:line` format). Script handles missing files as empty sets.
+
+**Enforcement**: Pre-commit hook `check-public-repo-secrets.py` (BLOCKING, `--staged-only` mode) + CI step (full repo scan, no `continue-on-error`). Vendored to consumer repos with drift-check hooks.
+
+**Evidence**: Issue #410. eBay store username, UserHome paths, and business strategies leaked in ebay-seller-tool (2026-04-11), required manual scrub + force-push.
+
+---
+
 ### No Backwards-Compatibility Hacks
 
 **Principle**: When code is removed or refactored, delete it completely.
