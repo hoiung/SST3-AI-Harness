@@ -21,7 +21,7 @@ ALLOWED_SPECIAL = {
     "temp",  # Shared temp folder
     "screenshots",  # Chrome DevTools MCP screenshots (see CLAUDE.md)
     ".claude",  # Claude Code project configuration
-    "essential_backups",  # User backups folder
+    # Add personal folders here (e.g. "backups")
 }
 
 

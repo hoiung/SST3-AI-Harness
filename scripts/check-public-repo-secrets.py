@@ -15,22 +15,22 @@ Usage:
   python check-public-repo-secrets.py <path> --allowlist .secret-allowlist
 """
 
-import sys
-import re
 import argparse
+import re
 import subprocess
+import sys
 import time
 from pathlib import Path
-from typing import List, Dict, Set, NamedTuple, Optional
+from typing import Dict, List, NamedTuple, Optional, Set
 
 try:
     from sst3_utils import (
-        fix_windows_console,
-        should_ignore_path,
+        SST3UtilError,
         collect_source_files,
+        fix_windows_console,
         get_repo_root,
         log_event,
-        SST3UtilError,
+        should_ignore_path,
     )
     fix_windows_console()
 except ImportError:
@@ -61,7 +61,9 @@ except ImportError:
                 return True
         return False
 
-    def collect_source_files(base_path: Path, extensions, ignore_patterns=(), allowed_files=()) -> list:
+    def collect_source_files(
+        base_path: Path, extensions, ignore_patterns=(), allowed_files=(),
+    ) -> list:
         base = Path(base_path)
         if not base.exists():
             return []
@@ -127,7 +129,10 @@ PLATFORM_TOKEN_PATTERNS: List[Dict] = [
         "fix": "Move to .env (gitignored) and reference via environment variable",
     },
     {
-        "pattern": re.compile(r"(?<![A-Z0-9])(?:AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}(?![A-Z0-9])"),
+        "pattern": re.compile(
+            r"(?<![A-Z0-9])(?:AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)"
+            r"[A-Z0-9]{16}(?![A-Z0-9])"
+        ),
         "message": "AWS Access Key ID",
         "fix": "Move to .env (gitignored) and reference via environment variable",
     },

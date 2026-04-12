@@ -1,13 +1,12 @@
 """SST3 shared utilities. Extracted from duplicate implementations across scripts (#399, #405)."""
+import io
 import json
 import os
 import subprocess
 import sys
-import io
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable, List
-
 
 # Constants (would live in sst3_limits.py for the larger config; kept here
 # because they describe internal IO defaults of helpers in this file).
@@ -59,6 +58,7 @@ KNOWN_REPOS: List[str] = [
     'auto_pb_swing_trader',
     'tradebook_GAS',
     'hoiboy-uk',
+    'ebay-seller-tool',
 ]
 
 
