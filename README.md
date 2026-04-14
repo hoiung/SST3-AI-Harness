@@ -39,7 +39,7 @@ That's what SST3 does. It's an accelerator. A catalyst that speeds up your alrea
 
 Here's the catch: if you're still learning your field, the harness won't save you. You'll struggle to judge whether the AI's output is right or wrong. You'll become dependent on it rather than your own intellect, experience, and knowledge. That's not the harness failing. That's trying to wear a hero suit before you've built the strength to carry it.
 
-SST3 is built for people who already know what they do. Domain experts. Subject matter experts (SMEs). Technical leads who can look at an AI agent's output and immediately spot what's wrong. The suit fits those who've already earned the muscle.
+SST3 is built for people who already know what they do. Domain experts. Subject matter experts (SMEs). Technical leads who can look at an AI agent's output and immediately spot what's wrong. The suit fits those who've already earned the muscle. You do have to finetune it to fit you and what you want to do with it. Once finetuned, it's a well oiled machine.
 
 And the AI skills? Those are the suit's enhancements. Weapons, shields, scanners, whatever your domain needs. But skills used alone aren't effective. A skill without the harness is a loose attachment with no frame to mount it on. SST3 is the frame. The skills plug into it, draw power from its governance and quality gates, and that's what lets them run at full potential. The harness without skills is a solid suit. Skills without the harness is a pile of parts on the floor.
 
