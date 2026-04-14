@@ -29,6 +29,22 @@ This matters because:
 
 SST3 solves all three through automated quality gates, structured delivery processes, and pre-commit enforcement that makes compliance the path of least resistance.
 
+## Think of It as a Hero Suit
+
+SST3 is a customisable hero suit. You are the subject matter expert. You already know your domain, your field, your craft. The harness doesn't replace that. It amplifies it.
+
+Think of it like a reshapeable knife. The same tool in different hands serves different purposes: a chef's blade, a surgeon's scalpel, a samurai's katana, a butcher's cleaver. The knife doesn't know how to cook or operate or fight. The expert does. The tool just makes them faster and more precise.
+
+That's what SST3 does. It's an accelerator. A catalyst that speeds up your already latent power. You direct the agents, you make the calls, you judge what's right and wrong. The harness enforces the discipline so nothing falls through the cracks while you work at speed. (Be careful of burnouts though. Working at 10x pace means you can also burn out at 10x pace.)
+
+Here's the catch: if you're still learning your field, the harness won't save you. You'll struggle to judge whether the AI's output is right or wrong. You'll become dependent on it rather than your own intellect, experience, and knowledge. That's not the harness failing. That's trying to wear a hero suit before you've built the strength to carry it.
+
+SST3 is built for people who already know what they do. Domain experts. SMEs. Technical leads who can look at an AI agent's output and immediately spot what's wrong. The suit fits those who've already earned the muscle.
+
+And the AI skills? Those are the suit's enhancements. Weapons, shields, scanners, whatever your domain needs. But skills used alone aren't effective. A skill without the harness is a loose attachment with no frame to mount it on. SST3 is the frame. The skills plug into it, draw power from its governance and quality gates, and that's what lets them run at full potential. The harness without skills is a solid suit. Skills without the harness is a pile of parts on the floor.
+
+You can use it to build automation, to research, to write, to analyse, all with tight guardrails that reduce hallucination and the bullshit AI spouts at times which is not factual or true. It's not perfect, but it's far better than Claude Code out the box. My principle is KISS (Keep It Simple Stupid), so this framework is built to be reliable and simple to customise without all the additional LLM wiki or graphs or other memory frameworks which add complexity and more parts to fail. (That doesn't mean I won't try them and see if they can improve SST3-AI-Harness or larger projects that work alongside the harness, but the current version works reliably.)
+
 ## Key Metrics
 
 | Metric | Value |
