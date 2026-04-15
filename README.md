@@ -280,11 +280,33 @@ Directing dynamically scaled concurrent AI agents is the functional equivalent o
 
 ## Getting Started
 
+### Prerequisites
+
+**Core requirements** (needed for every SST3 workflow):
+
+- **Python 3.10+** (`python3 --version` to check)
+- **Node 20+** (`node --version` to check)
+- **pre-commit** (`pip install pre-commit` then verify with `pre-commit --version`)
+- **Claude Code CLI** (see https://docs.claude.com/claude-code for install instructions)
+- **GitHub CLI `gh`** authenticated (`gh auth login` — follow the browser prompt and select HTTPS + public-repo scope at minimum)
+
+**Optional, only for the evidence-enforced checkbox MCP server**:
+
+- **`uv` package manager** (see https://docs.astral.sh/uv/ for install). Skip if you do not use the checkbox MCP; the rest of SST3 works without it.
+
+### Clone the Harness
+
+```bash
+git clone https://github.com/hoiung/SST3-AI-Harness.git
+cd SST3-AI-Harness
+pre-commit install
+```
+
 ### Adopt the Methodology
 
 1. Read [`workflow/WORKFLOW.md`](workflow/WORKFLOW.md): the 5-stage delivery lifecycle
 2. Read [`standards/STANDARDS.md`](standards/STANDARDS.md): engineering principles (Fail Fast, LMCE, JBGE)
-3. Copy [`templates/CLAUDE_TEMPLATE.md`](templates/CLAUDE_TEMPLATE.md) to your project as `CLAUDE.md`
+3. Copy [`templates/CLAUDE_TEMPLATE.md`](templates/CLAUDE_TEMPLATE.md) to your project as `CLAUDE.md`. The template uses in-repo relative paths (for example `standards/STANDARDS.md`) that resolve when you place your project's `CLAUDE.md` at the repo root.
 4. Use [`templates/issue-template.md`](templates/issue-template.md) for all new work
 
 ### Add Quality Gates
@@ -298,6 +320,37 @@ Directing dynamically scaled concurrent AI agents is the functional equivalent o
 1. Configure the [MCP server](mcp-servers/github-checkbox/) for evidence-enforced operations
 2. Use the 3-tier Ralph Review (Haiku → Sonnet → Opus) on every merge
 3. Follow the [`reference/self-healing-guide.md`](reference/self-healing-guide.md) for incident recovery
+
+### Your First Issue: End-to-End Walkthrough
+
+Work through a trivial change to learn the 5-stage flow. Suggested example: fix a typo in `README.md`.
+
+1. **Create a GitHub Issue** using [`templates/issue-template.md`](templates/issue-template.md). Title format: `Fix: typo in README [line X]`.
+2. **Create a solo branch**: `git checkout -b solo/issue-{N}-readme-typo` (where `{N}` is the issue number).
+3. **Invoke `/Leader 1`** (Research). A subagent swarm confirms the typo location and scope. Findings go to `/tmp`.
+4. **Invoke `/Leader 2`** (Issue Draft). Main agent drafts the issue body against the template; subagents verify coverage.
+5. **Invoke `/Leader 3`** (Sanity Check + Issue Creation). Subagents triple-check the draft, then `gh` creates the issue.
+6. **Invoke `/Leader 4`** (Implement). Main agent applies the fix, commits per file, pushes, runs the Verification Loop, then runs the 3-tier Ralph Review (Haiku, Sonnet, Opus).
+7. **Invoke `/Leader 5`** (Ship It). Merge to main after Ralph passes, post the user-review-checklist.
+8. **Invoke `/Leader 6`** (Final Review). Subagent swarm audits the implementation end-to-end. Fix any findings, close the issue.
+
+Commands live at [`claude/commands/Leader.md`](claude/commands/Leader.md) and [`claude/commands/SST3-solo.md`](claude/commands/SST3-solo.md). Either user-scope them by copying to `~/.claude/commands/` or keep them repo-scoped under `.claude/commands/` in your own project.
+
+### Branching for Your Use Case
+
+- **Using SST3 in your own project**: clone, create `solo/issue-{N}-{description}` branches per the 5-stage workflow, merge to your own `main` once Ralph review passes.
+- **Contributing back to SST3-AI-Harness**: fork the repo, run the Phase 1-5 SST3 workflow on your branch, submit a PR with links to your Ralph review evidence and Issue discussion.
+
+### Build Your Own Skill
+
+Want a domain-specific skill (marketing, HR, finance, R&D, etc.) that plugs into the harness? See [`reference/building-skills-guide.md`](reference/building-skills-guide.md) for the minimum viable template, section patterns, and a copy-pasteable skeleton.
+
+### Troubleshooting
+
+- **`gh auth status` reports unauthenticated**: run `gh auth login` and pick HTTPS. You need at least `repo` scope to create issues programmatically.
+- **Pre-commit hooks fail on `cmp -s` drift check**: one of the vendored scripts has drifted from canonical. Follow the `Run: cp ...` command in the error message to resync.
+- **`/Leader` commands "not found"**: Claude Code did not discover the command. Either copy `claude/commands/Leader.md` to `~/.claude/commands/Leader.md` for user scope, or place it at `.claude/commands/Leader.md` inside your project for repo scope.
+- **Path errors referencing `../dotfiles/`**: you are reading the private canonical version. The public harness uses in-repo paths (`standards/`, `workflow/`, `templates/`, `ralph/`). Verify you are editing files in `SST3-AI-Harness/`, not a private dotfiles mirror.
 
 ## Repository Structure
 
