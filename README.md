@@ -18,6 +18,13 @@ SST3 is a **production agent harness** and **AI delivery methodology**: a comple
 
 SST3 treats LLMs as an **execution layer** for Generative AI (GenAI) workflows. Not autocomplete, but a managed team of agentic AI agents operating under governance constraints.
 
+## Read the Journey
+
+Two companion blog posts carry the story and philosophy this README deliberately keeps short:
+
+- [**SST3-AI-Harness. Why I Built a Hero Suit for AI.**](https://hoiboy.uk/posts/sst3-ai-harness-reshapeable-knife/) — the reshapeable-knife metaphor, the cowboy problem, trust model, and why this works for marketing, HR, finance, and R&D as much as engineering.
+- [**Why I Spend More Tokens Refining Scope Than Writing Code**](https://hoiboy.uk/posts/why-scope-beats-code/) — SST2 lessons, the PM reasoning behind scope-first, and how poor scope compounds into technical debt.
+
 ## Why This Exists
 
 Most AI-assisted development uses LLMs as line-level autocomplete. SST3 takes a different approach: the human is the **orchestrator** who designs the work, and LLM agents execute it under quality constraints, the same way a technical lead directs a cross-functional team.
