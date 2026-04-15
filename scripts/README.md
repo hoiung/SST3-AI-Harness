@@ -152,7 +152,7 @@ python SST3/scripts/cleanup-temp.py              # Dry run (preview)
 python SST3/scripts/cleanup-temp.py --execute    # Actually delete
 python SST3/scripts/cleanup-temp.py --age 45     # Custom threshold
 
-# From other repos (auto_pb_swing_trader, tradebook_GAS, etc.):
+# From other repos (project-a, project-b, etc.):
 python ../cleanup-temp.py (current directory)
 ```
 
@@ -163,7 +163,7 @@ python ../cleanup-temp.py (current directory)
 
 **Filename Convention**:
 - Format: `{repo}-{issue#}-{description}.{ext}`
-- Examples: `dotfiles-121-api-design.md`, `auto_pb_swing_trader-122-test-data.json`
+- Examples: `dotfiles-121-api-design.md`, `project-a-122-test-data.json`
 
 **Protected Files**:
 - `README.md`, `.gitkeep`, `.gitignore` (never deleted)
@@ -339,7 +339,7 @@ python SST3/scripts/check-failed-experiments.py --test
 python SST3/scripts/propagate-template.py --all --dry-run
 
 # Single repository
-python SST3/scripts/propagate-template.py --repo ../tradebook_GAS
+python SST3/scripts/propagate-template.py --repo ../<your-project>
 
 # All repositories
 python SST3/scripts/propagate-template.py --all
@@ -411,7 +411,7 @@ python SST3/scripts/check-crossrepo-paths.py --verbose
 ```
 
 **Problem Solved**:
-When SST3 docs reference other SST3 files using repo-relative paths (e.g., `` `SST3/workflow/...` ``), those paths work from dotfiles repo but BREAK from other repos (auto_pb_swing_trader, tradebook_GAS). This makes SST3 features undiscoverable from other repos, violating the discoverability requirement.
+When SST3 docs reference other SST3 files using repo-relative paths (e.g., `` `SST3/workflow/...` ``), those paths work from dotfiles repo but BREAK from other repos (project-a, project-b). This makes SST3 features undiscoverable from other repos, violating the discoverability requirement.
 
 **What It Checks**:
 - Scans all SST3 markdown files (workflow/, templates/, reference/, standards/)
@@ -430,7 +430,7 @@ When SST3 docs reference other SST3 files using repo-relative paths (e.g., `` `S
 
 **Integration**: Configured in `.pre-commit-config.yaml` (runs on SST3 markdown file changes)
 
-**Reference**: See [Issue #298](https://github.com/hoiung/dotfiles/issues/298) for context
+**Reference**: See Issue #298 for context
 
 ---
 
@@ -464,7 +464,7 @@ When retrospectives are saved with relative paths from wrong working directories
 
 **Integration**: Can be added to pre-commit hooks to prevent saving to wrong location
 
-**Reference**: Prevents issues like [Issue #110](https://github.com/hoiung/dotfiles/issues/110) where retrospectives were saved to wrong directory
+**Reference**: Prevents issues like Issue #110 where retrospectives were saved to wrong directory
 
 ---
 
@@ -547,7 +547,7 @@ src/config.py:15 # Safe default for optional feature
 
 **Complements**: ANTI-PATTERNS.md Pattern #7 (Silent Fallbacks & Fake Data)
 
-**Reference**: Created for [Issue #367](https://github.com/hoiung/dotfiles/issues/367) - SST3 fallback enforcement
+**Reference**: Created for Issue #367 - SST3 fallback enforcement
 
 ---
 
@@ -646,7 +646,7 @@ python SST3/scripts/rollout-issue-assignment.py --execute --repos all --section 
 - `--dry-run`: Preview changes without editing
 - `--test N`: Update first N issues only
 - `--execute`: Full rollout
-- `--repos`: Target repos (dotfiles, auto_pb_swing_trader, tradebook_GAS, all)
+- `--repos`: Target repos (dotfiles, project-a, project-b, all)
 - `--section`: Which section to rollout (solo, stage, both - default: both)
 - `--skip-epic`: Skip issues with 'epic' label (default: True)
 
