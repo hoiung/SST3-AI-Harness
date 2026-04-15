@@ -70,7 +70,7 @@ The main orchestrator agent starts in PLANNING MODE. No file changes, no commits
 
 ### Issue-driven, evidence-enforced
 
-Every piece of work starts with a GitHub Issue. Every phase checkpoint posts a comment to the Issue. Every checkbox tick requires evidence (commit hash, test output, file diff) through a custom MCP server that literally blocks tick-without-proof. If the AI can't produce the evidence, the checkbox stays unchecked. Accountability by construction.
+Every piece of work starts with a GitHub Issue. Every phase checkpoint posts a comment to the Issue. Every checkbox tick requires evidence (commit hash, test output, file diff) through a custom MCP server that literally blocks tick-without-proof. If the AI can't produce the evidence, the checkbox stays unchecked. Accountability by construction. (Something the UK government could learn a thing or two about, frankly.)
 
 ### Handover protocol, so context never dies
 
