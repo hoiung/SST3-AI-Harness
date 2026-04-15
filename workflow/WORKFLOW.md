@@ -117,7 +117,7 @@ git push origin --delete solo/issue-{number}-{description}
 
 ## Context Management
 
-**Context**: 1M window (Opus/Sonnet), 200K (Haiku). Handover at 80% (800K/160K). Content budget ~42K. Research budget <30% Stage 1.
+**Context**: 1M window (Opus/Sonnet), 200K (Haiku). Handover at 80% (800K of 1M, 160K of 200K) — stop threshold, not routine. Warn at 70%, work until 80%. Content budget ~42K. Research budget <30% Stage 1.
 
 ## Quality Standards
 

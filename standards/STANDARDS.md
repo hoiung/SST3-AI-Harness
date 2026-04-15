@@ -818,6 +818,21 @@ When you see `[Stage X]`, it's SST3 process work. `[Phase X]` is project feature
 **Before PR**: Link issue, describe changes, confirm tests pass, request review
 **Before Merging**: Address feedback, CI/CD green, update issue, no force push to main
 
+## Keep Going Until Done
+
+Do not stop mid-work to ask permission, wait for confirmation, or "check in" when there is no real blocker. With a 1M context window, the run-length is the work, not the session. Stop only when one of these is actually true:
+
+1. **Context at 80%+** of the model window (800K of 1M, 160K of 200K). Warn at 70%, stop at 80%.
+2. **Irreversible destructive action** needs explicit user consent (force-push, `rm -rf`, `DROP TABLE`, branch deletion, overwrites of uncommitted work).
+3. **Genuinely stuck** after investigation — not as a first-response-to-friction reflex.
+4. **Task is complete.**
+
+Phase checkpoints post a comment to the Issue. They do NOT pause work. Post the comment, then immediately start the next phase. Warnings at 70% are informational; keep working until 80%.
+
+The 200K-era pattern of "stop at phase boundary to compact" no longer applies. The 1M window exists to be used. Stopping at 50%, 70%, or 80% REMAINING (i.e. only 20-50% used) is premature stopping — see ANTI-PATTERNS.md AP #17.
+
+**Threshold update (2026-04-15):** previously "80% warn / 90% stop" from the 200K era. Now **70% warn / 80% stop**. 80%+ of 1M (>800K) is where degradation becomes severe; the 10-point earlier warning gives enough runway to wrap up cleanly.
+
 ## Related Documentation
 
 - [Workflow Overview](../workflow/WORKFLOW.md) - 5-stage Solo workflow (Research → Issue → Triple-Check → Implement → Review)
