@@ -224,7 +224,7 @@
 - [ ] STANDARDS.md compliant
 - [ ] User review checklist complete
 
-**Checklists**: `../dotfiles/SST3/ralph/`
+**Checklists**: `ralph/`
 
 ### Branch & Commit Discipline
 > Commit after EACH file change. NO batching. NEVER `git add -A`.

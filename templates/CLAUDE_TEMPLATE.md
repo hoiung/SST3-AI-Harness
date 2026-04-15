@@ -2,13 +2,13 @@
 
 ## 5-Stage Solo Workflow Model
 
-**Your Role**: Orchestrate research/review via subagent swarms; implement directly. See `../dotfiles/SST3/workflow/WORKFLOW.md` for full 5-stage workflow.
+**Your Role**: Orchestrate research/review via subagent swarms; implement directly. See `workflow/WORKFLOW.md` for full 5-stage workflow.
 
 **Default: PLANNING MODE** — execute only when user says "work on #X" / "implement this". No file changes, no commits in planning mode. When unclear, ask.
 
 **MANDATORY READING**:
-1. `../dotfiles/SST3/standards/STANDARDS.md` (ALWAYS)
-2. `../dotfiles/SST3/standards/ANTI-PATTERNS.md` (ALWAYS — 18 documented failure modes you must not repeat)
+1. `standards/STANDARDS.md` (ALWAYS)
+2. `standards/ANTI-PATTERNS.md` (ALWAYS — 18 documented failure modes you must not repeat)
 3. `{repository-name}/CLAUDE.md` (ALWAYS - replace with repo root)
 
 **Reading Confirmation Checklist** (MUST display and complete):
@@ -27,7 +27,7 @@
 - **AP #16 Monitor, Don't Fire-and-Forget**: every script / command / subprocess / test / deployment / commit / push you launch must be verified end-to-end (tail logs, check exit code, verify output, confirm side effects). "Started" is not "done". For `run_in_background`, poll BashOutput. Be the user's eyes and ears, not just their executioner. If you cannot answer "what happened?" with specifics, you fired and forgot — go check NOW.
 - **AP #18 Sample Invocation Validates Workflow**: for any change touching pipeline / data-processing / orchestration / CLI-wiring / cross-module function-arg propagation — run an actual end-to-end sample invocation (real CLI, real DB, small liquid basket 8 items) BEFORE closing. Unit + smoke tests are necessary but NOT sufficient. Mocks that accept `**kwargs` silently discard params and do NOT prove propagation — assert `call_args.kwargs[...]` explicitly. Stage 4 Verification Loop mandatory gate. See STANDARDS.md "Testing Priority — Workflow Validation Gate".
 
-**STOP if**: No GitHub Issue exists. Create Issue using `../dotfiles/SST3/templates/issue-template.md`.
+**STOP if**: No GitHub Issue exists. Create Issue using `templates/issue-template.md`.
 
 ### Solo Workflow Overview
 
@@ -54,20 +54,20 @@ Pre-start read (CLAUDE.md + STANDARDS.md + Issue) → phase checkpoints (70%+ wa
 - `/start` — list repos, prompt selection, load CLAUDE.md, WAIT for task.
 - `/SST3-solo` — load STANDARDS.md + repo CLAUDE.md, display summary, prompt for task, execute with guardrails.
 
-Handover template: `../dotfiles/SST3/templates/chat-handover.md` (post checkpoint to Issue FIRST).
+Handover template: `templates/chat-handover.md` (post checkpoint to Issue FIRST).
 
 ## External Research References
 
 **Location**: `docs/research/` in project root
 **Check BEFORE external research**: Existing research references
 **Capture AFTER research**: If 3+ external resources found, create/update research reference
-See: `../dotfiles/SST3/reference/research-reference-guide.md` for complete guide
+See: `reference/research-reference-guide.md` for complete guide
 
 ## Quality Standards
 
 **See STANDARDS.md** — Never Assume (read source before concluding), Fix Everything (no scope/language excuses, no priority deferrals), Critical Thinking (challenge with evidence). Only valid skip reason: confirmed false positive (document why).
 
-**Voice Content Protection** — when editing Hoi-voice prose (CV, LinkedIn, cover letters, blogs): wrap in `<!-- iamhoi --> ... <!-- iamhoiend -->`. Canonical rules in `../dotfiles/SST3/standards/STANDARDS.md` "Voice Content Protection" + AP #15. Single source of truth for banned words: `../dotfiles/SST3/scripts/voice_rules.py`. (#406 F3.8 dedup.)
+**Voice Content Protection** (optional, opt in per project): when editing voice-sensitive prose (CV, LinkedIn, cover letters, blogs, marketing copy), wrap new prose in voice-guard markers your team uses so pre-commit and CI can scan only tagged regions. Canonical rules in `standards/STANDARDS.md` "Voice Content Protection" + AP #15. See `scripts/voice_rules.py` for the banned-word pattern to adapt to your own voice.
 
 ## Ralph Review Loop (MANDATORY)
 
@@ -84,7 +84,7 @@ See: `../dotfiles/SST3/reference/research-reference-guide.md` for complete guide
 **On FAIL any tier**: Main agent fixes → Restart from Tier 1 (Haiku)
 **On PASS all 3**: Merge to main immediately (protects work), then user review
 
-**Checklists**: `../dotfiles/SST3/ralph/`
+**Checklists**: `ralph/`
 
 ## Quick Reference
 
@@ -121,17 +121,12 @@ Cleanup branch, close Issue
 ### MCP Configuration (Global)
 - **Location**: `~/.claude.json` (user scope)
 - **Verify**: Run `claude mcp list` or `/mcp` inside Claude Code
-- **Servers**: chrome-devtools, github-checkbox, github
-- **Guide**: `../dotfiles/docs/guides/mcp-configuration.md`
-- **Tool Selection**: See `../dotfiles/SST3/reference/tool-selection-guide.md`
+- **Servers**: refer to your team's MCP stack (example: `github`, `github-checkbox`)
+- **Tool Selection**: See `reference/tool-selection-guide.md`
 
 ### MCP Tools
 - **Checkboxes**: `mcp__github-checkbox__update_issue_checkbox(issue_number, checkbox_text, evidence)`
-- **Frontend**: Chrome DevTools MCP — guide `../dotfiles/docs/guides/chrome-devtools-mcp.md`, screenshots → `../screenshots/`
 - **GitHub Issues**: issue_write, add_issue_comment, search_issues, get_file_contents, create_pull_request
-
-### Google Drive Sync Conflicts
-Edit fails with "File has been unexpectedly modified" → copy to `C:/temp/`, edit copy, copy back. See `docs/guides/google-drive-sync.md`.
 
 ---
 <!-- ============================================================== -->
