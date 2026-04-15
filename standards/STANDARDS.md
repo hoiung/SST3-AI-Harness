@@ -8,7 +8,7 @@
 
 **ROI = Quality Execution** (not token/time savings). Token efficiency is a byproduct, not the goal.
 
-**Clarity > Brevity** ([Issue #141](https://github.com/hoiung/dotfiles/issues/141)): Prune based on quality (JBGE + LMCE), never to hit a number. Clear instructions prevent rework.
+**Clarity > Brevity** (Issue #141): Prune based on quality (JBGE + LMCE), never to hit a number. Clear instructions prevent rework.
 
 ## Core Principles
 
@@ -42,13 +42,13 @@
 
 **JBGE** (Just Barely Good Enough): Document only what prevents problems.
 
-**Discoverability Requirement** ([Issue #119](https://github.com/hoiung/dotfiles/issues/119)): All SST3 files MUST be discoverable from CLAUDE.md in EVERY repo.
+**Discoverability Requirement** (Issue #119): All SST3 files MUST be discoverable from CLAUDE.md in EVERY repo.
 - **Chain**: CLAUDE.md → SST3/workflow/WORKFLOW.md → stage-X → feature (<=4 steps)
 - **Validation**: `python SST3/scripts/check-discoverability.py` during Verification Loop
 - **Exception**: CLAUDE_TEMPLATE.md (template), .sst3-local/ (project-specific)
 - **Enforcement**: Verification Loop BLOCKS merge if any repo fails discoverability check
 
-**Don't Explain Claude to Claude** ([Issue #119](https://github.com/hoiung/dotfiles/issues/119)): Document YOUR rules/decisions/patterns. Not model capabilities or standard practices. ✓ "Ralph Tier 1 uses haiku for surface checks" ✗ "Haiku is fast"
+**Don't Explain Claude to Claude** (Issue #119): Document YOUR rules/decisions/patterns. Not model capabilities or standard practices. ✓ "Ralph Tier 1 uses haiku for surface checks" ✗ "Haiku is fast"
 
 **LMCE** (Lean, Mean, Clean, Effective): JBGE defines *what* to keep; LMCE defines *how* to deliver it.
 - **Lean**: Remove if removable without breaking. Keep only if ROI > 1x.
@@ -58,9 +58,9 @@
 
 **Pruning rule**: Keep examples that prevent real problems and decision thresholds. Remove AI-known explanations and motivational language. If pruned content caused problems, restore it.
 
-See: `ANTI-PATTERNS.md` for top 5 recurring problems ([Issue #79](https://github.com/hoiung/dotfiles/issues/79))
+See: `ANTI-PATTERNS.md` for top 5 recurring problems (Issue #79)
 
-**AI-First Documentation** ([Issue #153](https://github.com/hoiung/dotfiles/issues/153)): Internal docs optimize for AI consumption.
+**AI-First Documentation** (Issue #153): Internal docs optimize for AI consumption.
 
 **Three-Category Framework**:
 
@@ -86,7 +86,7 @@ See: `ANTI-PATTERNS.md` for top 5 recurring problems ([Issue #79](https://github
 - Build custom only when existing solutions don't fit
 - Document why existing solutions rejected
 
-See: `../dotfiles/SST3/workflow/WORKFLOW.md` (Stage 1 — Research) for detailed library research process.
+See: `../workflow/WORKFLOW.md` (Stage 1 — Research) for detailed library research process.
 
 ### Critical Thinking & Honest Analysis
 
@@ -213,7 +213,7 @@ Main agent parses the RESULT block; subagent prose body is informational. Reduce
 
 ### Bash Output Budgets (#406 F4.7)
 
-Default flags for the 10 commands SST3 runs hot. Provenance: each row backed by file:line in the audit findings of #406. The `tee-run.sh` wrapper (`../dotfiles/SST3/scripts/tee-run.sh <label> -- <cmd>`) provides recovery for any compressed output: full log saved to `~/.cache/sst3/tee/`, last 200 lines printed.
+Default flags for the 10 commands SST3 runs hot. Provenance: each row backed by file:line in the audit findings of #406. The `tee-run.sh` wrapper (`../scripts/tee-run.sh <label> -- <cmd>`) provides recovery for any compressed output: full log saved to `~/.cache/sst3/tee/`, last 200 lines printed.
 
 | Command | Default | Why |
 |---|---|---|
@@ -228,7 +228,7 @@ Default flags for the 10 commands SST3 runs hot. Provenance: each row backed by 
 | `curl` | `--fail --max-time 30` (any JSON consumer pipes through `jq -e .`) | Fail loud on HTTP errors; no invalid-JSON consumers |
 | Logs | `tail -n 100` or `tee-run.sh logs -- cat <log>` | Never `cat` a log of unknown size |
 
-Rule of thumb: any single Bash invocation that produces > 200 lines should be wrapped with `../dotfiles/SST3/scripts/tee-run.sh <label> -- <cmd>` so the agent gets the tail and the full log is recoverable.
+Rule of thumb: any single Bash invocation that produces > 200 lines should be wrapped with `../scripts/tee-run.sh <label> -- <cmd>` so the agent gets the tail and the full log is recoverable.
 
 ### Contract Verification — Three Contracts (Issue #1407 post-mortem)
 
@@ -360,7 +360,7 @@ AP #12 builds the observability surfaces; AP #16 enforces reading them.
 
 **Enforcement**: pre-commit hook + CI in dotfiles (`validate.yml` voice-tells job) and hoiboy-uk (`ci.yml` voice-tells step). Drift between canonical and vendored copies enforced via `cmp -s` bash hook.
 
-**Reference**: hoiung/dotfiles#404, hoiung/hoiboy-uk#3.
+**Reference**: dotfiles#404, hoiboy-uk#3.
 
 ---
 
@@ -531,7 +531,7 @@ Comment WHY for non-obvious business logic (e.g., `time.sleep(2)` for IBKR rate-
 
 Document tool choices in CLAUDE.md.
 
-See: `../dotfiles/SST3/workflow/WORKFLOW.md` (Stage 1 — Research) for library research process.
+See: `../workflow/WORKFLOW.md` (Stage 1 — Research) for library research process.
 
 ## Path Portability
 
@@ -550,7 +550,7 @@ cd ../dotfiles  # from DevProjects/[repo]
 
 **Usage in documentation**:
 - Use `$DOTFILES_ROOT` in examples requiring absolute paths
-- Use relative paths (e.g., `../dotfiles/SST3/...`) for cross-repo references
+- Use relative paths (e.g., `../...`) for cross-repo references
 - Never hardcode `C:\Users\username` in documentation
 
 ## DevProjects Directory Structure
@@ -560,15 +560,15 @@ DevProjects/              ← Local parent (not a git repo, not on GitHub)
 ├── dotfiles/             ← SST3 source of truth (git repo)
 │   ├── SST3/            ← Workflow documentation
 │   └── CLAUDE.md        ← Entry point
-├── auto_pb_swing_trader/ ← Git repo (uses SST3)
-│   └── CLAUDE.md        → ../dotfiles/SST3/...
-├── tradebook_GAS/        ← Git repo (uses SST3)
-│   └── CLAUDE.md        → ../dotfiles/SST3/...
+├── project-a/              ← Git repo (uses SST3)
+│   └── CLAUDE.md        → ../...
+├── project-b/              ← Git repo (uses SST3)
+│   └── CLAUDE.md        → ../...
 
 C:/temp/                  ← Shared temp folder (outside Google Drive, avoids sync conflicts)
 ```
 
-**Key Implications**: DevProjects/ is local only. Each repo is independent. SST3 lives in dotfiles/, referenced via `../dotfiles/SST3/`. Temp: `C:/temp/{repo}-{issue}-{description}.ext`.
+**Key Implications**: DevProjects/ is local only. Each repo is independent. SST3 lives in dotfiles/, referenced via `../`. Temp: `C:/temp/{repo}-{issue}-{description}.ext`.
 
 ### Architecture Validation
 
@@ -576,14 +576,14 @@ C:/temp/                  ← Shared temp folder (outside Google Drive, avoids s
 
 **Validation**: `cd .. && git status` → expected: `fatal: not a git repository`.
 
-**If fails**: `cd .. && mv .git .git.DISABLED.{issue-number}` → remove duplicate files from DevProjects/ root → document → add to pre-commit hooks. See [Issue #172](https://github.com/hoiung/dotfiles/issues/172).
+**If fails**: `cd .. && mv .git .git.DISABLED.{issue-number}` → remove duplicate files from DevProjects/ root → document → add to pre-commit hooks. See Issue #172.
 
 ### DevProjects Cleanliness Enforcement
 
 **Pre-commit hook** `check-devprojects-clean` validates DevProjects/ before every commit:
 
 **Allowed:**
-- Known repos: `dotfiles/`, `auto_pb_swing_trader/`, `tradebook_GAS/`
+- Known repos: `dotfiles/`, `<your-project-a>/`, `<your-project-b>/`
 - Shared temp: `temp/`
 - New git repos: Any directory containing `.git/`
 - Disabled git: `.git.DISABLED.*` pattern
@@ -592,9 +592,9 @@ C:/temp/                  ← Shared temp folder (outside Google Drive, avoids s
 - Files at DevProjects/ root
 - Folders not matching allowed criteria
 
-**Script:** `../dotfiles/SST3/scripts/check-devprojects-clean.py`
+**Script:** `../scripts/check-devprojects-clean.py`
 
-**Reference:** [Issue #249](https://github.com/hoiung/dotfiles/issues/249)
+**Reference:** Issue #249
 
 ## Documentation Requirements
 
@@ -616,7 +616,7 @@ C:/temp/                  ← Shared temp folder (outside Google Drive, avoids s
 3. **Install?** - How do I set it up? (Dependencies and config)
 4. **Learn?** - Where can I learn more? (Links to docs)
 
-**Structure**: Use the What/Get/Install/Learn format from `../dotfiles/SST3/templates/CLAUDE_TEMPLATE.md` (Project-Specific Configuration section).
+**Structure**: Use the What/Get/Install/Learn format from `../templates/CLAUDE_TEMPLATE.md` (Project-Specific Configuration section).
 ```
 
 **Enforcement**: Pre-commit hook rejects README.md files > 80 lines
@@ -655,10 +655,10 @@ C:/temp/                  ← Shared temp folder (outside Google Drive, avoids s
 - **Verify**: `git branch -a` shows no orphaned branches for completed issues
 - **Monthly**: `git branch --merged main | grep -v "main" | xargs git branch -d`
 
-**Rollback Cleanup**: See `../dotfiles/SST3/reference/self-healing-guide.md` for full rollback procedures. Key: one logical change per commit (enables surgical `git revert`), separate debug commits, document rollback in Issue before restarting.
+**Rollback Cleanup**: See `../reference/self-healing-guide.md` for full rollback procedures. Key: one logical change per commit (enables surgical `git revert`), separate debug commits, document rollback in Issue before restarting.
 - **Implementation guidance**: Commit incrementally (per-file) supports this strategy
 
-**Removal Reporting** ([Issue #119](https://github.com/hoiung/dotfiles/issues/119)): When removing content, post a brief summary (`File: section (-X tokens/lines) — Removed: X, Kept: Y`) so user can approve deletions quickly.
+**Removal Reporting** (Issue #119): When removing content, post a brief summary (`File: section (-X tokens/lines) — Removed: X, Kept: Y`) so user can approve deletions quickly.
 
 ## "READ IN FULL" Warning Criteria
 
@@ -879,4 +879,4 @@ The 200K-era pattern of "stop at phase boundary to compact" no longer applies. T
 
 Capture quality research once in `docs/research/` (project root, NOT SST3/). Create when 3+ external resources found.
 
-See: `../dotfiles/SST3/reference/research-reference-guide.md` for complete guide, file structure, naming conventions, and template.
+See: `../reference/research-reference-guide.md` for complete guide, file structure, naming conventions, and template.
