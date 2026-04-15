@@ -304,7 +304,7 @@ Directing dynamically scaled concurrent AI agents is the functional equivalent o
 
 - **Python 3.10+** (`python3 --version` to check)
 - **Node 20+** (`node --version` to check)
-- **pre-commit** (`pip install pre-commit` then verify with `pre-commit --version`)
+- **pre-commit** (`pipx install pre-commit` or `pip install --user pre-commit`; plain `pip install pre-commit` will fail on Python 3.12+ due to PEP 668. Verify with `pre-commit --version`)
 - **Claude Code CLI** (see https://docs.claude.com/claude-code for install instructions)
 - **GitHub CLI `gh`** authenticated (`gh auth login`, follow the browser prompt and select HTTPS + public-repo scope at minimum)
 
@@ -343,14 +343,15 @@ pre-commit install
 
 Work through a trivial change to learn the 5-stage flow. Suggested example: fix a typo in `README.md`.
 
-1. **Create a GitHub Issue** using [`templates/issue-template.md`](templates/issue-template.md). Title format: `Fix: typo in README [line X]`.
-2. **Create a solo branch**: `git checkout -b solo/issue-{N}-readme-typo` (where `{N}` is the issue number).
-3. **Invoke `/Leader 1`** (Research). A subagent swarm confirms the typo location and scope. Findings go to `/tmp`.
-4. **Invoke `/Leader 2`** (Issue Draft). Main agent drafts the issue body against the template; subagents verify coverage.
-5. **Invoke `/Leader 3`** (Sanity Check + Issue Creation). Subagents triple-check the draft, then `gh` creates the issue.
-6. **Invoke `/Leader 4`** (Implement). Main agent applies the fix, commits per file, pushes, runs the Verification Loop, then runs the 3-tier Ralph Review (Haiku, Sonnet, Opus).
-7. **Invoke `/Leader 5`** (Ship It). Merge to main after Ralph passes, post the user-review-checklist.
-8. **Invoke `/Leader 6`** (Final Review). Subagent swarm audits the implementation end-to-end. Fix any findings, close the issue.
+The `/Leader` command creates the GitHub Issue for you in Stage 3. Do NOT create the Issue manually, and do NOT create the solo branch until after Stage 3 gives you the Issue number.
+
+1. **Invoke `/Leader 1`** (Research). A subagent swarm explores the codebase and confirms the typo location and scope. Findings go to `/tmp`.
+2. **Invoke `/Leader 2`** (Issue Draft). Main orchestrator drafts the Issue body against [`templates/issue-template.md`](templates/issue-template.md); subagents verify coverage.
+3. **Invoke `/Leader 3`** (Sanity Check + Issue Creation). Subagents triple-check the draft against the research, then `gh` creates the Issue. You will receive the Issue number (e.g. `#42`).
+4. **Create the solo branch NOW that you know the Issue number**: `git checkout -b solo/issue-42-readme-typo`.
+5. **Invoke `/Leader 4`** (Implement). Main orchestrator applies the fix, commits per file, pushes, runs the Verification Loop, then runs the 3-tier Ralph Review (Haiku, Sonnet, Opus).
+6. **Invoke `/Leader 5`** (Ship It). Merge to main after Ralph passes, post the user-review-checklist.
+7. **Invoke `/Leader 6`** (Final Review). Subagent swarm audits the implementation end-to-end. Fix any findings, close the Issue.
 
 Commands live at [`claude/commands/Leader.md`](claude/commands/Leader.md) and [`claude/commands/SST3-solo.md`](claude/commands/SST3-solo.md). Either user-scope them by copying to `~/.claude/commands/` or keep them repo-scoped under `.claude/commands/` in your own project.
 

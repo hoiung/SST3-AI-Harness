@@ -639,8 +639,8 @@ C:/temp/                  ← Shared temp folder (outside UserHome, avoids sync 
 - **Naming**: `{repo}-{issue#}-{description}.{ext}` (e.g., `dotfiles-121-api-design.md`)
 - **NOT for**: Handovers (use GitHub Issue comments)
 - **Cleanup**: Script-based deletion when issue closed OR file age >30 days
-- **Script**: `python ../dotfiles/SST3/scripts/cleanup-temp.py` (dry-run by default)
-- **Script Documentation**: See [scripts/README.md](../dotfiles/SST3/scripts/README.md)
+- **Script**: `python scripts/cleanup-temp.py` (dry-run by default)
+- **Script Documentation**: See [scripts/README.md](../scripts/README.md)
 - **Enforcement**: Pre-commit hook `no-temp-folder` blocks commits with temp/ paths (see Issue #241)
 
 **Archive**:
