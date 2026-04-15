@@ -20,7 +20,7 @@
 
 ### Example
 
-[Issue #83](https://github.com/hoiung/dotfiles/issues/83) finds Stage 3 instructions unclear about commit frequency.
+Issue #83 finds Stage 3 instructions unclear about commit frequency.
 
 **Proposed update to implementation guidance (Stage 4)**:
 ```markdown
@@ -50,11 +50,11 @@
 5. Re-run verification with fixed process
 
 **Prevention**:
-- Automated checks must auto-FAIL on BLOCKING ([Issue #128](https://github.com/hoiung/dotfiles/issues/128) fix)
+- Automated checks must auto-FAIL on BLOCKING (Issue #128 fix)
 - No manual override allowed for critical failures
 - Quantitative criteria only (exit codes, keyword parsing)
 
-**Reference**: [Issue #124](https://github.com/hoiung/dotfiles/issues/124) (failure), [#128](https://github.com/hoiung/dotfiles/issues/128) (fix)
+**Reference**: Issue #124 (failure), Issue #128 (fix)
 
 ---
 
@@ -80,7 +80,7 @@
 - Measure comprehension: Can 3 developers execute after pruning?
 - One pruning pass per Issue (not multiple)
 
-**Reference**: [Issue #119](https://github.com/hoiung/dotfiles/issues/119) (failure), [Issue #131](https://github.com/hoiung/dotfiles/issues/131) (recovery)
+**Reference**: Issue #119 (failure), Issue #131 (recovery)
 
 ---
 
@@ -106,7 +106,7 @@
 - Document all created files in Issue during work
 - Use naming convention: `temp/[repo]-[issue]-[description].md`
 
-**Reference**: [Issue #108](https://github.com/hoiung/dotfiles/issues/108) (lesson learned)
+**Reference**: Issue #108 (lesson learned)
 
 ---
 
@@ -132,7 +132,7 @@
 - Refactoring = separate Issue from new functionality
 - Easier rollback, clearer git history
 
-**Reference**: [Issue #124](https://github.com/hoiung/dotfiles/issues/124) (combined feature + optimization)
+**Reference**: Issue #124 (combined feature + optimization)
 
 ---
 
@@ -158,7 +158,7 @@
 - Clear objectives: Specific deliverable, success criteria
 - Test: Can you execute objective manually? If not, subagent can't either
 
-**Reference**: [Issue #119](https://github.com/hoiung/dotfiles/issues/119) (user observation)
+**Reference**: Issue #119 (user observation)
 
 ---
 
@@ -184,7 +184,7 @@
 - Update docs in same commit as behavior change
 - Stage 4 verification: Check docs match implementation
 
-**Reference**: [Issue #119](https://github.com/hoiung/dotfiles/issues/119) (pruning caused drift)
+**Reference**: Issue #119 (pruning caused drift)
 
 ---
 
@@ -210,7 +210,7 @@
 - If instruction prevents documented problem, it's a guardrail (keep it)
 - Comment guardrails with Issue references
 
-**Reference**: [Issue #108](https://github.com/hoiung/dotfiles/issues/108) (lesson learned)
+**Reference**: Issue #108 (lesson learned)
 
 ---
 
@@ -236,7 +236,7 @@
 - Compare before/after in Stage 4 verification
 - Effect size calculation (not just "is it better?")
 
-**Reference**: [Issue #128](https://github.com/hoiung/dotfiles/issues/128) Bug #3
+**Reference**: Issue #128 Bug #3
 
 ---
 
@@ -288,12 +288,12 @@
    - Commit atomicity (clean vs mixed)
 5. **Learn**: Add to Common Mistakes in relevant stage file
 
-**Prevention for Future** ([Issue #374](https://github.com/hoiung/dotfiles/issues/374)):
+**Prevention for Future** (Issue #374):
 - **Atomic commits**: One logical change per commit (enables clean rollback)
 - **Separate debug commits**: Label with "debug:" prefix (easy to revert)
 - **Stage 3 Item 6**: Follow atomic commit guidance
 
-**See**: `../dotfiles/SST3/standards/STANDARDS.md` (Rollback Cleanup section)
+**See**: `../standards/STANDARDS.md` (Rollback Cleanup section)
 
 ---
 
@@ -356,11 +356,11 @@
 
 ## References
 
-- [Issue #108](https://github.com/hoiung/dotfiles/issues/108): Housekeeping lesson, JBGE/LMCE compliance
-- [Issue #119](https://github.com/hoiung/dotfiles/issues/119): Pruning death spiral, frozen subagents
-- [Issue #124](https://github.com/hoiung/dotfiles/issues/124): Verification false PASS, scope creep
-- [Issue #128](https://github.com/hoiung/dotfiles/issues/128): Automated enforcement, baseline requirement
-- [Issue #131](https://github.com/hoiung/dotfiles/issues/131): Quality First, restoration strategy
+- Issue #108: Housekeeping lesson, JBGE/LMCE compliance
+- Issue #119: Pruning death spiral, frozen subagents
+- Issue #124: Verification false PASS, scope creep
+- Issue #128: Automated enforcement, baseline requirement
+- Issue #131: Quality First, restoration strategy
 
 ---
 

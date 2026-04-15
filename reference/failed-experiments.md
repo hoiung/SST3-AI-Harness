@@ -9,7 +9,7 @@ Track self-healing changes reverted after validation period. Learn from failures
 - Meta-test failure or quality regression
 
 ## Auto-Updated By
-`../dotfiles/SST3/scripts/auto-rollback.py`, Stage 5 post-implementation review, manual documentation
+`../scripts/auto-rollback.py`, Stage 5 post-implementation review, manual documentation
 
 ## Entry Template
 ```markdown
@@ -42,4 +42,4 @@ Track self-healing changes reverted after validation period. Learn from failures
 Note: Some experiments will fail. This proves validation works.
 
 ## Related
-`validation-protocol.md`, `../scripts/auto-rollback.py`, `../dotfiles/SST3/standards/STANDARDS.md`
+`validation-protocol.md`, `../scripts/auto-rollback.py`, `../standards/STANDARDS.md`

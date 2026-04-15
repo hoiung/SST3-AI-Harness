@@ -223,4 +223,4 @@ Apply validation at multiple levels. **Mandatory vs optional**:
 - Issue #128: Automated enforcement > manual checklists
 - Failed Issue #124: What happens when validation fails
 
-**Automated Validation**: See `../dotfiles/SST3/scripts/quality-check.py`
+**Automated Validation**: See `../scripts/quality-check.py`

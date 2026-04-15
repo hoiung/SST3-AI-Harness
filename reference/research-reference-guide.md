@@ -83,7 +83,7 @@
 - Code Patterns with copy-paste blocks
 - Integration Points table (file:line references)
 
-**Template**: Use `../dotfiles/SST3/templates/research-reference-template.md`
+**Template**: Use `../templates/research-reference-template.md`
 
 ## Maintenance Standards
 
@@ -129,16 +129,16 @@
 - STANDARDS.md defines principle
 - Stage 1 workflow enforces discovery
 
-**auto_pb_swing_trader**:
+**project-a** (example):
 - docs/research/ for trading-specific patterns
 - CLAUDE.md points to research location
 
-**tradebook_GAS**:
+**project-b** (example):
 - Migrated IBKR_API_REFERENCE.md → docs/research/IBKR_API.md
 - CLAUDE.md includes migration notice
 
 ## Related Documentation
 
-- Template: `../dotfiles/SST3/templates/research-reference-template.md`
-- Standards: `../dotfiles/SST3/standards/STANDARDS.md` (External Research References section)
-- Workflow: `../dotfiles/SST3/workflow/WORKFLOW.md` (Stage 1 — Research)
+- Template: `../templates/research-reference-template.md`
+- Standards: `../standards/STANDARDS.md` (External Research References section)
+- Workflow: `../workflow/WORKFLOW.md` (Stage 1 — Research)

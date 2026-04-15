@@ -29,4 +29,4 @@ NEVER remove content with these patterns during pruning:
 - "Verify Z exists"
 - "MUST validate"
 
-See: `../dotfiles/SST3/scripts/suggest-pruning.py` for automated detection
+See: `../scripts/suggest-pruning.py` for automated detection

@@ -26,4 +26,4 @@ Every 500 tokens removed:
 - Verify guardrails intact
 - Run check-size-limits.py
 
-See: `../dotfiles/SST3/scripts/suggest-pruning.py` for automated suggestions
+See: `../scripts/suggest-pruning.py` for automated suggestions

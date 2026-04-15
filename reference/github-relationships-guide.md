@@ -19,7 +19,7 @@ coverage: comprehensive
 
 **Sub-issues (parent/child)**: GitHub MCP provides `sub_issue_write` tool (preferred). Fallback to `gh CLI` with GraphQL API if MCP unavailable.
 
-**Tool Selection Guide**: See [tool-selection-guide.md](../dotfiles/SST3/reference/tool-selection-guide.md) for complete decision tree.
+**Tool Selection Guide**: See [tool-selection-guide.md](../reference/tool-selection-guide.md) for complete decision tree.
 
 ---
 
