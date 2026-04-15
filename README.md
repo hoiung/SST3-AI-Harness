@@ -257,6 +257,14 @@ Directing dynamically scaled concurrent AI agents is the functional equivalent o
 
 ## Getting Started
 
+### For Non-Techies (No Install Required)
+
+If you don't write code, you don't need to install anything to start. Open ChatGPT, Claude chat, or whichever AI you already use, and paste this prompt:
+
+> *"Read the README at https://github.com/hoiung/SST3-AI-Harness and walk me through setting it up for my work. I'm not a developer. Explain each step in plain English, tell me what to install, and flag anything that needs a paid plan before I start."*
+
+The AI will do the reading and hand you back a plain-English setup plan. If you want the full SST3 experience (the `/Leader 1-6` stage commands running end-to-end), continue with the Prerequisites below.
+
 ### Prerequisites
 
 **Core requirements** (needed for every SST3 workflow):
