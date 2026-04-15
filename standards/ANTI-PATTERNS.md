@@ -1,11 +1,11 @@
 # SST3 Anti-Patterns
 
-> 18 documented failure modes. Origin: [Issue #79](https://github.com/hoiung/dotfiles/issues/79).
+> 18 documented failure modes. Origin: Issue #79.
 
 ## Anti-Pattern #1: Propagation Failures
 
 **Problem**: Changes in one repo don't reach others, causing inconsistency
-**Evidence**: [Issue #79](https://github.com/hoiung/dotfiles/issues/79) (#406 F3.11: stale 2024 percentages stripped — keep the rule, drop the unsourced numbers)
+**Evidence**: Issue #79 (#406 F3.11: stale 2024 percentages stripped — keep the rule, drop the unsourced numbers)
 **Root Cause**: Manual propagation, no verification after changes
 
 **Prevention**:
@@ -75,7 +75,7 @@ Subsumed by AP #3 (Skipped Verification) + AP #6 (Skipped Pre-Commit Validation)
 ## Anti-Pattern #6: Skipping Pre-Commit Validation
 
 **Problem**: Committing without validating branch hygiene, file counts, or syntax
-**Evidence**: [Issue #195](https://github.com/hoiung/dotfiles/issues/195) - Branch contamination (15 unrelated files, 6593 lines) caught in Stage 4 instead of during Verification Loop
+**Evidence**: Issue #195 - Branch contamination (15 unrelated files, 6593 lines) caught in Stage 4 instead of during Verification Loop
 **Root Cause**: Verification Loop interpreted as optional, no branch hygiene check
 
 **Prevention**:
@@ -94,7 +94,7 @@ Subsumed by AP #3 (Skipped Verification) + AP #6 (Skipped Pre-Commit Validation)
 ## Anti-Pattern #7: Silent Fallbacks & Fake Data
 
 **Problem**: Code uses hardcoded defaults, fake data, or silent fallback behavior when required dependencies/config missing.
-**Evidence**: [Issue #269](https://github.com/hoiung/dotfiles/issues/269) — script silently fell back to parsing all headers instead of failing when Stage headers missing. Issue #667: 5 `.get("value", [9])` fallbacks; frontend showed "MVWAP10", backend served MVWAP9. Issue #670/672: `setMarkers()` never called — feature appeared to work but did nothing.
+**Evidence**: Issue #269 — script silently fell back to parsing all headers instead of failing when Stage headers missing. Issue #667: 5 `.get("value", [9])` fallbacks; frontend showed "MVWAP10", backend served MVWAP9. Issue #670/672: `setMarkers()` never called — feature appeared to work but did nothing.
 **Root Cause**: Workarounds instead of fail-fast error handling.
 
 **Detection Patterns**:
