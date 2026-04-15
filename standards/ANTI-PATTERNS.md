@@ -335,6 +335,43 @@ Phase checkpoints post a comment to the Issue — they DO NOT pause work. Post t
 
 ---
 
+## Anti-Pattern #18: Smoke-Tested Pipeline Shipped Without End-to-End Sample Run
+
+**Problem**: Closing a pipeline / backtest / data-processing / orchestration / CLI-wiring issue on the strength of unit tests + smoke tests + synthetic fixtures alone. Smoke validates local code paths; it does NOT validate multi-module workflow wiring across CLI flags → function signatures → DB writes → downstream consumers.
+
+**Evidence (pattern, scrubbed)**: A CLI-threading change added window-aware filtering at one layer of a pipeline but left the pre-flight coverage check at an earlier layer window-agnostic. Unit tests passed (mocks accepted `**kwargs` and silently discarded window args). Synthetic smoke passed (did not exercise the real CLI against real DB). Regression caught operationally by the next phase's first real invocation, NOT by the test suite. Sample invocation on a small liquid basket would have surfaced it before merge.
+
+**Rule — Sample Invocation Validates Workflow Logic**:
+For any change that touches pipeline / data-processing / orchestration / CLI-wiring / cross-module function-arg propagation, run an actual end-to-end sample invocation matching the intended user workflow BEFORE closing the issue. Real DB. Real CLI. Real downstream consumers. Unit + smoke tests are necessary but NOT sufficient.
+
+**Scope triggers** (ANY of these → sample invocation mandatory):
+- New or modified CLI flags and their threading into downstream function signatures
+- Pipeline coverage pre-flights, auto-bootstrap paths, experiment-path logic
+- Snapshot / window-scoped / period-scoped code paths
+- Multi-module function-arg propagation chains (>1 hop from CLI to DB write)
+- Any change where a `**kwargs`-accepting mock could silently hide the regression
+
+**How to apply (MANDATORY in Stage 4 Verification Loop)**:
+1. Run real-CLI sample invocation on a small liquid basket (8 items typical) exercising the full pipeline end-to-end.
+2. Verify row counts land in DB, downstream consumers succeed, audit queries return OK.
+3. Smoke first (cheap, fast). If smoke passes → STILL run the sample. Exit gate = sample succeeds.
+4. Assertions MUST verify arg propagation explicitly (`mock.call_args.kwargs["window_start"] == expected`), NOT rely on `**kwargs` swallowing.
+5. Add a Stage 5 integration test covering the sample path when the change introduces cross-module signatures or CLI flags.
+
+**Do / Don't**:
+- ✓ DO: run small-basket real-CLI sample on every pipeline-touching issue before close
+- ✓ DO: assert function-arg propagation with explicit `call_args` checks
+- ✓ DO: write a regression integration test when adding/changing cross-module function signatures
+- ✗ DON'T: close on unit + smoke alone for pipeline / wiring / CLI changes
+- ✗ DON'T: defer the sample run to "the next issue's smoke" — shipped regressions originate there
+- ✗ DON'T: rely on mocks that discard kwargs to prove propagation
+
+**Self-Healing**: If you catch yourself about to close a pipeline/wiring issue without running a real sample → run the sample first. If you already closed one → reopen, run the sample, and add the missing regression test in the same fix.
+
+**Enforcement**: STANDARDS.md "Testing Priority — Workflow Validation Gate"; Stage 4 Verification Loop mandatory item; `CLAUDE_TEMPLATE.md` behavioural rule bullet; `issue-template.md` PREREQUISITE CHECKPOINT includes sample-run confirmation.
+
+---
+
 ## Pattern Detection
 
 Monitor for these anti-patterns:
