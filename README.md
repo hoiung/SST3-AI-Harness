@@ -39,24 +39,24 @@ Some of that was my inexperience at the time. Some of it was the tooling availab
 
 Even with the guardrails in place, it was like letting 5 to 10 cowboy agents fire away at the same time. Each one confident. Each one making changes. Each one creating a mess somewhere that took ages to clean up later. I suspect my tradebook system still has lingering stale and contradictory code from that era. I tried to clean it up. I genuinely did. Every time I thought I was done, I'd find more. At some point it became one of those defeats you just accept: the production code has legacy technical debt I haven't fully exorcised, I've moved on, and the rule now is that new code doesn't touch the legacy mess or accidentally integrate with it. The worst part is that you only feel the pain months later, long after the agents have finished. By then you have no memory of which agent changed what, or why. Debugging becomes archaeology.
 
-So SST3 took the opposite route. Focused. Narrow. One main agent owns the writing, always. Subagents are dispatched like a research team, not a coding team. They read, they analyse, they report findings. They never touch the code. Each subagent is also deliberately pointed at a new angle or perspective the previous subagents haven't covered, so the main agent ends up with a 360-degree view of the problem instead of five copies of the same answer. Each angle gets double-checked and triple-checked by layered subagents. The code still gets touched (that's the whole point), but only by the main orchestrator agent, and every piece is revised, finetuned, and optimised against those cross-angle findings before it ships. That one constraint (read-only, different angle each time) kills about 80% of the mess SST2 used to generate.
+So SST3 took the opposite route. Focused. Narrow. One main orchestrator agent owns the writing, always. Subagents are dispatched like a research team, not a coding team. They read, they analyse, they report findings. They never touch the code. Each subagent is also deliberately pointed at a new angle or perspective the previous subagents haven't covered, so the main orchestrator agent ends up with a 360-degree view of the problem instead of five copies of the same answer. Each angle gets double-checked and triple-checked by layered subagents. The code still gets touched (that's the whole point), but only by the main orchestrator agent, and every piece is revised, finetuned, and optimised against those cross-angle findings before it ships. That one constraint (read-only, different angle each time) kills about 80% of the mess SST2 used to generate.
 
 **Build it like Lego.** One piece at a time. Each piece has to be gold-quality and polished before it gets inserted. Once it fits with the surrounding pieces, move on. Never stack two half-finished bricks and hope they'll settle. This is the opposite of how many AI frameworks think about "throughput". SST3 doesn't optimise for "how many agents can I run in parallel?". It optimises for "how few clean pieces can I ship per hour, with zero rework?".
 
-The 1M context window that arrived in 2025 made this approach practical at scale. The main agent can hold the Issue, the standards, the research, and the full diff without spilling context. Subagents absorb the high-volume reads on its behalf. The orchestrator stays coherent. The code stays coherent. No more cowboys.
+The 1M context window that arrived in 2025 made this approach practical at scale. The main orchestrator agent can hold the Issue, the standards, the research, and the full diff without spilling context. Subagents absorb the high-volume reads on its behalf. The orchestrator stays coherent. The code stays coherent. No more cowboys.
 
 ## What's Different About Our Approach
 
 Most agent frameworks focus on "how do I chain prompts" or "how do I assign tasks to multiple agents". SST3 starts from a different question: **how do I stop the AI from shipping garbage, even when I'm not watching?** That question shapes every design choice below.
 
-### Main agent orchestrates. Subagents are PLANNING ONLY.
+### One main orchestrator agent writes. Subagents are PLANNING ONLY.
 
-The main agent is the single writer. It holds full context, makes the calls, writes every line of code, and owns every commit. Subagents are dispatched in parallel to research, explore, audit, and review. They read, analyse, and report findings back. **They never write code.** This separation is load-bearing:
+The main orchestrator agent is the single writer. It holds full context, makes the calls, writes every line of code, and owns every commit. Subagents are dispatched in parallel to research, explore, audit, and review. They read, analyse, and report findings back. **They never write code.** This separation is load-bearing:
 
 - The orchestrator keeps a coherent mental model across the whole issue without context pollution from parallel edits.
 - Subagents get narrow, focused prompts on specific questions (review a directory, verify a claim, audit against a standard) and cheaper models (Haiku, Sonnet) can be used without risking production code quality.
 - Subagents cross-check each other from different angles. Layer 2 is NOT allowed to use the same prompt as Layer 1.
-- The main agent verifies every subagent finding against the source before acting on it. Trust but verify, always.
+- The main orchestrator agent verifies every subagent finding against the source before acting on it. Trust but verify, always.
 
 This is explicitly the opposite of "let N agents write code in parallel and merge the winner". That path produces inconsistent styles, duplicate implementations, and silent conflicts. SST3 treats subagents like a research team, not a coding team.
 
@@ -66,7 +66,7 @@ If the task has 12 claim categories, dispatch 12 subagents (or more). If it's an
 
 ### Planning mode by default
 
-The main agent starts in PLANNING MODE. No file changes, no commits. It only shifts to execution when the user explicitly says "work on #X" or "implement this". This prevents the "AI ran ahead and wrote a whole feature you didn't ask for" failure mode. Alignment first, then action.
+The main orchestrator agent starts in PLANNING MODE. No file changes, no commits. It only shifts to execution when the user explicitly says "work on #X" or "implement this". This prevents the "AI ran ahead and wrote a whole feature you didn't ask for" failure mode. Alignment first, then action.
 
 ### Issue-driven, evidence-enforced
 
@@ -74,11 +74,11 @@ Every piece of work starts with a GitHub Issue. Every phase checkpoint posts a c
 
 ### Handover protocol, so context never dies
 
-Long-running work risks two failure modes: context fills up, or the session crashes. SST3 mitigates both with a handover protocol. Before a context break (routine or emergency), the main agent posts a checkpoint to the GitHub Issue FIRST, then writes a handover document. On recovery, the next session re-reads STANDARDS.md, CLAUDE.md, the Issue, and the last checkpoint. It picks up exactly where it left off, with no "the AI forgot what it was doing" rework. The Issue is the single source of truth for progress.
+Long-running work risks two failure modes: context fills up, or the session crashes. SST3 mitigates both with a handover protocol. Before a context break (routine or emergency), the main orchestrator agent posts a checkpoint to the GitHub Issue FIRST, then writes a handover document. On recovery, the next session re-reads STANDARDS.md, CLAUDE.md, the Issue, and the last checkpoint. It picks up exactly where it left off, with no "the AI forgot what it was doing" rework. The Issue is the single source of truth for progress.
 
 ### Verification loop before Ralph Review
 
-Stage 4 (Implementation) doesn't hand off to Ralph Review until the main agent has independently verified:
+Stage 4 (Implementation) doesn't hand off to Ralph Review until the main orchestrator agent has independently verified:
 - Every acceptance criterion maps to a specific file:line in the diff
 - Every new function has a caller
 - Every config key is read somewhere
@@ -94,7 +94,7 @@ Named after Ralph Wiggum (if Ralph can spot it, it's really wrong). Haiku handle
 
 ### Branch safety, commit-per-file, direct merge after Ralph
 
-Work happens on a solo branch (`solo/issue-{N}-description`). The main agent **NEVER switches branches** mid-work. That's one of the loudest ways to lose uncommitted changes. Commits are per-file, with descriptive messages. After all three Ralph tiers pass, the merge to `main` happens immediately (protecting the work from a late conflict), then the human review checklist gets posted. This order matters: merge protects work, then human reviews for judgement calls the Ralph tiers aren't built to catch.
+Work happens on a solo branch (`solo/issue-{N}-description`). The main orchestrator agent **NEVER switches branches** mid-work. That's one of the loudest ways to lose uncommitted changes. Commits are per-file, with descriptive messages. After all three Ralph tiers pass, the merge to `main` happens immediately (protecting the work from a late conflict), then the human review checklist gets posted. This order matters: merge protects work, then human reviews for judgement calls the Ralph tiers aren't built to catch.
 
 ### Keep going until done (AP #17)
 
@@ -188,12 +188,12 @@ Each stage has explicit entry/exit criteria. Stages cannot be reordered or skipp
 | Stage | What Happens | Who Does It |
 |-------|-------------|-------------|
 | **1. Research** | Parallel subagent swarm explores codebase, maps dependencies, identifies risks | Subagents (Haiku/Sonnet) |
-| **2. Issue Creation** | Structured issue with acceptance criteria, phase checkpoints, quality mantras | Main agent from research findings |
+| **2. Issue Creation** | Structured issue with acceptance criteria, phase checkpoints, quality mantras | Main orchestrator agent from research findings |
 | **3. Triple-Check** | Independent verification that scope matches research: no gaps, no drift | Subagent verification swarm |
-| **4. Implementation** | Execute phases, commit per file, verification loop, Ralph Review, merge | Main agent + Ralph subagents |
+| **4. Implementation** | Execute phases, commit per file, verification loop, Ralph Review, merge | Main orchestrator agent + Ralph subagents |
 | **5. Post-Implementation** | Phase-by-phase review against scope, wiring checks, regression tests | Subagent review swarm |
 
-The main agent orchestrates the workflow. Subagents handle research, exploration, and review. They read and analyse but never write code. This separation ensures the orchestrator maintains full context while subagents provide independent verification.
+The main orchestrator agent orchestrates the workflow. Subagents handle research, exploration, and review. They read and analyse but never write code. This separation ensures the orchestrator maintains full context while subagents provide independent verification.
 
 ## Ralph Review: AI Governance
 
@@ -205,7 +205,7 @@ Ralph is a 3-tier automated quality review system. Every merge requires all thre
 | **2. Sonnet** | Claude Sonnet | Logic checks | Silent fallbacks, scope drift, duplicate modules, dead code |
 | **3. Opus** | Claude Opus | Architecture | Overengineering, standard violations, contract mismatches, design flaws |
 
-Each tier outputs a machine-readable token (`HAIKU_PASS`, `SONNET_PASS`, `OPUS_PASS`). If any tier fails, the main agent fixes the issues and restarts from Tier 1. This creates a **responsible AI** feedback loop. Quality is enforced automatically, not by honour system.
+Each tier outputs a machine-readable token (`HAIKU_PASS`, `SONNET_PASS`, `OPUS_PASS`). If any tier fails, the main orchestrator agent fixes the issues and restarts from Tier 1. This creates a **responsible AI** feedback loop. Quality is enforced automatically, not by honour system.
 
 ### What Ralph Catches (The 5 Common Culprits)
 
