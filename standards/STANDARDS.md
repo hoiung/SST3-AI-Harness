@@ -364,9 +364,11 @@ AP #12 builds the observability surfaces; AP #16 enforces reading them.
 
 ---
 
-### Public Repo Secret Detection
+### Public Harness Vendoring Rules
 
 **Principle**: Public repos (`ebay-seller-tool`, `SST3-AI-Harness`, `hoiboy-uk`) must never contain secrets, business identifiers, or private filesystem paths. Repos opt in via `.public-repo` marker file at root.
+
+#### Secret Detection
 
 **What is blocked**: Platform tokens (GitHub PATs, AWS keys, GCP, Stripe, JWT), private key headers (PEM, PGP), generic secret assignments (password/token/credential with non-placeholder values), private paths (`/mnt/c/Users/`, `UserHome/`, `UserHome/`, `UserHome/`), per-repo business terms (from `.secret-blocklist`).
 
@@ -374,7 +376,22 @@ AP #12 builds the observability surfaces; AP #16 enforces reading them.
 
 **Enforcement**: Pre-commit hook `check-public-repo-secrets.py` (BLOCKING, `--staged-only` mode) + CI step (full repo scan, no `continue-on-error`). Vendored to consumer repos with drift-check hooks.
 
-**Evidence**: Issue #410. eBay store username, UserHome paths, and business strategies leaked in ebay-seller-tool (2026-04-11), required manual scrub + force-push.
+**Evidence**: eBay store username, UserHome paths, and business strategies leaked in ebay-seller-tool (2026-04-11), required manual scrub + force-push.
+
+#### Command File Path Rewrites (Vendored from private `dotfiles/.claude/commands/`)
+
+Canonical command files live in the private `dotfiles` repo at `.claude/commands/<name>.md` and reference private-SST3 paths (`../dotfiles/SST3/<subdir>/`). When vendored to `SST3-AI-Harness/claude/commands/<name>.md`, rewrite to in-repo paths:
+
+- `../dotfiles/SST3/standards/` → `standards/`
+- `../dotfiles/SST3/workflow/` → `workflow/`
+- `../dotfiles/SST3/templates/` → `templates/`
+- `../dotfiles/SST3/ralph/` → `ralph/`
+- `../dotfiles/SST3/scripts/` → `scripts/`
+- `../dotfiles/SST3/reference/` → `reference/`
+
+**Verify after each scrub**: grep the vendored file for `../dotfiles/` — must return zero matches. Grep for `hoiung`, `hoi_u`, `auto_pb_swing_trader`, `tradebook_GAS`, `hoiboy`, `ebay-seller` — must return zero matches.
+
+**Drift enforcement** (`cmp -s` with transform applied): deferred until 3+ vendored command files exist. Track as follow-up issue when threshold is crossed.
 
 ---
 
