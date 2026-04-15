@@ -8,7 +8,7 @@
 
 **MANDATORY READING**:
 1. `../dotfiles/SST3/standards/STANDARDS.md` (ALWAYS)
-2. `../dotfiles/SST3/standards/ANTI-PATTERNS.md` (ALWAYS — 16 documented failure modes you must not repeat)
+2. `../dotfiles/SST3/standards/ANTI-PATTERNS.md` (ALWAYS — 18 documented failure modes you must not repeat)
 3. `{repository-name}/CLAUDE.md` (ALWAYS - replace with repo root)
 
 **Reading Confirmation Checklist** (MUST display and complete):
