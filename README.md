@@ -45,6 +45,22 @@ So SST3 took the opposite route. Focused. Narrow. One main orchestrator agent ow
 
 The 1M context window that arrived in 2025 made this approach practical at scale. The main orchestrator agent can hold the Issue, the standards, the research, and the full diff without spilling context. Subagents absorb the high-volume reads on its behalf. The orchestrator stays coherent. The code stays coherent. No more cowboys.
 
+## Why Scoping Is Worth the Tokens
+
+I spend a lot of tokens, a lot of subagents, and a lot of time on scoping before a single line of code gets written. That is deliberate, and it is the single biggest lesson from two decades of Project Management, IT engineering, running my own businesses, and leading teams through plenty of failures and a fair number of successes.
+
+The biggest killer of any project is unclear instructions and scope that is not well defined. You can have the smartest team and the best tools in the world; if the scope is fuzzy, the output will be fuzzy. Worse, you only discover the fuzziness after you have already spent money and time building the wrong thing.
+
+Taking the first step in the right direction is the most important decision you make. It is like having a map of where you want to get to. There are many ways to reach the destination, but you want to plan the route so you can navigate the obstacles, challenges, and gotchas that would otherwise stop you from getting there easily or quickly.
+
+I find it far cheaper to have a clear plan that is still flexible to changes than a loose plan that gets lost or misinterpreted. The loose plan costs you later: you look up months down the line, realise you have drifted further from the goal, and then you pay twice to find your way back. Cleaning up a mess from bad code is hard, sometimes genuinely painful, and sometimes the scars never fully heal once the bad code has shipped to production.
+
+That is what technical debt actually is. And SST3 is built to prevent it from accumulating, or at least reduce it enough that the damage does not compound into something that costs ten times more to fix or maintain later. Think ahead. Scope properly. Pay a bit more in the planning phase so you do not pay a fortune in the cleanup phase.
+
+That is why SST3 spends more tokens on each piece. Each piece gets researched, scoped, verified, triple-checked, implemented, reviewed, and audited before it ships. Yes, it is more expensive per piece in tokens. It is dramatically cheaper overall, because you are not constantly rebuilding on top of broken foundations.
+
+Quality over quantity. ALWAYS.
+
 ## What's Different About Our Approach
 
 Most agent frameworks focus on "how do I chain prompts" or "how do I assign tasks to multiple agents". SST3 starts from a different question: **how do I stop the AI from shipping garbage, even when I'm not watching?** That question shapes every design choice below.
