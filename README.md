@@ -2,7 +2,7 @@
 
 **SST3 = Single Source of Truth v3.** AI Agent Orchestration & Governance Methodology Framework for LLM-Powered Software Delivery.
 
-A production-grade methodology framework for orchestrating multi-agent LLM workflows with built-in quality gates, automated governance, and structured delivery processes. Developed through three generations of iteration (SST1 → SST2 → SST3) and battle-tested across 10,000+ commits in production systems. The "Single Source of Truth" principle is the backbone: every rule, standard, template, and anti-pattern lives in exactly one canonical place, with automated drift checks preventing divergence across mirrored copies.
+A production-grade methodology framework for orchestrating multi-agent LLM workflows with built-in quality gates, automated governance, and structured delivery processes. Developed through three generations of iteration (SST1 → SST2 → SST3) and battle-tested across 10,000+ commits in production systems. The "Single Source of Truth" principle is the backbone: every rule, standard, template, and anti-pattern lives in exactly one canonical place, with automated drift checks that catch divergence across mirrored copies early and keep it from spreading.
 
 ---
 
@@ -12,7 +12,7 @@ SST3 is a **production agent harness** and **AI delivery methodology framework**
 
 - **5-Stage Delivery Lifecycle**: Research → Issue Creation → Triple-Check → Implementation → Post-Implementation Review
 - **3-Tier Automated Review (Ralph)**: Haiku surface checks → Sonnet logic review → Opus architectural audit, with machine-readable pass/fail tokens
-- **14 Pre-Commit Enforcement Hooks**: Token budget monitoring, template drift detection, debug code scanning, fallback prevention, hardcoded parameter detection
+- **14 Pre-Commit Enforcement Hooks**: Token budget monitoring, template drift detection, debug code scanning, fallback reduction, hardcoded parameter detection
 - **Structured Context Management**: Handover protocols, crash recovery checkpoints, context budget tracking across 1M-token sessions
 - **Self-Healing Operations**: 8 documented failure scenarios with recovery procedures, derived from real production incidents
 
