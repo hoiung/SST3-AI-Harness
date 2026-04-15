@@ -9,7 +9,7 @@
 
 ## Execution Guardrails (MANDATORY)
 
-Read `../dotfiles/SST3/standards/STANDARDS.md` and `[repository]/CLAUDE.md` in full before starting. All work must follow Quality First, JBGE, LMCE, Fail Fast, Use Existing Before Building, Modularity (defined in STANDARDS.md). Git workflow per `../dotfiles/SST3/templates/issue-template.md` Solo Assignment section: commit per file, never `git add -A`, merge to main BEFORE user review.
+Read `../standards/STANDARDS.md` and `[repository]/CLAUDE.md` in full before starting. All work must follow Quality First, JBGE, LMCE, Fail Fast, Use Existing Before Building, Modularity (defined in STANDARDS.md). Git workflow per `../templates/issue-template.md` Solo Assignment section: commit per file, never `git add -A`, merge to main BEFORE user review.
 
 ### Before Starting Work
 - [ ] Read CLAUDE.md in full

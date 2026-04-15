@@ -16,7 +16,7 @@ Emergency-only. Use when context hits 80% of the model window (800K for 1M, 160K
 - [ ] Remove abandoned code from failed/rescoped approaches
 - [ ] Check git status for unexpected files
 
-See: `../dotfiles/SST3/standards/STANDARDS.md` (File Housekeeping) for guidance.
+See: `../standards/STANDARDS.md` (File Housekeeping) for guidance.
 
 **Quality First Reminder**: Comprehensive handover prevents context loss. Include more context than seems necessary (clarity over brevity).
 
@@ -75,12 +75,12 @@ Only after posting the checkpoint to the Issue, create the handover message for 
 ```
 📋 COPY THIS TO NEW CHAT:
 
-IMPORTANT: Read ../dotfiles/SST3/workflow/WORKFLOW.md and {repository-name}/CLAUDE.md (replace {repository-name} with repo root of the github issue you're working on) before starting.
+IMPORTANT: Read ../workflow/WORKFLOW.md and {repository-name}/CLAUDE.md (replace {repository-name} with repo root of the github issue you're working on) before starting.
 
 🎯 YOUR ROLE: Follow the 5-stage Solo workflow
 - Subagents for research/explore/audit/verify/review (Sonnet/Haiku for reads, Opus for main)
 - Main agent collates findings and implements directly
-- Read ../dotfiles/SST3/workflow/WORKFLOW.md for the 5-stage process
+- Read ../workflow/WORKFLOW.md for the 5-stage process
 - Post phase completion to Issue after each phase
 
 **IMPORTANT**: You start in PLAN MODE by default. Do NOT execute unless user provides explicit trigger ("work on #X", "implement", "autonomously").
@@ -95,7 +95,7 @@ Context:
 - [Any critical context note]
 
 Workflow:
-- Follow ../dotfiles/SST3/workflow/WORKFLOW.md (5-stage process: Stages 1-5)
+- Follow ../workflow/WORKFLOW.md (5-stage process: Stages 1-5)
 - This is [description of work type]
 - [Any special notes]
 
