@@ -3,7 +3,7 @@
 
 # Session Handover Template
 
-Use when reaching 80% of context limit (800K for 1M models, 160K for Haiku 200K) or when context preservation is needed.
+Emergency-only. Use when context hits 80% of the model window (800K for 1M, 160K for Haiku). Do NOT use routinely. Phase checkpoints post to the Issue and keep working — see STANDARDS.md "Keep Going Until Done".
 
 ## Critical: Two-Step Process
 
@@ -165,7 +165,7 @@ That's it! The checkpoint in Issue #X has all details.
 ## When to Create Handover
 
 ### Automatic Triggers
-- Token usage reaches 80% of context limit (800K for 1M models, 160K for Haiku)
+- Token usage reaches 80% of context limit (800K for 1M, 160K for Haiku) — the actual stop threshold, not a routine pause point
 - System warning about approaching token limit
 
 ### Manual Triggers

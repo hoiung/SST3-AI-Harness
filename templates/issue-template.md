@@ -49,13 +49,13 @@
 ## Acceptance Criteria
 
 ### [Phase 1: Description]
-> **COMPACT BREAK**: Post checkpoint to issue comment after this phase. Check context memory — if >80%, warn user. If >90%, STOP immediately.
+> **PHASE CHECKPOINT**: After this phase, post a checkpoint comment to the issue and CONTINUE to the next phase. Do NOT pause for user. Stop only if context is 80%+ used, a destructive action needs consent, you are genuinely stuck, or the task is complete.
 
 - [ ] [Specific acceptance criterion]
 - [ ] [Specific acceptance criterion]
 
 ### [Phase 2: Description]
-> **COMPACT BREAK**: Post checkpoint to issue comment after this phase. Check context memory — if >80%, warn user. If >90%, STOP immediately.
+> **PHASE CHECKPOINT**: After this phase, post a checkpoint comment to the issue and CONTINUE to the next phase. Do NOT pause for user. Stop only if context is 80%+ used, a destructive action needs consent, you are genuinely stuck, or the task is complete.
 
 - [ ] [Specific acceptance criterion]
 - [ ] [Specific acceptance criterion]
@@ -156,14 +156,14 @@
   - Files modified
   - Key changes made
   - Any blockers or scope changes
-- [ ] **Check context memory**: If 80%+ used, warn user. If 90%+, STOP and notify.
+- [ ] **Check context memory**: If 70%+ used, warn user. If 80%+, STOP and notify.
 - [ ] **Commit after EACH file change**: `git add {file} && git commit -m "type: description (#issue)" && git push`
 - [ ] **NEVER use `git add -A` or `git add .`** — stage files individually by name only
 
 #### Context Management (For Long Issues)
-- [ ] **After each phase**: Check context usage — if 80%+, compact before next phase
-- [ ] **At 80% context**: Warn user - "Context at ~80%, recommend compact after this phase"
-- [ ] **At 90% context**: STOP immediately, post checkpoint, notify user
+- [ ] **After each phase**: Check context usage — if 70%+, warn; if 80%+, stop
+- [ ] **At 70% context**: Warn user - "Context at ~70%, approaching stop threshold"
+- [ ] **At 80% context**: STOP immediately, post checkpoint, notify user
 - [ ] **Before any risky operation**: Ensure checkpoint posted (compaction could happen anytime)
 
 **Checkpoint Content**:

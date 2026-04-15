@@ -304,6 +304,37 @@ python SST3/scripts/check-fallbacks.py --severity warning .
 
 ---
 
+## Anti-Pattern #17: Premature Stopping Mid-Work
+
+**Problem**: Agent stops mid-phase to ask permission, wait for user confirmation, or "check in" when there's no blocker and context is nowhere near the stop threshold. Caused by 200K-era habits ("stop at phase boundary to compact") bleeding into 1M-context sessions, plus over-application of the Claude Code baseline safety prompt ("transparently communicate the action and ask for confirmation before proceeding") to routine work.
+
+**Evidence**: 2026-04-15 — subagents stopped at 50%, 70%, 80% context REMAINING (far below the actual stop threshold) with self-commentary like *"old habit from earlier sessions, user-rule caution that doesn't apply here. Executing — no more stops until 80% context or done."* The agent catches itself, but only after wasting user time.
+
+**Rule — Keep Going Until Done:**
+Do not stop mid-phase for permission, confirmation, or a "check in". Stop only for:
+1. Context at 80%+ of the model window (800K of 1M, 160K of 200K) — the actual hard threshold
+2. Irreversible destructive action needing user consent (force-push, rm -rf, drop table, branch deletion)
+3. Genuinely stuck after investigation (not as a first-response-to-friction reflex)
+4. Task actually complete
+
+Phase checkpoints post a comment to the Issue — they DO NOT pause work. Post the comment and continue. Warnings at 70% context are informational, not stop signals.
+
+**Threshold update (2026-04-15):** previously documented as "80% warn / 90% stop" from the 200K era. Now 70% warn / 80% stop.
+
+**Do / Don't:**
+- ✓ DO: post phase checkpoint to Issue, immediately start next phase
+- ✓ DO: warn at 70% context, keep working
+- ✓ DO: confirm before destructive actions only
+- ✗ DON'T: stop to ask "should I continue?" when nothing destructive is pending
+- ✗ DON'T: treat "transparently communicate the action" as "pause and wait"
+- ✗ DON'T: stop at 50% / 70% / 80% REMAINING — the 1M window exists to be used
+
+**Self-Healing**: If you catch yourself about to stop without hitting a real threshold → don't write the "I'll pause here" message, just do the next action. If you already stopped → resume immediately on the next turn, note the lapse in the next commit.
+
+**Enforcement**: STANDARDS.md "Keep Going Until Done". All phase templates (`issue-template.md`, `subagent-solo-template.md`) updated to 70%/80% thresholds.
+
+---
+
 ## Pattern Detection
 
 Monitor for these anti-patterns:

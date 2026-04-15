@@ -24,7 +24,7 @@ Read `../dotfiles/SST3/standards/STANDARDS.md` and `[repository]/CLAUDE.md` in f
   - Files modified
   - Key changes made
   - Any blockers or scope changes
-- [ ] **Check context memory**: If <10% remaining, STOP and notify user to compact
+- [ ] **Check context memory**: Keep going. 1M context window exists to be used. Stop ONLY at 80%+ used, destructive-action consent, genuinely stuck, or task complete (STANDARDS.md "Keep Going Until Done")
 - [ ] **Commit after EACH file change**: `git add {file} && git commit -m "type: description (#issue)" && git push`
 
 ### After Compact (Context Recovery)

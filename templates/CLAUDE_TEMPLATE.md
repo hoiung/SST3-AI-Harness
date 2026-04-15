@@ -23,6 +23,7 @@
 - **AP #11 Stopping vs Applying**: when an audit surfaces a documented violation, RUN the full process (false-positive sweep then apply). Don't stop to ask permission for fixes the standards already mandate. Don't apply without the sweep.
 - **AP #12 No Observability**: every component needs structured logs, metrics, and audit trails AT WRITE TIME. Not after the first incident.
 - **AP #13 "Proceed" ≠ "Bypass Process"**: when the user says okay / proceed / yes / go ahead, that means **proceed using the full standard process** — not skip the sweeps, gates, Ralph reviews, or guardrails. User authorisation never bypasses workflow.
+- **AP #17 Keep Going Until Done**: do NOT stop mid-work to ask permission, wait for user confirmation, or "check in". Phase checkpoints post a comment to the Issue and CONTINUE. Stop ONLY for: (a) context at 80%+ of model window, (b) irreversible destructive action needing user consent (force-push, rm -rf, DROP TABLE, branch deletion), (c) genuinely stuck after investigation (not a first-response-to-friction reflex), (d) task complete. Warn at 70%, keep working until 80%. The 1M window exists to be used.
 - **AP #16 Monitor, Don't Fire-and-Forget**: every script / command / subprocess / test / deployment / commit / push you launch must be verified end-to-end (tail logs, check exit code, verify output, confirm side effects). "Started" is not "done". For `run_in_background`, poll BashOutput. Be the user's eyes and ears, not just their executioner. If you cannot answer "what happened?" with specifics, you fired and forgot — go check NOW.
 
 **STOP if**: No GitHub Issue exists. Create Issue using `../dotfiles/SST3/templates/issue-template.md`.
@@ -31,14 +32,14 @@
 
 **Context Window**: 1M tokens (Opus 4.6/Sonnet 4.6), 200K (Haiku 4.5)
 **Content Budget**: ~42K tokens (STANDARDS.md + CLAUDE.md + Issue loaded at session start)
-**Handover at**: 80% of model window (800K for 1M, 160K for Haiku)
+**Handover at**: 80% of model window (800K for 1M, 160K for Haiku) — STOP threshold, not routine. Warn at 70%. Keep working until 80%.
 **Issue Header**: `## Solo Assignment (SST3 Automated)`
 **Branch**: `solo/issue-{number}-{description}` (commit per file, no PR)
 **Merge**: Direct merge to main after Ralph Review passes (BEFORE user review - protects work)
 
 ### Execution Guardrails (Built-in)
 
-Pre-start read (CLAUDE.md + STANDARDS.md + Issue) → phase checkpoints (80%+ warn, 90%+ STOP) → post-compact re-read → verification loop until clean → user-review-checklist.md.
+Pre-start read (CLAUDE.md + STANDARDS.md + Issue) → phase checkpoints (70%+ warn, 80%+ STOP) → post-compact re-read → verification loop until clean → user-review-checklist.md.
 
 ### Branch Safety (CRITICAL — DO NOT VIOLATE)
 
