@@ -115,6 +115,11 @@ Medium-depth validation. Catches 30% of issues missed by Haiku.
 ### Bash Output Discipline (#406 F4.9)
 - [ ] If you ran any bash command producing > 200 lines (pytest, git diff, log tail, etc.), you wrapped it with `../dotfiles/SST3/scripts/tee-run.sh <label> -- <cmd>`. Return only the tee path + verdict in your RESULT block; do NOT paste the full output back to the main agent.
 
+### AP #18 — Sample Invocation Gate (workflow validation)
+- [ ] Scope check: does this change touch pipeline / data-processing / orchestration / CLI-wiring / cross-module function-arg propagation? If **yes** → the next checkbox is mandatory. If **no** → document the scope-skip reason here.
+- [ ] If in-scope: evidence of a real-CLI sample invocation exists — either a log file path, or an Issue comment with exit code + row-count + audit verdict. Exit code 0 alone is NOT sufficient (history of exit-0 runs writing zero rows). The proof must show rows landed + downstream consumers succeeded.
+- [ ] If in-scope: any mock used in the fix's tests uses explicit `call_args.kwargs["<key>"] == <expected>` assertions — NOT a `**kwargs`-swallowing mock that would pass regardless of whether the code actually propagated the arg.
+
 ## Pass Criteria
 
 ALL checkboxes above verified with evidence.

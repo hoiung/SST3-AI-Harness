@@ -90,6 +90,7 @@
   4. Every None-producing code path: confirm callee's type annotation accepts `Optional` / has null guard
 - [ ] **Regression tests**: Run project test suite, verify no regressions
 - [ ] **Quality scan**: No inefficiencies, no bottlenecks, no memory leaks, no dead code, STANDARDS.md compliant
+- [ ] **AP #18 Sample Invocation Gate**: if the change touches pipeline / data-processing / orchestration / CLI-wiring / cross-module function-arg propagation → a REAL-CLI sample invocation (8-item liquid basket, real DB) must be run BEFORE close. Exit code 0 alone insufficient — verify row-count landed, downstream consumers succeeded, audit queries OK. Document the sample log path + verification queries in an Issue comment. If NOT in-scope, document the scope-skip reason. Canonical: ANTI-PATTERNS.md #18 + STANDARDS.md "Testing Priority — Workflow Validation Gate".
 
 ## Branch & Commit Discipline
 
