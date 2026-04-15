@@ -44,7 +44,7 @@ Three lessons from SST2 shaped SST3:
 - Context died mid-work. SST3 enforces checkpoint-before-handover on the Issue.
 - Fixes applied in isolation broke other paths. SST3 integrates all sources per edit.
 
-Build it like Lego. One polished piece at a time, no stacking half-finished bricks. Full story in [Why I Spend More Tokens Refining Scope Than Writing Code](https://hoiboy.uk/posts/why-scope-beats-code/).
+Quality over parallel throughput. Full story in [Why I Spend More Tokens Refining Scope Than Writing Code](https://hoiboy.uk/posts/why-scope-beats-code/).
 
 ## Why Scope First
 
