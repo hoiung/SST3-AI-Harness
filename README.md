@@ -57,6 +57,8 @@ Taking the first step in the right direction is the most important decision you 
 
 I find it far cheaper to have a clear plan that is still flexible to changes than a loose plan that gets lost or misinterpreted. The loose plan costs you later: you look up months down the line, realise you have drifted further from the goal, and then you pay twice to find your way back. Cleaning up a mess from bad code is hard, sometimes genuinely painful, and sometimes the scars never fully heal once the bad code has shipped to production.
 
+The sneaky part is the compounding. Small gaps and poor implementations do not announce themselves on day one. They sit there quietly, and every new feature you build on top of them inherits the same weak foundation. Miss a gap this week, the next piece layers on top of it, then the one after that, and before you know it you have a snowball. You end up with a fragile production system that breaks the moment the wind changes direction. This is why the token spend on refining scope up front is a magnitude cheaper than the cleanup bill you avoid downstream.
+
 That is what technical debt actually is. And SST3 is built to prevent it from accumulating, or at least reduce it enough that the damage does not compound into something that costs ten times more to fix or maintain later. Think ahead. Scope properly. Pay a bit more in the planning phase so you do not pay a fortune in the cleanup phase.
 
 That is why SST3 spends more tokens on each piece. Each piece gets researched, scoped, verified, triple-checked, implemented, reviewed, and audited before it ships. Yes, it is more expensive per piece in tokens. It is dramatically cheaper overall, because you are not constantly rebuilding on top of broken foundations.
