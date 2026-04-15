@@ -29,6 +29,65 @@ This matters because:
 
 SST3 solves all three through automated quality gates, structured delivery processes, and pre-commit enforcement that makes compliance the path of least resistance.
 
+## What's Different About Our Approach
+
+Most agent frameworks focus on "how do I chain prompts" or "how do I assign tasks to multiple agents". SST3 starts from a different question: **how do I stop the AI from shipping garbage, even when I'm not watching?** That question shapes every design choice below.
+
+### Main agent orchestrates. Subagents are PLANNING ONLY.
+
+The main agent is the single writer. It holds full context, makes the calls, writes every line of code, and owns every commit. Subagents are dispatched in parallel to research, explore, audit, and review. They read, analyse, and report findings back. **They never write code.** This separation is load-bearing:
+
+- The orchestrator keeps a coherent mental model across the whole issue without context pollution from parallel edits.
+- Subagents get narrow, focused prompts on specific questions (review a directory, verify a claim, audit against a standard) and cheaper models (Haiku, Sonnet) can be used without risking production code quality.
+- Subagents cross-check each other from different angles. Layer 2 is NOT allowed to use the same prompt as Layer 1.
+- The main agent verifies every subagent finding against the source before acting on it. Trust but verify, always.
+
+This is explicitly the opposite of "let N agents write code in parallel and merge the winner". That path produces inconsistent styles, duplicate implementations, and silent conflicts. SST3 treats subagents like a research team, not a coding team.
+
+### Subagent count is dynamic, not stingy (AP #14)
+
+If the task has 12 claim categories, dispatch 12 subagents (or more). If it's an audit across 8 directories, one subagent per directory. Default stinginess of "2-3 subagents" misses 40-60% of issues. The 1M-token context window exists precisely to let the orchestrator absorb high-volume subagent output. Use it.
+
+### Planning mode by default
+
+The main agent starts in PLANNING MODE. No file changes, no commits. It only shifts to execution when the user explicitly says "work on #X" or "implement this". This prevents the "AI ran ahead and wrote a whole feature you didn't ask for" failure mode. Alignment first, then action.
+
+### Issue-driven, evidence-enforced
+
+Every piece of work starts with a GitHub Issue. Every phase checkpoint posts a comment to the Issue. Every checkbox tick requires evidence (commit hash, test output, file diff) through a custom MCP server that literally blocks tick-without-proof. If the AI can't produce the evidence, the checkbox stays unchecked. Accountability by construction.
+
+### Handover protocol, so context never dies
+
+Long-running work risks two failure modes: context fills up, or the session crashes. SST3 mitigates both with a handover protocol. Before a context break (routine or emergency), the main agent posts a checkpoint to the GitHub Issue FIRST, then writes a handover document. On recovery, the next session re-reads STANDARDS.md, CLAUDE.md, the Issue, and the last checkpoint. It picks up exactly where it left off, with no "the AI forgot what it was doing" rework. The Issue is the single source of truth for progress.
+
+### Verification loop before Ralph Review
+
+Stage 4 (Implementation) doesn't hand off to Ralph Review until the main agent has independently verified:
+- Every acceptance criterion maps to a specific file:line in the diff
+- Every new function has a caller
+- Every config key is read somewhere
+- Every database column exists
+- Every nullable path has a guard
+- No silent fallbacks, no mocked tests that swallow arguments
+
+Only then does Ralph run. Reviewer time is precious. Don't waste it on things the writer should have checked themselves.
+
+### Ralph Review: three models, increasing depth
+
+Named after Ralph Wiggum (if Ralph can spot it, it's really wrong). Haiku handles surface checks (missing files, debug prints, naming). Sonnet traces logic (null propagation, scope drift, silent fallbacks). Opus audits architecture (wiring across modules, contract mismatches, overengineering). Any tier emits a machine-readable PASS token or the loop restarts from Haiku with the fixes applied. No shortcuts. No "looks good to me" without evidence.
+
+### Branch safety, commit-per-file, direct merge after Ralph
+
+Work happens on a solo branch (`solo/issue-{N}-description`). The main agent **NEVER switches branches** mid-work. That's one of the loudest ways to lose uncommitted changes. Commits are per-file, with descriptive messages. After all three Ralph tiers pass, the merge to `main` happens immediately (protecting the work from a late conflict), then the human review checklist gets posted. This order matters: merge protects work, then human reviews for judgement calls the Ralph tiers aren't built to catch.
+
+### Keep going until done (AP #17)
+
+The AI does NOT stop mid-work to ask permission or "check in". Phase checkpoints post to the Issue and continue. The only valid reasons to stop are: context at 80%+ of model window, irreversible destructive action needing user consent (force-push, `rm -rf`, DROP TABLE), genuinely stuck after investigation (not first-response-to-friction), or task complete. Premature stopping is its own anti-pattern with its own rule.
+
+### Single Source of Truth, drift-checked automatically
+
+Every rule, standard, template, script, and anti-pattern lives in ONE canonical place inside `dotfiles/SST3/`. Other repos (this one, `ebay-seller-tool`, `hoiboy-uk`) vendor byte-identical copies. Pre-commit hooks use `cmp -s` to fail any commit where a vendored copy has drifted from canonical. No "which version is the real one?" ambiguity. That IS the "Single Source of Truth v3" in the name, applied at the file-system level.
+
 ## Think of It as a Hero Suit
 
 SST3 is a customisable hero suit. You are the subject matter expert. You already know your domain, your field, your craft. The harness doesn't replace that. It amplifies it.
