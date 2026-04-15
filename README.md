@@ -45,9 +45,11 @@ So SST3 took the opposite route. Focused. Narrow. One main orchestrator agent ow
 
 The 1M context window that arrived in 2025 made this approach practical at scale. The main orchestrator agent can hold the Issue, the standards, the research, and the full diff without spilling context. Subagents absorb the high-volume reads on its behalf. The orchestrator stays coherent. The code stays coherent. No more cowboys.
 
-## Why Scoping Is Worth the Tokens
+## Why You Should Spend More Tokens Refining a Quality Scope
 
-I spend a lot of tokens, a lot of subagents, and a lot of time on scoping before a single line of code gets written. That is deliberate, and it is the single biggest lesson from two decades of Project Management, IT engineering, running my own businesses, and leading teams through plenty of failures and a fair number of successes.
+Every harness does some form of scoping. That is the easy part. The hard part, and the part that actually separates a usable methodology from a waste of tokens, is the PROCESS you use to refine the scope into something sharp enough to act on. A loose scope is a shitty scope, no matter how many agents you throw at it.
+
+I spend a lot of tokens, a lot of subagents, and a lot of time refining the scope before a single line of code gets written. That is deliberate, and it is the single biggest lesson from two decades of Project Management, IT engineering, running my own businesses, and leading teams through plenty of failures and a fair number of successes.
 
 The biggest killer of any project is unclear instructions and scope that is not well defined. You can have the smartest team and the best tools in the world; if the scope is fuzzy, the output will be fuzzy. Worse, you only discover the fuzziness after you have already spent money and time building the wrong thing.
 
