@@ -29,21 +29,15 @@ This matters because:
 
 SST3 solves all three through automated quality gates, structured delivery processes, and pre-commit enforcement that makes compliance the path of least resistance.
 
-## Why We Chose This Route (Lessons from SST2)
+## Why We Chose This Route
 
-SST3 did not start as "one orchestrator, subagents read-only". The earlier generation (SST2) looked a lot like the mainstream agent frameworks out there today. One main orchestrator, a pool of specialised agents with different skills, coordination protocols between them, every agent free to make file changes. Basically the LangChain / CrewAI shape, with my own guardrails, standards, and anti-patterns bolted on.
+Three lessons from SST2 shaped SST3:
 
-It was disastrous.
+- Multiple writer-agents collided. SST3 elects one orchestrator; subagents read-only.
+- Context died mid-work. SST3 enforces checkpoint-before-handover on the Issue.
+- Fixes applied in isolation broke other paths. SST3 integrates all sources per edit.
 
-Some of that was my inexperience at the time. Some of it was the tooling available then. Some of it was the 200K context window Claude had in late 2024, which was simply not enough for a multi-agent swarm to hold a shared mental model of a production codebase. The agents would go in different directions, make overlapping edits, step on each other's work, and produce a codebase that was technically alive but architecturally incoherent.
-
-Even with the guardrails in place, it was like letting 5 to 10 cowboy agents fire away at the same time. Each one confident. Each one making changes. Each one creating a mess somewhere that took ages to clean up later. I suspect my tradebook system still has lingering stale and contradictory code from that era. I tried to clean it up. I genuinely did. Every time I thought I was done, I'd find more. At some point it became one of those defeats you just accept: the production code has legacy technical debt I haven't fully exorcised, I've moved on, and the rule now is that new code doesn't touch the legacy mess or accidentally integrate with it. The worst part is that you only feel the pain months later, long after the agents have finished. By then you have no memory of which agent changed what, or why. Debugging becomes archaeology.
-
-So SST3 took the opposite route. Focused. Narrow. One main orchestrator agent owns the writing, always. Subagents are dispatched like a research team, not a coding team. They read, they analyse, they report findings. They never touch the code. Each subagent is also deliberately pointed at a new angle or perspective the previous subagents haven't covered, so the main orchestrator agent ends up with a 360-degree view of the problem instead of five copies of the same answer. Each angle gets double-checked and triple-checked by layered subagents. The code still gets touched (that's the whole point), but only by the main orchestrator agent, and every piece is revised, finetuned, and optimised against those cross-angle findings, verified against [`STANDARDS.md`](standards/STANDARDS.md) and [`ANTI-PATTERNS.md`](standards/ANTI-PATTERNS.md), then put through regression tests, end-to-end (E2E) tests, and injection tests before it ships. That last layer is how the 80% working trust gets pushed up to 90-95% "good enough, won't break, won't fail in the wild". That one constraint (read-only, different angle each time) kills about 80% of the mess SST2 used to generate.
-
-**Build it like Lego.** One piece at a time. Each piece has to be gold-quality and polished before it gets inserted. Once it fits with the surrounding pieces, move on. Never stack two half-finished bricks and hope they'll settle. This is the opposite of how many AI frameworks think about "throughput". SST3 doesn't optimise for "how many agents can I run in parallel?". It optimises for "how few clean pieces can I ship per hour, with zero rework?".
-
-The 1M context window that arrived in 2025 made this approach practical at scale. The main orchestrator agent can hold the Issue, the standards, the research, and the full diff without spilling context. Subagents absorb the high-volume reads on its behalf. The orchestrator stays coherent. The code stays coherent. No more cowboys.
+Build it like Lego. One polished piece at a time, no stacking half-finished bricks. Full story in [Why I Spend More Tokens Refining Scope Than Writing Code](https://hoiboy.uk/posts/why-scope-beats-code/).
 
 ## Why Scope First
 
