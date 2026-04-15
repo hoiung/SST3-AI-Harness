@@ -9,8 +9,8 @@ Automation scripts for SST3 workflow validation and enforcement.
 
 | Script | Purpose |
 |--------|---------|
-| [check-crossrepo-paths.py](../dotfiles/SST3/scripts/check-crossrepo-paths.py) | Pre-commit hook for cross-repo path validation |
-| [check-retrospective-location.py](../dotfiles/SST3/scripts/check-retrospective-location.py) | Validates retrospective file locations |
+| [check-crossrepo-paths.py](check-crossrepo-paths.py) | Pre-commit hook for cross-repo path validation |
+| [check-retrospective-location.py](check-retrospective-location.py) | Validates retrospective file locations |
 | check-discoverability.py | Validates CLAUDE.md → SST3 chain (4 hops max). Pre-commit + Verification Loop. Exit 0 = clean, 1 = chain broken. |
 | check-issue-body-vs-comments.py | Detects scope content placed in issue comments instead of issue body. Required by user-review-checklist Section 5. Exit 0 = clean, 1 = violations. |
 | check-issue-checkboxes.py | Parses issue body+comments for checkbox state. Used by Verification Loop and MCP checkbox tools. |
@@ -275,7 +275,7 @@ python SST3/scripts/check-failed-experiments.py "UTF-8 encoding" --issue 119 --j
 **Log Architecture**:
 - `temp/{issue#}-failed-experiments.log`: Per-issue failures
 - `.sst3-local/failed-experiments.log`: Project-level recurring patterns
-- `../dotfiles/SST3/reference/failed-experiments.md`: Template and process guide
+- `../reference/failed-experiments.md`: Template and process guide
 
 **Integration with Stage 5**:
 Stage 5 post-implementation review uses this script before adding fixes to Common Mistakes:
@@ -323,7 +323,7 @@ python SST3/scripts/check-failed-experiments.py --test
 ```
 
 **Related Documentation**:
-- See `../dotfiles/SST3/reference/failed-experiments.md` for process guide
+- See `../reference/failed-experiments.md` for process guide
 - See `temp/119-infinite-loop-findings.md` for detailed analysis
 - Integration with auto-rollback.py for automatic failure tracking
 
