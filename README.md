@@ -22,8 +22,8 @@ SST3 treats LLMs as an **execution layer** for Generative AI (GenAI) workflows. 
 
 Two companion blog posts carry the story and philosophy this README deliberately keeps short:
 
-- [**SST3-AI-Harness. Why I Built a Hero Suit for AI.**](https://hoiboy.uk/posts/sst3-ai-harness-reshapeable-knife/) — the reshapeable-knife metaphor, the cowboy problem, trust model, and why this works for marketing, HR, finance, and R&D as much as engineering.
-- [**Why I Spend More Tokens Refining Scope Than Writing Code**](https://hoiboy.uk/posts/why-scope-beats-code/) — SST2 lessons, the PM reasoning behind scope-first, and how poor scope compounds into technical debt.
+- [**SST3-AI-Harness. Why I Built a Hero Suit for AI.**](https://hoiboy.uk/posts/sst3-ai-harness-reshapeable-knife/): the reshapeable-knife metaphor, the cowboy problem, trust model, and why this works for marketing, HR, finance, and R&D as much as engineering.
+- [**Why I Spend More Tokens Refining Scope Than Writing Code**](https://hoiboy.uk/posts/why-scope-beats-code/): SST2 lessons, the PM reasoning behind scope-first, and how poor scope compounds into technical debt.
 
 ## Why This Exists
 
