@@ -239,21 +239,6 @@ This implements **RAG-based governance**: the server queries live GitHub data be
 
 A custom statusline (`claude/statusline.js`, 343 lines) that parses JSONL session transcripts in real-time, displaying token usage, git status, session duration, and CI/CD status. Provides the orchestrator with continuous situational awareness during long sessions.
 
-## Comparison with Other Approaches
-
-| Capability | SST3 | LangChain | CrewAI |
-|-----------|------|-----------|--------|
-| **Primary focus** | Delivery governance & orchestration | Chain/pipeline composition | Multi-agent role-play |
-| **Quality gates** | 3-tier automated review (Ralph) | None built-in | None built-in |
-| **Pre-commit enforcement** | 14 hooks | None | None |
-| **Context management** | Structured handover protocol + checkpoints | Manual | Manual |
-| **Self-healing** | 8 documented recovery procedures | None | None |
-| **Human-in-the-loop** | Mandatory user review gates at Stage 4–5 | Optional callbacks | Optional human input |
-| **Model evaluation** | Per-merge Haiku/Sonnet/Opus pass/fail | Per-call evaluation possible | None built-in |
-| **Delivery methodology** | Full 5-stage lifecycle | None (tool, not methodology) | Task assignment only |
-
-SST3 is complementary to these tools. It operates at the **methodology layer** (how you organise and govern AI-assisted work), while LangChain and CrewAI operate at the **execution layer** (how you chain prompts and assign tasks).
-
 ## Addressing the "Solo Project" Question
 
 SST3 was developed through production use, not as a theoretical exercise. The methodology emerged from three generations of iteration, each driven by real failures documented in the [Anti-Patterns guide](standards/ANTI-PATTERNS.md).
