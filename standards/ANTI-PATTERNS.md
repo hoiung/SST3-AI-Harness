@@ -1,6 +1,6 @@
 # SST3 Anti-Patterns
 
-> 16 documented failure modes. Origin: [Issue #79](https://github.com/hoiung/dotfiles/issues/79).
+> 18 documented failure modes. Origin: [Issue #79](https://github.com/hoiung/dotfiles/issues/79).
 
 ## Anti-Pattern #1: Propagation Failures
 
