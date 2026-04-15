@@ -108,7 +108,7 @@ Thorough architectural review. Catches 10% of issues missed by Haiku+Sonnet.
 - [ ] Ready for posting user-review-checklist.md to user
 
 ### Bash Output Discipline (#406 F4.9)
-- [ ] If you ran any bash command producing > 200 lines (pytest, git diff, log tail, etc.), you wrapped it with `../dotfiles/SST3/scripts/tee-run.sh <label> -- <cmd>`. Return only the tee path + verdict in your RESULT block; do NOT paste the full output back to the main agent.
+- [ ] If you ran any bash command producing > 200 lines (pytest, git diff, log tail, etc.), you wrapped it with `../scripts/tee-run.sh <label> -- <cmd>`. Return only the tee path + verdict in your RESULT block; do NOT paste the full output back to the main agent.
 
 ## Pass Criteria
 

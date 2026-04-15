@@ -113,7 +113,7 @@ Medium-depth validation. Catches 30% of issues missed by Haiku.
 - [ ] Hot paths (fill handlers, order processors): count DB round-trips — flag any path querying the same row more than once
 
 ### Bash Output Discipline (#406 F4.9)
-- [ ] If you ran any bash command producing > 200 lines (pytest, git diff, log tail, etc.), you wrapped it with `../dotfiles/SST3/scripts/tee-run.sh <label> -- <cmd>`. Return only the tee path + verdict in your RESULT block; do NOT paste the full output back to the main agent.
+- [ ] If you ran any bash command producing > 200 lines (pytest, git diff, log tail, etc.), you wrapped it with `../scripts/tee-run.sh <label> -- <cmd>`. Return only the tee path + verdict in your RESULT block; do NOT paste the full output back to the main agent.
 
 ### AP #18 — Sample Invocation Gate (workflow validation)
 - [ ] Scope check: does this change touch pipeline / data-processing / orchestration / CLI-wiring / cross-module function-arg propagation? If **yes** → the next checkbox is mandatory. If **no** → document the scope-skip reason here.
