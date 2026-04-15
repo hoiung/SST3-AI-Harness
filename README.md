@@ -45,25 +45,13 @@ So SST3 took the opposite route. Focused. Narrow. One main orchestrator agent ow
 
 The 1M context window that arrived in 2025 made this approach practical at scale. The main orchestrator agent can hold the Issue, the standards, the research, and the full diff without spilling context. Subagents absorb the high-volume reads on its behalf. The orchestrator stays coherent. The code stays coherent. No more cowboys.
 
-## Why You Should Spend More Tokens Refining a Quality Scope
+## Why Scope First
 
-Every harness does some form of scoping. That is the easy part. The hard part, and the part that actually separates a usable methodology from a waste of tokens, is the PROCESS you use to refine the scope into something sharp enough to act on. A loose scope is a shitty scope, no matter how many agents you throw at it.
+- Tokens spent refining scope cost less than tokens spent fixing the wrong thing twice.
+- Gaps compound. Small misses become fragile foundations that crack months later.
+- Pay in planning or pay ten times more in cleanup. SST3 picks the first one every time.
 
-I spend a lot of tokens, a lot of subagents, and a lot of time refining the scope before a single line of code gets written. That is deliberate, and it is the single biggest lesson from two decades of Project Management, IT engineering, running my own businesses, and leading teams through plenty of failures and a fair number of successes.
-
-The biggest killer of any project is unclear instructions and scope that is not well defined. You can have the smartest team and the best tools in the world; if the scope is fuzzy, the output will be fuzzy. Worse, you only discover the fuzziness after you have already spent money and time building the wrong thing.
-
-Taking the first step in the right direction is the most important decision you make. It is like having a map of where you want to get to. There are many ways to reach the destination, but you want to plan the route so you can navigate the obstacles, challenges, and gotchas that would otherwise stop you from getting there easily or quickly.
-
-I find it far cheaper to have a clear plan that is still flexible to changes than a loose plan that gets lost or misinterpreted. The loose plan costs you later: you look up months down the line, realise you have drifted further from the goal, and then you pay twice to find your way back. Cleaning up a mess from bad code is hard, sometimes genuinely painful, and sometimes the scars never fully heal once the bad code has shipped to production.
-
-The sneaky part is the compounding. Small gaps and poor implementations do not announce themselves on day one. They sit there quietly, and every new feature you build on top of them inherits the same weak foundation. Miss a gap this week, the next piece layers on top of it, then the one after that, and before you know it you have a snowball. You end up with a fragile production system that breaks the moment the wind changes direction. This is why the token spend on refining scope up front is a magnitude cheaper than the cleanup bill you avoid downstream.
-
-That is what technical debt actually is. And SST3 is built to prevent it from accumulating, or at least reduce it enough that the damage does not compound into something that costs ten times more to fix or maintain later. Think ahead. Scope properly. Pay a bit more in the planning phase so you do not pay a fortune in the cleanup phase.
-
-That is why SST3 spends more tokens on each piece. Each piece gets researched, scoped, verified, triple-checked, implemented, reviewed, and audited before it ships. Yes, it is more expensive per piece in tokens. It is dramatically cheaper overall, because you are not constantly rebuilding on top of broken foundations.
-
-Quality over quantity. ALWAYS.
+Full PM reasoning in [Why I Spend More Tokens Refining Scope Than Writing Code](https://hoiboy.uk/posts/why-scope-beats-code/).
 
 ## What's Different About Our Approach
 
