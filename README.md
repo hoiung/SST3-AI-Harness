@@ -288,7 +288,7 @@ Directing dynamically scaled concurrent AI agents is the functional equivalent o
 - **Node 20+** (`node --version` to check)
 - **pre-commit** (`pip install pre-commit` then verify with `pre-commit --version`)
 - **Claude Code CLI** (see https://docs.claude.com/claude-code for install instructions)
-- **GitHub CLI `gh`** authenticated (`gh auth login` — follow the browser prompt and select HTTPS + public-repo scope at minimum)
+- **GitHub CLI `gh`** authenticated (`gh auth login`, follow the browser prompt and select HTTPS + public-repo scope at minimum)
 
 **Optional, only for the evidence-enforced checkbox MCP server**:
 
