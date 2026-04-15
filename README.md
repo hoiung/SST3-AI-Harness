@@ -1,8 +1,8 @@
 # SST3-AI-Harness
 
-**AI Agent Orchestration & Governance Methodology for LLM-Powered Software Delivery**
+**SST3 = Single Source of Truth v3.** AI Agent Orchestration & Governance Methodology for LLM-Powered Software Delivery.
 
-A production-grade framework for orchestrating multi-agent LLM workflows with built-in quality gates, automated governance, and structured delivery processes. Developed through three generations of iteration (SST1 → SST2 → SST3) and battle-tested across 10,000+ commits in production systems.
+A production-grade framework for orchestrating multi-agent LLM workflows with built-in quality gates, automated governance, and structured delivery processes. Developed through three generations of iteration (SST1 → SST2 → SST3) and battle-tested across 10,000+ commits in production systems. The "Single Source of Truth" principle is the methodology's backbone: every rule, standard, template, and anti-pattern lives in exactly one canonical place, with automated drift checks preventing divergence across mirrored copies.
 
 ---
 
@@ -44,6 +44,37 @@ SST3 is built for people who already know what they do. Domain experts. Subject 
 And the AI skills? Those are the suit's enhancements. Weapons, shields, scanners, whatever your domain needs. But skills used alone aren't effective. A skill without the harness is a loose attachment with no frame to mount it on. SST3 is the frame. The skills plug into it, draw power from its governance and quality gates, and that's what lets them run at full potential. The harness without skills is a solid suit. Skills without the harness is a pile of parts on the floor.
 
 You can use it to build automation, to research, to write, to analyse, all with tight guardrails that reduce hallucination and the bullshit AI spouts at times which is not factual or true. It's not perfect, but it's far better than Claude Code out the box. My principle is KISS (Keep It Simple Stupid), so this framework is built to be reliable and simple to customise without all the additional LLM wiki or graphs or other memory frameworks which add complexity and more parts to fail. (That doesn't mean I won't try them and see if they can improve SST3-AI-Harness or larger projects that work alongside the harness, but the current version works reliably.)
+
+## Not Just for Engineering
+
+SST3 is not an IT tool. It's a methodology for wrapping AI with guardrails, and guardrails apply to every department that produces work under a quality standard.
+
+- **Marketing**: brand voice profile, banned-vocab lists, SEO checklists, approval gates before a campaign ships. Same structure as the voice guard that runs over this very README.
+- **HR**: job description templates, interview rubrics, bias sweeps, tone-of-voice guides. SME sets the rules, AI drafts, the harness enforces, human reviews in minutes instead of hours.
+- **Finance and accounting**: regulatory disclosures, audit-trail compliance, report templates where a wrong figure ends careers. Fail-fast enforcement and evidence-enforced approvals are non-optional here.
+- **R&D**: research protocols, literature-review methodology, hypothesis validation checklists. The senior researcher's judgement becomes the rules; AI accelerates grunt work inside the method, not around it.
+
+The pattern is always the same: SMEs set the standards, AI produces the first pass, the harness enforces compliance, humans review the output. Same shape whether the output is code, ad copy, a financial disclosure, or a research protocol.
+
+## Trust Model: The 80:20 Rule
+
+Never fully trust AI. Not 100%. Not even 90%. With SST3 wrapped around the agents, working trust sits at around 80%, meaning 80% of output is clean enough to use with light review. The remaining 20% is a grey zone where the AI tends to fudge things, and over time you learn where it usually tries. That 20% is why human review gates at Stage 4–5 are mandatory.
+
+Before SST3, the ratio was flipped: maybe 20% usable, 80% slop. The harness turns that around. It does not hand over the keys. It keeps the keys in your hand while the AI does the driving under supervision.
+
+## SMEs and Juniors: Who Benefits, Who Should Be Careful
+
+**Domain experts and SMEs become force multipliers.** The harness captures your judgement as rules, templates, and anti-patterns. AI executes against your bar. You review with the eye of someone who spots wrongness in seconds. Week-long tasks compress to a day. Day-long tasks compress to an hour.
+
+**Juniors and those still learning: the harness is a good learning tool, but it is not a substitute for the craft.** The guardrails surface the standards. Ralph Review pass/fail feedback teaches what "good" looks like. The anti-patterns list is effectively a catalogue of senior-level mistakes so juniors don't repeat them. But dependency on the harness without building underlying judgement is a trap. Training wheels should come off eventually. Use it to accelerate learning, not replace it.
+
+## Why Embrace It
+
+Humans have an edge AI does not. Creativity. Abstract reasoning across many angles at once. The ingenuity that put people on the moon, that built aircraft, submarines, and the light bulb. Those came from humans staring at walls and daydreaming, not algorithms. That is a uniquely human trick and it should be guarded.
+
+The tasks that can be automated should be automated. Not because humans are lazy. Because human time is better spent on the work AI cannot do alone. Will AI take jobs? Not the way most people fear. It will shift work toward strategy, creativity, and judgement. Companies are still made of people; not the other way around. The ones that remember this will win.
+
+If you can't adapt to this tech age, your job will eventually adapt for you. Better to be the person who learnt the harness than the person who got replaced by someone who did.
 
 ## Key Metrics
 
