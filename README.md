@@ -163,13 +163,9 @@ Before SST3, the ratio was flipped: maybe 20% usable, 80% slop. The harness turn
 
 **Juniors and those still learning: the harness is a good learning tool, but it is not a substitute for the craft.** The guardrails surface the standards. Ralph Review pass/fail feedback teaches what "good" looks like. The anti-patterns list is effectively a catalogue of senior-level mistakes so juniors don't repeat them. But dependency on the harness without building underlying judgement is a trap. Training wheels should come off eventually. Use it to accelerate learning, not replace it.
 
-## Why Embrace It
+## Embrace, Don't Resist
 
-Humans have an edge AI does not. Creativity. Abstract reasoning across many angles at once. The ingenuity that put people on the moon, that built aircraft, submarines, and the light bulb. Those came from humans staring at walls and daydreaming, not algorithms. That is a uniquely human trick and it should be guarded.
-
-The tasks that can be automated should be automated. Not because humans are lazy. Because human time is better spent on the work AI cannot do alone. Will AI take jobs? Not the way most people fear. It will shift work toward strategy, creativity, and judgement. Companies are still made of people; not the other way around. The ones that remember this will win.
-
-If you can't adapt to this tech age, your job will eventually adapt for you. Better to be the person who learnt the harness than the person who got replaced by someone who did.
+Automate the repeatable. Spend your edge where humans still win: creativity, intuition, weird leaps. Full argument in [the reshapeable-knife post](https://hoiboy.uk/posts/sst3-ai-harness-reshapeable-knife/).
 
 ## Key Metrics
 
