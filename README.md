@@ -56,7 +56,7 @@ Full PM reasoning in [Why I Spend More Tokens Refining Scope Than Writing Code](
 
 ## What's Different About Our Approach
 
-Most agent frameworks focus on "how do I chain prompts" or "how do I assign tasks to multiple agents". SST3 starts from a different question: **how do I stop the AI from shipping garbage, even when I'm not watching?** That question shapes every design choice below.
+Most agent frameworks focus on "how do I chain prompts" or "how do I assign tasks to multiple agents". SST3 starts from a different question: **how do I reduce the chance of the AI shipping garbage, and raise the chance it hits the goal I set?** AI is probabilistic, so eliminating bad outcomes completely is not on the table. Shifting the odds is. That question shapes every design choice below.
 
 ### One main orchestrator agent writes. Subagents are PLANNING ONLY.
 
@@ -75,7 +75,7 @@ If the task has 12 claim categories, dispatch 12 subagents (or more). If it's an
 
 ### Planning mode by default
 
-The main orchestrator agent starts in PLANNING MODE. No file changes, no commits. It only shifts to execution when the user explicitly says "work on #X" or "implement this". This prevents the "AI ran ahead and wrote a whole feature you didn't ask for" failure mode. Alignment first, then action.
+The main orchestrator agent starts in PLANNING MODE. No file changes, no commits. It only shifts to execution when the user explicitly says "work on #X" or "implement this". This cuts down the "AI ran ahead and wrote a whole feature you didn't ask for" failure mode. Alignment first, then action.
 
 ### Issue-driven, evidence-enforced
 
@@ -185,7 +185,7 @@ Each stage has explicit entry/exit criteria. Stages cannot be reordered or skipp
 | **4. Implementation** | Execute phases, commit per file, verification loop, Ralph Review, merge | Main orchestrator agent + Ralph subagents |
 | **5. Post-Implementation** | Phase-by-phase review against scope, wiring checks, regression tests | Subagent review swarm |
 
-The main orchestrator agent orchestrates the workflow. Subagents handle research, exploration, and review. They read and analyse but never write code. This separation ensures the orchestrator maintains full context while subagents provide independent verification.
+The main orchestrator agent orchestrates the workflow. Subagents handle research, exploration, and review. They read and analyse but never write code. This separation helps the orchestrator keep full context while subagents provide independent verification.
 
 ## Ralph Review: AI Governance
 
