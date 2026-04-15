@@ -157,11 +157,12 @@ Never fully trust AI. Not 100%. Not even 90%. With SST3 wrapped around the agent
 
 Before SST3, the ratio was flipped: maybe 20% usable, 80% slop. The harness turns that around. It does not hand over the keys. It keeps the keys in your hand while the AI does the driving under supervision.
 
-## SMEs and Juniors: Who Benefits, Who Should Be Careful
+## Who It Helps
 
-**Domain experts and SMEs become force multipliers.** The harness captures your judgement as rules, templates, and anti-patterns. AI executes against your bar. You review with the eye of someone who spots wrongness in seconds. Week-long tasks compress to a day. Day-long tasks compress to an hour.
+- **SMEs**: force multiplier. Your judgement becomes reusable guardrails.
+- **Juniors**: learning tool only. Training wheels, not a replacement for reps. Read the source, ask why, don't outsource your craft.
 
-**Juniors and those still learning: the harness is a good learning tool, but it is not a substitute for the craft.** The guardrails surface the standards. Ralph Review pass/fail feedback teaches what "good" looks like. The anti-patterns list is effectively a catalogue of senior-level mistakes so juniors don't repeat them. But dependency on the harness without building underlying judgement is a trap. Training wheels should come off eventually. Use it to accelerate learning, not replace it.
+Full guidance in [the reshapeable-knife post](https://hoiboy.uk/posts/sst3-ai-harness-reshapeable-knife/).
 
 ## Embrace, Don't Resist
 
