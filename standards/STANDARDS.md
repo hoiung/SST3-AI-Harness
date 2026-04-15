@@ -696,6 +696,25 @@ Test in this order:
 
 **Minimum coverage**: 85% for Stage 5 verification
 
+### Workflow Validation Gate (AP #18 — MANDATORY)
+
+Unit + smoke tests are necessary but NOT sufficient for pipeline / data-processing / CLI-wiring / cross-module propagation changes. Every such change MUST pass a **real-CLI sample invocation** against real DB before the issue closes.
+
+**Applies to (ANY match → gate active):**
+- New/modified CLI flags threaded into downstream function signatures
+- Pipeline / orchestration wiring changes
+- Coverage pre-flights, auto-bootstrap paths, window-scoped / experiment-path logic
+- Multi-module function-arg propagation chains (>1 hop from CLI to DB write)
+- Any change where a `**kwargs`-accepting mock could silently hide the regression
+
+**Gate (verification loop item — NOT optional)**:
+1. Small liquid basket (8 items typical), real CLI, real DB.
+2. Verify rows land; downstream consumers (audit queries, consumers of the output) succeed.
+3. Mocks MUST assert explicit kwargs (`call_args.kwargs["window_start"] == expected`). No `**kwargs`-swallowing proof.
+4. Stage 5 integration test added for every new cross-module signature or CLI flag.
+
+**Enforcement**: AP #18, Stage 4 Verification Loop, `issue-template.md` PREREQUISITE CHECKPOINT.
+
 ## Modularity Standards
 
 ### Single Responsibility

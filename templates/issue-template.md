@@ -36,6 +36,7 @@
 > - [ ] **LMCE**: Lean, Mean, Clean, Effective
 > - [ ] **JBGE**: Just Barely Good Enough (only what prevents problems)
 > - [ ] **Single Objective**: This Issue has ONE objective. If mixed (fix + refactor), split now.
+> - [ ] **Sample Invocation Gate (AP #18)**: if this Issue touches pipeline / data-processing / orchestration / CLI-wiring / cross-module function-arg propagation, Stage 4 MUST include a real-CLI sample invocation (real DB, 8-item liquid basket) that exercises the full pipeline end-to-end before close. Unit + smoke tests alone are INSUFFICIENT. Mocks MUST assert explicit `call_args.kwargs[...]` — never rely on `**kwargs`-swallowing. Skip only if change does NOT trigger AP #18 scope; document the skip reason when checking the box.
 
 ## Problem/Goal
 
