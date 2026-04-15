@@ -151,11 +151,9 @@ SST3 is not an IT tool. It's a methodology for wrapping AI with guardrails, and 
 
 The pattern is always the same: SMEs set the standards, AI produces the first pass, the harness enforces compliance, humans review the output. Same shape whether the output is code, ad copy, a financial disclosure, or a research protocol.
 
-## Trust Model: The 80:20 Rule
+## Trust Model
 
-Never fully trust AI. Not 100%. Not even 90%. With SST3 wrapped around the agents, working trust sits at around 80%, meaning 80% of output is clean enough to use with light review. The remaining 20% is a grey zone where the AI tends to fudge things, and over time you learn where it usually tries. That 20% is why human review gates at Stage 4–5 are mandatory.
-
-Before SST3, the ratio was flipped: maybe 20% usable, 80% slop. The harness turns that around. It does not hand over the keys. It keeps the keys in your hand while the AI does the driving under supervision.
+80:20 rule. About 80% of AI output is usable after light review; the 20% grey zone is what the harness is for. Full reasoning in [the reshapeable-knife post](https://hoiboy.uk/posts/sst3-ai-harness-reshapeable-knife/).
 
 ## Who It Helps
 
