@@ -368,7 +368,7 @@ For any change that touches pipeline / data-processing / orchestration / CLI-wir
 
 **Self-Healing**: If you catch yourself about to close a pipeline/wiring issue without running a real sample → run the sample first. If you already closed one → reopen, run the sample, and add the missing regression test in the same fix.
 
-**Enforcement**: STANDARDS.md "Testing Priority — Workflow Validation Gate"; Stage 4 Verification Loop mandatory item; `CLAUDE_TEMPLATE.md` behavioural rule bullet; `issue-template.md` PREREQUISITE CHECKPOINT includes sample-run confirmation.
+**Enforcement**: STANDARDS.md "Testing Priority — Workflow Validation Gate"; `WORKFLOW.md` Verification Loop (canonical gate); `CLAUDE_TEMPLATE.md` behavioural rule bullet; `issue-template.md` PREREQUISITE CHECKPOINT includes sample-run confirmation; Ralph `sonnet-review.md` AP #18 checklist (three sub-checks covering scope, evidence, and mock-assertion discipline). Note: all five enforcement points are documentation-level + honour-system checklists — there is currently no CI job that blocks a merge when a pipeline-touching diff lacks a sample log. Adding such a CI gate is tracked as a future hardening task.
 
 ---
 
