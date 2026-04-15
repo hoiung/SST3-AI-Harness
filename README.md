@@ -267,6 +267,8 @@ The AI will do the reading and hand you back a plain-English setup plan. If you 
 
 ### Prerequisites
 
+**Platform.** On Windows, install [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) with Ubuntu (or your Linux distro of choice) and run everything inside WSL2. If you do not know how to set up WSL2, install Claude Code first and ask it to walk you through the setup. On Mac, Claude Code is reported to run well natively (not personally tested by the author). On Linux, everything runs natively.
+
 **Core requirements** (needed for every SST3 workflow):
 
 - **Python 3.10+** (`python3 --version` to check)
