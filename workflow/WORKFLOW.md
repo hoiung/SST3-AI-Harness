@@ -17,7 +17,7 @@
 
 ### Stage 2 — Issue Creation (Main Agent from /tmp Research)
 
-- [ ] Use `../dotfiles/SST3/templates/issue-template.md` — NEVER create issues from scratch
+- [ ] Use `../templates/issue-template.md` — NEVER create issues from scratch
 - [ ] Add ALL before/after illustrations for comparison after implementation
 - [ ] Add compact breaks between phases in Acceptance Criteria
 - [ ] Check context memory — stop and allow compact before continuing if needed
@@ -126,10 +126,10 @@ See STANDARDS.md (mandatory read). Key rule labels: Quality First, JBGE, LMCE, F
 
 ## Templates
 
-- **Issue Creation**: `../dotfiles/SST3/templates/issue-template.md`
-- **Execution Template**: `../dotfiles/SST3/templates/subagent-solo-template.md`
-- **User Review**: `../dotfiles/SST3/templates/user-review-checklist.md`
-- **Chat Handover**: `../dotfiles/SST3/templates/chat-handover.md`
+- **Issue Creation**: `../templates/issue-template.md`
+- **Execution Template**: `../templates/subagent-solo-template.md`
+- **User Review**: `../templates/user-review-checklist.md`
+- **Chat Handover**: `../templates/chat-handover.md`
 
 ## Checkpoint Format
 
