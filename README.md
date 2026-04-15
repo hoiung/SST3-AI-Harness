@@ -29,6 +29,22 @@ This matters because:
 
 SST3 solves all three through automated quality gates, structured delivery processes, and pre-commit enforcement that makes compliance the path of least resistance.
 
+## Why We Chose This Route (Lessons from SST2)
+
+SST3 did not start as "one orchestrator, subagents read-only". The earlier generation (SST2) looked a lot like the mainstream agent frameworks out there today. One main orchestrator, a pool of specialised agents with different skills, coordination protocols between them, every agent free to make file changes. Basically the LangChain / CrewAI shape, with my own guardrails, standards, and anti-patterns bolted on.
+
+It was disastrous.
+
+Some of that was my inexperience at the time. Some of it was the tooling available then. Some of it was the 200K context window Claude had in late 2024, which was simply not enough for a multi-agent swarm to hold a shared mental model of a production codebase. The agents would go in different directions, make overlapping edits, step on each other's work, and produce a codebase that was technically alive but architecturally incoherent.
+
+Even with the guardrails in place, it was like letting 5 to 10 cowboy agents fire away at the same time. Each one confident. Each one making changes. Each one creating a mess somewhere that took ages to clean up later. I suspect my Tradebook_GAS repo still has lingering stale and contradictory code from that era that I haven't yet had the patience to clean up. The cost of multi-agent mess is paid months after the agents have finished their "work", and by then the context of who changed what and why is long gone.
+
+So SST3 took the opposite route. Focused. Narrow. One main agent owns the writing, always. Subagents are dispatched like a research team, not a coding team. They read, they analyse, they report findings. They never touch the code. That one constraint kills about 80% of the mess SST2 used to generate.
+
+**Build it like Lego.** One piece at a time. Each piece has to be gold-quality and polished before it gets inserted. Once it fits with the surrounding pieces, move on. Never stack two half-finished bricks and hope they'll settle. This is the opposite of how many AI frameworks think about "throughput". SST3 doesn't optimise for "how many agents can I run in parallel?". It optimises for "how few clean pieces can I ship per hour, with zero rework?".
+
+The 1M context window that arrived in 2025 made this approach practical at scale. The main agent can hold the Issue, the standards, the research, and the full diff without spilling context. Subagents absorb the high-volume reads on its behalf. The orchestrator stays coherent. The code stays coherent. No more cowboys.
+
 ## What's Different About Our Approach
 
 Most agent frameworks focus on "how do I chain prompts" or "how do I assign tasks to multiple agents". SST3 starts from a different question: **how do I stop the AI from shipping garbage, even when I'm not watching?** That question shapes every design choice below.
