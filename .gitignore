@@ -8,3 +8,6 @@ settings.local.json
 Thumbs.db
 *.log
 *.tmp
+
+# Code review graph (local AST index, regenerable)
+.code-review-graph/
