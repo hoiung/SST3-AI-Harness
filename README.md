@@ -237,7 +237,7 @@ This implements **RAG-based governance**: the server queries live GitHub data be
 
 ### Adopted MCP Server: code-review-graph (code-awareness)
 
-SST3 integrates the open-source `better-code-review-graph` MCP server (fork of `tirth8205/code-review-graph`) to give the orchestrator AST-level code-awareness. Uses Tree-sitter parsers and a local SQLite knowledge graph stored in `.code-review-graph/` (gitignored, regenerable). Provides 6 tools: `graph`, `query`, `review`, `config`, `setup`, `help`, enabling blast-radius analysis, caller/callee resolution, dead-code detection, and large-function audits.
+SST3 integrates the open-source `better-code-review-graph` MCP server (fork of `tirth8205/code-review-graph`) to give the orchestrator AST-level code-awareness. Uses Tree-sitter parsers and a local SQLite knowledge graph stored in `.code-review-graph/` (gitignored, regenerable). Provides 5 tools: `graph`, `query`, `review`, `config`, `help` (setup is a `config` sub-action), enabling blast-radius analysis, caller/callee resolution, dead-code detection, and large-function audits. Parses 14 source languages (Python, TypeScript, TSX, JavaScript, Go, Rust, Java, C#, Ruby, C/C++, Kotlin, Swift, PHP, Solidity); NOT Markdown/YAML/JSON/SQL/TOML/shell.
 
 Runs in local-only mode (`EMBEDDING_BACKEND=local`, no cloud embeddings) so proprietary code never leaves the machine. Ralph Review tiers include optional graph-backed checks (blast radius on changed files, orphan detection, community-boundary crossing) that are non-blocking when the server is unavailable. Install via `uvx --python 3.13 better-code-review-graph --stdio` in `~/.claude.json` mcpServers config.
 
