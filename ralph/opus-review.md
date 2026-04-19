@@ -86,10 +86,20 @@ Thorough architectural review. Catches 10% of issues missed by Haiku+Sonnet.
 - [ ] For each: does a verifiable source exist (benchmark, prior issue, measured observation, command output)?
 - [ ] If no source: flag as unverified claim — must be sourced or removed before OPUS_PASS
 
-### Optional: Code Graph Checks (if code-review-graph available)
-- [ ] Dead code detection via graph — any orphaned functions introduced by this change?
-- [ ] Community detection — does the change cross architectural boundaries unexpectedly?
-- [ ] Large functions audit — did the change push any function over 200 lines?
+### Required when graph available: Code Graph Checks (Architectural Depth)
+
+**Rollout note**: this check became required with Issue #419. Reviews in-flight at Issue #419 merge-time are grandfathered UNTIL the branch's next push; any review dispatched after that push follows the full "Required when available" rule.
+
+**Documentation-only PR exemption**: if the PR diff touches ONLY Markdown / YAML / JSON / TOML / shell (unsupported languages per STANDARDS.md "Structural Code Queries"), skip this section entirely. Document `[GRAPH: skipped — doc-only PR]` in RESULT and return PASS on graph checks. Proceed to standard Opus deep checks on the doc content.
+
+Preconditions (code-touching PRs, run once): `config status` returns `total_nodes > 0` AND `last_updated < 24h`. If either fails, skip to fallback clause below.
+
+- [ ] Dead code detection: `graph query large_functions(min_lines=200)` + manual orphan scan. For each candidate: `graph query callers_of(<name>)` returns empty in the same module ⇒ orphan. Subagent confirms whether call is via reflection / dynamic dispatch (not an orphan) or a true orphan (cleanup target).
+- [ ] Impact scope validation: `graph query impact(changed_files, max_depth=2)` — enumerate all impacted modules; identify unexpected cross-boundary edges. Document each boundary: intended (defence-in-depth / architectural layering) vs emergent (refactor target).
+- [ ] Large functions audit: confirm no function in diff exceeded 200 lines (`graph query large_functions(min_lines=200, file_path_pattern=<diff-scope>)`). If any did, architectural red flag — require refactor.
+- [ ] **AP #19 full compliance**: includes Sonnet's over-trust spot-check, plus: any "no results" response from graph in an area with unsupported-language files (YAML, JSON, SQL, shell) is explicitly broadened to subagent exploration before drawing a negative conclusion; graph `last_updated` timestamp recorded in RESULT.
+
+**Fallback clause (retry-aware, evidence-required)**: first graph call fails → retry once. Second fails → RESULT MUST include the Explore-subagent's RESULT block demonstrating manual architectural audit (dead code + impact + large functions) was actually executed. Main RESULT: `[graph unavailable: <reason>] [subagent fallback: <subagent-id>]` with concrete findings. Documenting only `[graph unavailable]` without the subagent RESULT block = silent skip = FAIL.
 
 ### Overengineering Check
 - [ ] Is there a simpler solution that works?
@@ -117,7 +127,7 @@ Thorough architectural review. Catches 10% of issues missed by Haiku+Sonnet.
 
 ## Pass Criteria
 
-ALL checkboxes above verified with evidence. Code graph checks are optional — do not fail if MCP server unavailable.
+ALL checkboxes above verified with evidence. Graph was available and not used for structural architectural question = FAIL. If doc-only PR exempted via the short-circuit above, PASS. Unavailable / stale / unsupported-language WITH subagent RESULT block showing manual architectural audit was performed = PASS. Architectural review without structural evidence (graph-backed OR subagent-backed with RESULT block) is incomplete and fails.
 
 ## On Pass
 
