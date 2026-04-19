@@ -120,14 +120,24 @@ Medium-depth validation. Catches 30% of issues missed by Haiku.
 - [ ] If in-scope: evidence of a real-CLI sample invocation exists — either a log file path, or an Issue comment with exit code + row-count + audit verdict. Exit code 0 alone is NOT sufficient (history of exit-0 runs writing zero rows). The proof must show rows landed + downstream consumers succeeded.
 - [ ] If in-scope: any mock used in the fix's tests uses explicit `call_args.kwargs["<key>"] == <expected>` assertions — NOT a `**kwargs`-swallowing mock that would pass regardless of whether the code actually propagated the arg.
 
-### Optional: Code Graph Checks (if code-review-graph available)
-- [ ] Verify blast radius covers all callers/callees of changed functions
-- [ ] Search for duplicate implementations of new logic via graph search
-- [ ] Check callers_of for any modified function — are all call sites handling the change?
+### Required when graph available: Code Graph Checks
+
+**Rollout note**: this check became required with Issue #419. Reviews in-flight at Issue #419 merge-time are grandfathered UNTIL the branch's next push; any review dispatched after that push follows the full "Required when available" rule.
+
+**Documentation-only PR exemption**: if the PR diff touches ONLY Markdown / YAML / JSON / TOML / shell (unsupported languages per STANDARDS.md "Structural Code Queries"), skip this section entirely. Document `[GRAPH: skipped — doc-only PR]` in RESULT and return PASS on graph checks. Proceed to standard Sonnet logic checks on the doc content.
+
+Preconditions (code-touching PRs, run once): `config status` returns `total_nodes > 0` AND `last_updated < 24h`. If either fails, skip to fallback clause below.
+
+- [ ] For each modified function: `graph query callers_of(<function_name>)` → list all call sites; verify each handles the changed signature / behaviour (subagent reads each caller to verify intent — graph narrows, subagent confirms).
+- [ ] For each modified function: `graph query callees_of(<function_name>)` → confirm no newly-called functions have incompatible contracts (null-safety, config access).
+- [ ] `graph query search(pattern)` for duplicate implementations: search for new calculation / parsing / schema-handling logic in codebase — confirm it doesn't already exist.
+- [ ] **AP #19 over-trust check**: if graph was used, one result spot-checked by reading source. Record the spot-check file:line in the RESULT block.
+
+**Fallback clause (retry-aware, evidence-required)**: if first graph call fails, retry once. If second fails, the RESULT block MUST include the Explore-subagent's RESULT block demonstrating manual call-graph audit was actually executed (e.g. "Layer 1 subagent checked 5 call sites, 3 caller contracts verified compatible, 2 flagged for semantic review"). Main RESULT references it as `[graph unavailable: <reason>] [subagent fallback: <subagent-id>]`. Documenting only `[graph unavailable]` without the subagent RESULT block = silent skip = FAIL.
 
 ## Pass Criteria
 
-ALL checkboxes above verified with evidence. Code graph checks are optional — do not fail if MCP server unavailable.
+ALL checkboxes above verified with evidence (graph-backed + source spot-check, OR documented fallback + subagent RESULT block showing manual audit was performed). If graph was available (per definition above) and not used for a structural question, FAIL. If doc-only PR exempted via the short-circuit above, PASS. If unavailable / stale / unsupported-language WITH subagent-backed fallback evidence = PASS.
 
 ## On Pass
 
