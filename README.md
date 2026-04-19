@@ -111,7 +111,7 @@ The AI does NOT stop mid-work to ask permission or "check in". Phase checkpoints
 
 ### Single Source of Truth, drift-checked automatically
 
-Every rule, standard, template, script, and anti-pattern lives in ONE canonical place inside `dotfiles/SST3/`. Other repos (this one, `ebay-seller-tool`, `hoiboy-uk`) vendor byte-identical copies. Pre-commit hooks use `cmp -s` to fail any commit where a vendored copy has drifted from canonical. No "which version is the real one?" ambiguity. That IS the "Single Source of Truth v3" in the name, applied at the file-system level.
+Every rule, standard, template, script, and anti-pattern lives in ONE canonical place inside `dotfiles/SST3/`. Other repos (this one, `ebay-seller-tool`, `hoiboy-uk`) vendor copies — byte-identical for Python scripts, scrubbed (private paths, identifiers, trading-specific terms genericized) for markdown documentation. A manifest-driven pre-commit hook (`check-mirror-drift.py`) fails any commit where a vendored copy has drifted from canonical after expected transforms. A companion pre-commit hook in the canonical repo (`propagate-mirrors.py --validate`) fails any canonical-side edit that has not been propagated. The `propagate-mirrors.py --apply` script applies transforms and writes mirrors in one step. No "which version is the real one?" ambiguity. That IS the "Single Source of Truth v3" in the name, applied at the file-system level.
 
 ## Hero Suit, Not Hero
 
