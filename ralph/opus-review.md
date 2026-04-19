@@ -86,6 +86,11 @@ Thorough architectural review. Catches 10% of issues missed by Haiku+Sonnet.
 - [ ] For each: does a verifiable source exist (benchmark, prior issue, measured observation, command output)?
 - [ ] If no source: flag as unverified claim — must be sourced or removed before OPUS_PASS
 
+### Optional: Code Graph Checks (if code-review-graph available)
+- [ ] Dead code detection via graph — any orphaned functions introduced by this change?
+- [ ] Community detection — does the change cross architectural boundaries unexpectedly?
+- [ ] Large functions audit — did the change push any function over 200 lines?
+
 ### Overengineering Check
 - [ ] Is there a simpler solution that works?
 - [ ] No premature abstractions
@@ -112,7 +117,7 @@ Thorough architectural review. Catches 10% of issues missed by Haiku+Sonnet.
 
 ## Pass Criteria
 
-ALL checkboxes above verified with evidence.
+ALL checkboxes above verified with evidence. Code graph checks are optional — do not fail if MCP server unavailable.
 
 ## On Pass
 
