@@ -49,6 +49,7 @@ Scale subagent count to match scope. No maximum. No minimum of 2-3. If 12 direct
 
 **Process**:
 1. Check `docs/research/` in the active repo for existing research FIRST. Do not re-derive what exists.
+1b. **Pre-swarm graph gate**: if the research topic is structural code in a supported language (see STANDARDS.md "Structural Code Queries"), run `mcp__code-review-graph__config action=status` + relevant `query` / `impact` BEFORE step 2. Use graph findings to seed, narrow, or validate subagent prompts — NOT to replace the swarm's different-angle coverage. If topic is semantic / voice / intent / cross-document / non-code (12 subagent-only moments per STANDARDS.md), skip graph and go to step 2. Record graph calls + `last_updated` + `embeddings_count` in the /tmp research file.
 2. Launch parallel subagents — max 5 files per subagent. Include the RESULT block schema in every subagent prompt.
 3. Main context = orchestrator ONLY. Do NOT read source files directly. Subagents read; main agent collates.
 4. If subagents return uncertain or conflicting findings, dispatch MORE subagents to resolve. Do not guess.
@@ -72,6 +73,7 @@ Create `/tmp/issue_draft_<topic>_<date>.md` FIRST. Do NOT create the GitHub issu
 
 **Process**:
 1. Read the `/tmp` research file from Stage 1.
+1b. **Graph scope-completeness recipe** (structural-code topics in supported languages — see playbook "Stage-Mapped Recipes" Stage 2 section): for every function/hook/class named in the scope, run `mcp__code-review-graph__query callers_of <file::symbol>` and compare the count to what Stage 1 research claimed. More call sites than research flagged = expand scope. For every "X doesn't exist" claim, run `search X` (literal identifier when `embeddings_count=0`). Record every query + target + count + one spot-check file:line in the draft's References section. Skip if topic is semantic / non-code / one of the 12 subagent-only moments.
 2. Read `templates/issue-template.md`. Follow the template EXACTLY. Every section is mandatory:
    - PREREQUISITE CHECKPOINT (6 principle checkboxes)
    - Problem/Goal
@@ -114,7 +116,7 @@ The draft exists. Now verify it is correct before it becomes the contract.
    - **No overengineering**: Scoped items that solve problems that don't exist? Remove them.
    - **Chat history check**: Review the conversation. Did we discuss and agree on things NOT in the issue? Check for forgotten agreements.
    - **Opposite-scoping check**: Are we scoping the OPPOSITE of what was agreed? This failure mode is documented. Verify explicitly.
-   - **Dead/obsolete/legacy code**: Did the audit find cleanup targets? Are they in the issue?
+   - **Dead/obsolete/legacy code**: Did the audit find cleanup targets? Are they in the issue? Structural layer: `mcp__code-review-graph__query large_functions(min_lines=200)` + `query impact(changed_files)` on the area the Issue edits, when graph available and fresh (pre-query gate per STANDARDS.md "Structural Code Queries"). Surfaces dead-code / wide-blast-radius candidates that should be in scope. Subagent still verifies intent (intentional duplication vs accidental).
    - **All scope in issue BODY**: Nothing in comments. Everything in the body.
 3. Layer 2 subagents (DIFFERENT prompt): cross-check layer 1 findings. Specifically verify no false positives and no false negatives in scope.
 4. Each subagent returns a RESULT block. Main agent reviews ALL results.
@@ -210,7 +212,7 @@ If ANY check fails: fix, re-run ALL checks. The loop exits only when every check
 Subagents audit everything the main agent produced. Main agent produced the work; subagents verify it.
 
 **Process**:
-1. Launch subagent swarm (scale to implementation size). Each covers ONE angle with a RESULT block:
+1. Launch subagent swarm (scale to implementation size). Each covers ONE angle with a RESULT block. One of those angles is a graph-backed audit (NOT a replacement — one audit input among several) when graph available per STANDARDS.md "Structural Code Queries": `mcp__code-review-graph__review base=<default-branch>` (use `main` or `master` per repo default) on the diff. Feed the returned impact + untested-function list + wide-blast-radius flags into a subagent prompt. Subagent checks whether each flagged item is expected or a regression; main agent verifies against source.
    - **Phase-by-phase scope review**: every issue phase delivered? Every acceptance criterion met?
    - **Goal alignment**: does the implementation solve the stated problem? "Code written" is not "problem solved".
    - **Wiring check**: every new function called by existing code? Every config key read? Every code path handles nulls? No orphaned code? Documentation references correct (file paths, line numbers, URLs all resolve)? Cross-references between docs, configs, and code all connected? Nothing dangling.
