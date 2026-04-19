@@ -1,17 +1,23 @@
-# GitHub Tool Selection Guide
+# Tool Selection Guide
 
 ---
-domain: github_tooling
+domain: tool_selection
 type: guide
-topics: [mcp-tools, github-mcp, checkbox-mcp, gh-cli, tool-selection]
-use_when: "Choosing between GitHub MCP, Checkbox MCP, and gh CLI for GitHub operations"
-last_updated: 2025-01-16
+topics: [mcp-tools, github-mcp, checkbox-mcp, gh-cli, code-review-graph, tool-selection]
+use_when: "Choosing between MCP tools, subagents, and CLI tools for GitHub operations OR code-understanding queries"
+last_updated: 2026-04-19
 sources:
   - Internal SST3 workflow patterns
   - GitHub MCP server documentation
   - Checkbox MCP server implementation
+  - code-review-graph MCP (better-code-review-graph v3.10.0)
 coverage: comprehensive
 ---
+
+This guide provides decision trees for selecting the correct tool across two domains:
+
+1. **GitHub Operations** (Checkbox MCP / GitHub MCP / `gh` CLI) — edit issues, update checkboxes, query repos.
+2. **Code-Understanding Queries** (code-review-graph MCP / subagent exploration / Bash) — callers/callees, blast radius, dead-code, impact.
 
 ## Overview
 
@@ -20,8 +26,6 @@ SST3 workflow provides THREE methods for GitHub interactions:
 1. **Checkbox MCP**: Progressive checkbox updates with evidence (local Python server)
 2. **GitHub MCP**: Issue body editing, sub-issues, comments (configured in `~/.claude.json`)
 3. **gh CLI**: Complex queries, dependencies, fallback operations (always available)
-
-This guide provides decision trees for selecting the correct tool.
 
 ---
 
@@ -302,6 +306,70 @@ gh api repos/hoiung/dotfiles/issues/365/dependencies/blocked_by \
 
 ---
 
+## Decision Tree: Code-Understanding Queries
+
+For structural code questions (callers, callees, imports, inheritance, blast radius, dead code, large functions, test coverage) the SST3 workflow provides **three layered tools**:
+
+1. **code-review-graph MCP** — 5 tools (`graph`, `query`, `review`, `config`, `help`) over a local SQLite + Tree-sitter AST graph. Sub-second answers for 14 source languages. Graph stored in `<repo>/.code-review-graph/` (gitignored, regenerable). Embeddings optional (~570 MB ONNX per repo).
+2. **Subagent exploration** — `Agent(Explore)` for semantic / cross-document / intent / voice / non-code / ambiguous questions. Subagents are NEVER replaced by graph; graph feeds them.
+3. **Bash tools** (Grep/Glob/Read) — unsupported-language fallback, direct file reads, text searches.
+
+### 4-Quadrant Boundary Matrix
+
+| Quadrant | Topic | Primary tool | Subagent role |
+|---|---|---|---|
+| Q1 Graph-first | Who calls X? / blast radius of Y / dead functions in Z / tests for W (all in supported languages) | `query callers_of` / `query impact` / `query large_functions` / `query tests_for` | Spot-check one result; NOT primary |
+| Q2 Graph + Subagent | Change spans multiple concerns (structure + intent / structure + cross-language) | Graph narrows + subagent verifies semantics | Layered — graph seeds, subagent validates |
+| Q3 Subagent-only | Voice-prose / intent / chat-history / scope-vs-audit / cross-document / non-code file content audits | None — subagent is the primary tool | Sole owner (12 documented moments) |
+| Q4 Direct-tool | Exact-file-path lookup / specific function read / single-grep for a known string | Read / Grep / Glob | Skip both — tool is fastest |
+
+### Pre-Query Safety Gate (5 items)
+
+Run BEFORE any graph call:
+
+1. Graph exists: `config status` returns non-null `graph_path` and `total_nodes > 0`. If not → `graph build`.
+2. Graph is fresh: `last_updated` within 24 h or since last `git fetch`. If not → `graph update`.
+3. Target language is supported: Python, TypeScript, TSX, JavaScript, Go, Rust, Java, C#, Ruby, C/C++, Kotlin, Swift, PHP, Solidity. If not (Markdown, YAML, JSON, SQL, TOML, shell, HTML, Jinja, Dockerfile) → skip graph, use subagents.
+4. Embeddings status: if using `search`, check `embeddings_count`. If 0 → treat results as keyword substring, NOT semantic similarity.
+5. Spot-check discipline: read one graph result from source before drawing conclusions. "Never Assume — Always Check" applies.
+
+### Edge-Case Resolutions
+
+| Situation | Resolution |
+|---|---|
+| Change edits `config.yaml`; a value reads from Python | YAML is unsupported → use Grep + subagent for the config-key-read contract. Do NOT expect graph to catch the link. |
+| SQL column rename | SQL is unsupported → grep for column name + subagent. Graph won't help. |
+| Markdown doc cross-references | Subagent + grep. Graph cannot read Markdown. |
+| Py ↔ Rust parallel adapters | Separate language graphs cannot be joined. Use subagent to verify parity between the two. Graph can show each side independently. |
+| Jinja template → rendered-variable contract | Jinja is unsupported → subagent reads both ends. |
+| "No dead functions found" from `large_functions` / `impact` | Spot-check by reading one result. If zero results AND diff includes unsupported-language files, broaden to subagent. |
+| `tests_for(<function>)` returns empty | Unit tests may live in a separate language (e.g. Python impl, JS E2E). Broaden to Grep for test files. |
+| Fresh clone (graph empty) | `graph build` runs once (one-off cost). Downstream sessions skip via pre-query gate. |
+
+### Graph Limitations (when NOT to reach for graph)
+
+**Does NOT parse**: Markdown, YAML, JSON, SQL, TOML, shell, HTML, Jinja, Dockerfile, CSS, plain text docs.
+
+**Does NOT answer**: docstring / comment content searches, voice / style / tone analysis, scope-vs-audit alignment, chat-history / opposite-scoping checks, intent / motivation / design-rationale questions, cross-language boundary contracts, cross-document reference integrity, false-positive sweep for confirmed violations, acceptance-criteria prose → code evidence mapping, factual-claims provenance validation.
+
+For any of the above → subagents remain the primary tool (see the 12 subagent-only moments enumerated in STANDARDS.md "Structural Code Queries" and ANTI-PATTERNS.md AP #19).
+
+### Invocation Quick Reference
+
+| Question | Graph call |
+|---|---|
+| Who calls `foo`? | `mcp__code-review-graph__query action=callers_of function=foo` |
+| What does `foo` call? | `mcp__code-review-graph__query action=callees_of function=foo` |
+| Blast radius of editing `file.py`? | `mcp__code-review-graph__query action=impact files=["file.py"]` |
+| Any function over 200 lines? | `mcp__code-review-graph__query action=large_functions min_lines=200` |
+| Find tests covering `foo`? | `mcp__code-review-graph__query action=tests_for function=foo` |
+| Review for diff vs main? | `mcp__code-review-graph__review base=main` |
+| Graph status? | `mcp__code-review-graph__config action=status` |
+
+See `../../docs/guides/code-review-graph-playbook.md` for full operational playbook (freshness recipe, fallback rules, embeddings policy, cadence governance).
+
+---
+
 ## References
 
 - [Checkbox MCP Server](../../mcp-servers/github-checkbox/README.md)
@@ -309,3 +377,6 @@ gh api repos/hoiung/dotfiles/issues/365/dependencies/blocked_by \
 - [GitHub Relationships Guide](../reference/github-relationships-guide.md)
 - [WORKFLOW.md](../workflow/WORKFLOW.md)
 - [WORKFLOW.md Stage 4](../workflow/WORKFLOW.md) (Implementation)
+- [STANDARDS.md "Structural Code Queries"](../standards/STANDARDS.md)
+- [ANTI-PATTERNS.md AP #19](../standards/ANTI-PATTERNS.md)
+- [code-review-graph Playbook](../../docs/guides/code-review-graph-playbook.md)
