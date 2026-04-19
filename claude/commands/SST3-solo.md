@@ -7,6 +7,26 @@ Read these files in order BEFORE starting:
 2. Current repository's `CLAUDE.md` (entire file)
 3. `workflow/WORKFLOW.md` (entire file — defines the 5-stage workflow)
 
+## Per-Session Initialization
+
+On each SST3-solo invocation, run this block ONCE (not per subagent dispatch).
+
+**Graph availability check** — only if `code-review-graph` is registered in `~/.claude.json`.
+
+Registration detection (explicit, not try/except): run
+`grep -q '"code-review-graph"' ~/.claude.json && echo registered || echo unregistered`
+- If `unregistered`: log `[GRAPH] Server not registered; skipping pre-session check. Downstream graph calls (WORKFLOW Stage 1, Ralph) will skip with documented fallback.` and continue to main SST3-solo work.
+- If `registered`: proceed with the graph check below.
+
+Graph check (registered case):
+1. Run `mcp__code-review-graph__config action=status`. If the call errors, log `[GRAPH] config status failed: <error>; retrying once.` and retry once. If second attempt fails, log `[GRAPH unavailable: MCP call failed after retry]` and continue — downstream will fall back to subagent with documented evidence.
+2. If `total_nodes == 0`, run `graph build` (one-off; subsequent sessions skip the build).
+3. If `last_updated > 24h`, run `graph update`.
+
+Cadence: this check runs ONCE per SST3-solo invocation, not per subagent dispatch. Between sessions, a `git fetch` that lands new commits should trigger `graph update` as part of the next session's check. See `../../docs/guides/code-review-graph-playbook.md` for the 24h rationale and per-repo freshness-tuning note.
+
+This is the structural-query layer; the subagent swarm remains your semantic layer. Rule detail lives in STANDARDS.md "Structural Code Queries".
+
 ## Solo Mode Summary
 
 **Purpose**: All SST3 workflow tasks — 5-stage sequential process with subagent swarms for research/review, main agent for implementation.
@@ -92,7 +112,7 @@ Repeat until ALL pass:
 - [ ] Architecture reuse check: duplicated instead of reused?
 - [ ] Code duplication check: needs deduplication?
 - [ ] Fallback policy check: silent failures?
-- [ ] **Wiring check**: All changed code actually called by existing functions/processes?
+- [ ] **Wiring check**: All changed code actually called by existing functions/processes? Structural layer: `mcp__code-review-graph__query callers_of(<function>)` + `query impact(changed_files)` when graph available (per STANDARDS.md "Structural Code Queries" pre-query gate). Semantic layer: subagent verifies each caller handles the new contract. YAML / shell / unsupported-language keys still grep-based.
 - [ ] **Regression tests**: Run project test suite, verify no regressions
 - [ ] **Quality scan**: No inefficiencies, no bottlenecks, no memory leaks, no dead code, STANDARDS.md compliant
 
