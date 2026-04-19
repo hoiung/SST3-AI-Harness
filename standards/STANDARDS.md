@@ -230,6 +230,20 @@ Default flags for the 10 commands SST3 runs hot. Provenance: each row backed by 
 
 Rule of thumb: any single Bash invocation that produces > 200 lines should be wrapped with `../scripts/tee-run.sh <label> -- <cmd>` so the agent gets the tail and the full log is recoverable.
 
+### Structural Code Queries — Prefer Graph, Never Alone
+
+For structural code questions (callers, callees, imports, inheritance, blast radius, dead code, large functions, test coverage) in a language the graph supports (Python, TypeScript, TSX, JavaScript, Go, Rust, Java, C#, Ruby, C/C++, Kotlin, Swift, PHP, Solidity), prefer **code-review-graph** MCP queries over subagent exploration — when the pre-query safety gate passes:
+
+1. Graph exists for the target repo (`config status` returns non-null `graph_path` and `total_nodes > 0`). If not, `graph build`.
+2. Graph is fresh (`last_updated` within 24 h or since last `git fetch`). If stale, `graph update`.
+3. Target file / project language is in the supported list above. If not (Markdown, YAML, JSON, SQL, TOML, shell, HTML, Jinja, Dockerfile, etc.), skip graph; use subagent exploration.
+4. If using `search`, check `embeddings_count`. If 0, treat results as keyword substring — NOT semantic similarity.
+5. Spot-check one graph result by reading source before drawing conclusions. "Never Assume — Always Check" applies to graph output the same as to memory or subagent summaries.
+
+Graph is **NOT a replacement** for subagents. The following workflow moments remain subagent-only: voice content protection and AI-tell detection; intentional-vs-accidental architecture distinction; Research-Applied-Collectively cross-lens checks; chat-history scope-drift / opposite-scoping checks; false-positive sweep for confirmed violations; scope-vs-audit 100 % alignment; overengineering / out-of-scope detection; design rationale explanation; factual-claims provenance validation; YAML/JSON/SQL/shell/TOML semantic content audits; Markdown voice-prose AI-tells; acceptance-criteria prose → code file:line evidence mapping. See ANTI-PATTERNS.md AP #19.
+
+See also `../reference/tool-selection-guide.md` "Decision Tree: Code-Understanding Queries" and `../docs/guides/code-review-graph-playbook.md`.
+
 ### Contract Verification — Three Contracts (Issue #1407 post-mortem)
 
 Every change that crosses a boundary must verify all three contracts:
