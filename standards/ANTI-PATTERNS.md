@@ -5,16 +5,23 @@
 ## Anti-Pattern #1: Propagation Failures
 
 **Problem**: Changes in one repo don't reach others, causing inconsistency
-**Evidence**: Issue #79 (#406 F3.11: stale 2024 percentages stripped — keep the rule, drop the unsourced numbers)
-**Root Cause**: Manual propagation, no verification after changes
+**Evidence**: Issue #79, Issue #417 (Ralph file drift to public harness mirror, caught only by post-closure sanity check)
+**Root Cause**: Canonical-side edits without propagation — no hook previously fired when canonical files changed
 
-**Prevention**:
-- ✓ DO: Use dotfiles as single source, automated sync via main agent
-- ✓ DO: Verify propagation with cross-repo checks (Stage 5)
-- ✗ DON'T: Make direct repo edits without updating dotfiles
-- ✗ DON'T: Assume propagation worked without verification
+**Prevention (automated — Issue #418)**:
+- `drift-manifest.json` lists every vendored file with required transforms (or `divergent + mirror_sha256` for hand-authored structural rewrites)
+- `scripts/propagate-mirrors.py --validate` runs in canonical pre-commit — fails when canonical edit is staged without mirrors synced
+- `scripts/check-mirror-drift.py` runs in each mirror pre-commit — fails when mirror drifted from canonical after expected transforms
+- `scripts/propagate-mirrors.py --apply` syncs mirrors in one command; error messages from both hooks include the exact invocation
+- New canonical files: validator warns unless the file is in `unmirrored_canonical_files` allow-list or has a mirror entry
 
-**Self-Healing**: If this pattern appears, escalate after 3 occurrences → trigger full cross-repo audit
+**Prevention (behavioural — still apply alongside automation)**:
+- ✓ DO: Edit canonical, propagate via script, never hand-edit mirrors
+- ✓ DO: Verify per-phase Ralph Review catches any silent bypass
+- ✗ DON'T: Make direct mirror edits without updating canonical
+- ✗ DON'T: Use `SKIP=<hook-id> git commit` without filing an issue for the underlying false positive
+
+**Self-Healing**: Automated hooks catch drift on commit. Residual occurrences → escalate after 3 → trigger full cross-repo audit.
 
 ---
 

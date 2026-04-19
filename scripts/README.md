@@ -9,6 +9,9 @@ Automation scripts for SST3 workflow validation and enforcement.
 
 | Script | Purpose |
 |--------|---------|
+| propagate-mirrors.py (canonical-only) | Canonical-side validator + propagator. `--validate` (pre-commit), `--dry-run` (default), `--apply` (sync). Issue #418. |
+| check-mirror-drift.py | Mirror-side drift check. Vendored to SST3-AI-Harness, hoiboy-uk, ebay-seller-tool. Runs pre-commit. Issue #418. |
+| sst3_mirror_utils.py | Shared module: 7 transforms + manifest loader + schema validator + drift comparator. Byte-identical across canonical and 3 mirrors. Issue #418. |
 | [check-crossrepo-paths.py](check-crossrepo-paths.py) | Pre-commit hook for cross-repo path validation |
 | [check-retrospective-location.py](check-retrospective-location.py) | Validates retrospective file locations |
 | check-discoverability.py | Validates CLAUDE.md → SST3 chain (4 hops max). Pre-commit + Verification Loop. Exit 0 = clean, 1 = chain broken. |
@@ -707,3 +710,53 @@ python -m pytest SST3/scripts/test_rollout_core.py -v
 **Created**: 2025-11-09 (Issue #109, #110)
 **Updated**: 2025-11-28 (Issue #305, Stage Assignment rollout automation)
 **Maintained By**: SST3 self-healing process
+
+---
+
+## Mirror Drift Detection (Issue #418)
+
+### drift-manifest.json (canonical-only config)
+
+**Location**: `../dotfiles/SST3/drift-manifest.json` (canonical repo)
+
+**Schema**: `{version, canonical_root, unmirrored_canonical_files, transforms_doc, vendored_files: [{canonical, mirrors: [{repo, path, transforms: [] OR divergent + mirror_sha256}]}]}`
+
+**Two drift modes per mirror entry**:
+1. `transforms: [...]` — deterministic. `apply(canonical) == mirror`. Empty list means byte-identical.
+2. `divergent: true` + `mirror_sha256: "<64-hex>"` — hash-pinned. Used for hand-authored structural rewrites (evidence scrubs, voice rule rewrites) that cannot round-trip from canonical.
+
+### propagate-mirrors.py (canonical-only)
+
+Lives in canonical dotfiles repo only. Not vendored here.
+
+**Usage** (from canonical repo):
+```bash
+python scripts/propagate-mirrors.py --dry-run                  # default — print diffs
+python scripts/propagate-mirrors.py --apply                    # atomic temp+rename writes
+python scripts/propagate-mirrors.py --validate <file...>       # pre-commit hook mode
+```
+
+### check-mirror-drift.py (vendored here)
+
+**Purpose**: Mirror-side pre-commit hook. Reads the canonical manifest at `../dotfiles/SST3/drift-manifest.json`, verifies each entry for this mirror. Byte-identical across canonical + 3 mirror vendored copies (a `check-mirror-drift-self-drift` cmp-s hook enforces this bootstrap invariant).
+
+**Usage**:
+```bash
+python scripts/check-mirror-drift.py --repo <mirror-name>           # scoped check
+python scripts/check-mirror-drift.py --verbose                       # per-file status
+```
+
+**Exit codes**: `0` (clean or gracefully skipped when dotfiles absent), `1` (drift detected), `2` (config/schema error).
+
+### sst3_mirror_utils.py (vendored here)
+
+**Purpose**: Shared module imported by `check-mirror-drift.py`. Byte-identical to canonical. Exposes 7 transforms, manifest loader + validator, drift comparator, and a CLI idempotency self-test.
+
+### Emergency bypass / rollback plan
+
+If the new hooks block legitimate work due to a tool bug:
+```bash
+SKIP=sst3-mirror-drift git commit ...
+```
+
+Any bypass MUST be followed by a GitHub issue describing the false positive or negative. No silent bypasses. See ANTI-PATTERNS.md AP #1.
