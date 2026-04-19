@@ -358,7 +358,7 @@ AP #12 builds the observability surfaces; AP #16 enforces reading them.
 
 **Principle**: Any prose written in the operator's voice in any repo (CV, LinkedIn, cover letters, blog posts, profile docs) MUST be wrapped in `<!-- iamhoi -->` ... `<!-- iamhoiend -->` markers so the marker-driven voice guard can scan it. Default = SKIP. Untagged prose is silently unprotected.
 
-**Canonical source of truth**: `dotfiles/SST3/scripts/voice_rules.py` (~80 banned words, banned phrases, KEEP_LIST, cutoff date 2026-04-07). Human companion: `cv-linkedin/VOICE_PROFILE.md` Sections 8 + 19. NEVER duplicate the rules — both `check-ai-writing-tells.py` (canonical) and any vendored copy (e.g. `hoiboy-uk/scripts/check_voice_tells.py`) import from `voice_rules.py` only.
+**Canonical source of truth**: `../scripts/voice_rules.py` (~80 banned words, banned phrases, KEEP_LIST, cutoff date 2026-04-07). Human companion: `cv-linkedin/VOICE_PROFILE.md` Sections 8 + 19. NEVER duplicate the rules — both `check-ai-writing-tells.py` (canonical) and any vendored copy (e.g. `hoiboy-uk/scripts/check_voice_tells.py`) import from `voice_rules.py` only.
 
 **MUST**:
 - Wrap every new voice-prose paragraph in `<!-- iamhoi --> ... <!-- iamhoiend -->` before commit.
