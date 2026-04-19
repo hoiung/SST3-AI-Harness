@@ -20,7 +20,7 @@ LIMITS = {
 
     # Component-level token limits (rebalanced post-cleanup, #399)
     "SST3/workflow": 10000,    # actual ~2,239 — was 44000 (massively over-allocated)
-    "SST3/standards": 20000,   # raised 2026-04-08 18000->20000 to absorb AP #9-#14 + Subagent Discipline section
+    "SST3/standards": 22000,   # raised 2026-04-08 18000->20000 for AP #9-#14 + Subagent Discipline; raised 2026-04-19 20000->22000 for AP #19 + Structural Code Queries subsection (#419). Partially offset by compressing the inline 12-moment prose at STANDARDS.md:243 to an AP #19 pointer (saved ~130 words, #420 Phase 2 item 13).
     "SST3/templates": 18000,   # actual ~12,062 post-cleanup — was 14000
     "SST3/reference": 16000,   # actual ~13,168 post-cleanup — was 21000
 
