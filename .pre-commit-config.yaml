@@ -68,6 +68,29 @@ repos:
         pass_filenames: false
         always_run: true
 
+      - id: check-mirror-drift-self-drift
+        name: Self-check that vendored check-mirror-drift.py + sst3_mirror_utils.py match canonical
+        entry: bash
+        args:
+          - -c
+          - |
+            for f in check-mirror-drift.py sst3_mirror_utils.py; do
+              CANONICAL=../dotfiles/SST3/scripts/$f
+              LOCAL=scripts/$f
+              [ -f "$CANONICAL" ] || { echo "SKIP: dotfiles not found — drift check skipped" >&2; exit 0; }
+              cmp -s "$LOCAL" "$CANONICAL" || { echo "ERROR: scripts/$f has drifted from canonical. Run: cp $CANONICAL $LOCAL" >&2; exit 1; }
+            done
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      - id: sst3-mirror-drift
+        name: SST3 vendored file drift check (manifest-driven)
+        entry: python scripts/check-mirror-drift.py --repo SST3-AI-Harness
+        language: system
+        pass_filenames: false
+        always_run: true
+
   # Standard file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
