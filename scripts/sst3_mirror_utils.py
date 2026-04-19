@@ -60,6 +60,12 @@ _REPO_REF_RE = re.compile(r"\bhoiung/(dotfiles|hoiboy-uk|ebay-seller-tool|SST3-A
 _AUTO_PB_RE = re.compile(r"\bauto_pb_swing_trader\b")
 _TRADEBOOK_RE = re.compile(r"\btradebook_GAS\b")
 _USER_QUOTE_RE = re.compile(r"^User quote:\s*\*\".*?\"\*\s*$", re.MULTILINE)
+_TRADING_TERM_PATTERNS: list[tuple[re.Pattern[str], str]] = [
+    (re.compile(r"\bpipeline\s*/\s*backtest\s*/\s*SL1\s*/\s*SL2\s*/"), "pipeline / data-processing /"),
+    (re.compile(r"\bSL1\s*/\s*SL2\s*/\s*backtest\b"), "data-processing"),
+    (re.compile(r"\bbacktest\s*/\s*SL1\s*/\s*SL2\b"), "data-processing"),
+]
+_PRIVATE_PATH_RE = re.compile(r"logs/sample_\d+_validation\.log")
 
 
 def path_scrub(text: str, ctx: dict) -> str:
@@ -98,14 +104,9 @@ def project_name_scrub(text: str, ctx: dict) -> str:
 
 def trading_term_scrub(text: str, ctx: dict) -> str:
     """Genericize trading-pipeline terminology."""
-    patterns = [
-        (r"\bpipeline\s*/\s*backtest\s*/\s*SL1\s*/\s*SL2\s*/", "pipeline / data-processing /"),
-        (r"\bSL1\s*/\s*SL2\s*/\s*backtest\b", "data-processing"),
-        (r"\bbacktest\s*/\s*SL1\s*/\s*SL2\b", "data-processing"),
-    ]
     out = text
-    for pat, repl in patterns:
-        out = re.sub(pat, repl, out)
+    for pat, repl in _TRADING_TERM_PATTERNS:
+        out = pat.sub(repl, out)
     return out
 
 
@@ -115,8 +116,7 @@ def private_path_scrub(text: str, ctx: dict) -> str:
     Conservative: only scrubs obviously-private log path patterns observed in
     canonical content. Not a general sanitizer.
     """
-    out = re.sub(r"logs/sample_\d+_validation\.log", "log file path", text)
-    return out
+    return _PRIVATE_PATH_RE.sub("log file path", text)
 
 
 def user_quote_scrub(text: str, ctx: dict) -> str:
@@ -249,10 +249,14 @@ def _validate_mirror(mirror: Any, prefix: str) -> None:
     divergent = mirror.get("divergent", False)
     if divergent:
         sha = mirror.get("mirror_sha256")
-        if not isinstance(sha, str) or len(sha) != 64:
+        if (
+            not isinstance(sha, str)
+            or len(sha) != 64
+            or not all(c in "0123456789abcdef" for c in sha)
+        ):
             raise ManifestError(
                 f"{prefix} has divergent=true but mirror_sha256 missing or malformed "
-                f"(expected 64-char hex sha256)"
+                f"(expected 64-char lowercase hex sha256)"
             )
     else:
         transforms = mirror.get("transforms")
@@ -330,10 +334,16 @@ def check_mirror_drift(
     manifest_path: Path,
     entry: dict[str, Any],
     mirror: dict[str, Any],
+    *,
+    canonical_text: str | None = None,
 ) -> tuple[bool, str]:
     """Return (has_drift, detail). detail is an actionable error string if drift else ''.
 
     Raises ManifestError if canonical file missing.
+
+    `canonical_text` lets callers pre-read the canonical file once and share it
+    across multiple mirror entries for the same canonical. Omit to read on
+    demand (safe default).
     """
     canonical_path = resolve_canonical(manifest_path, entry["canonical"])
     mirror_path = resolve_mirror(manifest_path, mirror["repo"], mirror["path"])
@@ -362,7 +372,8 @@ def check_mirror_drift(
         return False, ""
 
     # deterministic transform mode
-    canonical_text = canonical_path.read_text(encoding="utf-8")
+    if canonical_text is None:
+        canonical_text = canonical_path.read_text(encoding="utf-8")
     transforms = mirror.get("transforms", [])
     ctx = {"repo": mirror["repo"], "canonical": entry["canonical"], "path": mirror["path"]}
     expected = apply_transforms(canonical_text, transforms, ctx)

@@ -60,7 +60,7 @@ repos:
         args:
           - -c
           - |
-            CANONICAL=../dotfiles/scripts/check-public-repo-secrets.py
+            CANONICAL=../dotfiles/SST3/scripts/check-public-repo-secrets.py
             LOCAL=scripts/check-public-repo-secrets.py
             [ -f "$CANONICAL" ] || { echo "SKIP: dotfiles not found — drift check skipped" >&2; exit 0; }
             cmp -s "$LOCAL" "$CANONICAL" || { echo "ERROR: $LOCAL has drifted. Run: cp $CANONICAL $LOCAL" >&2; exit 1; }

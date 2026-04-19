@@ -32,7 +32,7 @@ except ImportError as exc:  # pragma: no cover — only hits if script is run st
         f"ERROR: cannot import sst3_mirror_utils (must be in same dir): {exc}",
         file=sys.stderr,
     )
-    sys.exit(smu.EXIT_CONFIG if "smu" in dir() else 2)
+    sys.exit(2)
 
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -91,11 +91,20 @@ def main(argv: list[str] | None = None) -> int:
 
     checked = 0
     drifted: list[str] = []
+    canonical_cache: dict[str, str] = {}
     for entry, mirror in smu.iter_mirror_entries(
         manifest, repo_filter=args.repo, file_filter=args.file
     ):
         try:
-            has_drift, detail = smu.check_mirror_drift(manifest_path, entry, mirror)
+            text = canonical_cache.get(entry["canonical"])
+            if text is None and not mirror.get("divergent"):
+                canonical_path = smu.resolve_canonical(manifest_path, entry["canonical"])
+                if canonical_path.is_file():
+                    text = canonical_path.read_text(encoding="utf-8")
+                    canonical_cache[entry["canonical"]] = text
+            has_drift, detail = smu.check_mirror_drift(
+                manifest_path, entry, mirror, canonical_text=text
+            )
         except smu.ManifestError as exc:
             print(f"ERROR: {exc}", file=sys.stderr)
             return smu.EXIT_CONFIG
