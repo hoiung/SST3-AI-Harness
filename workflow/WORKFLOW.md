@@ -9,10 +9,11 @@
 ### Stage 1 — Research (Subagent Swarm → /tmp)
 
 - [ ] Check `docs/research/` for existing research on this domain first
-- [ ] Launch MANY parallel subagents, each with focused area (5 files max per subagent)
+- [ ] **Pre-swarm graph gate** (STANDARDS.md "Structural Code Queries"): if the research topic is structural code in a supported language, run `mcp__code-review-graph__config action=status` + relevant `query` / `impact` BEFORE launching the swarm. Use graph findings to SEED / NARROW / VALIDATE subagent angles — not to replace swarm coverage. If the topic is semantic / voice / intent / cross-document / non-code (one of the 12 subagent-only moments), skip graph; go straight to swarm.
+- [ ] Launch MANY parallel subagents, each with focused area (5 files max per subagent). Subagents remain required for the 12 subagent-only moments.
 - [ ] Main context = orchestrator only — NEVER read source files directly in main context
 - [ ] Research phase must use <30% of context budget
-- [ ] Main agent collates all subagent findings into /tmp file containing: **findings + gaps + plan**
+- [ ] Main agent collates all subagent findings into /tmp file containing: **findings + gaps + plan**. Record any graph calls used + `last_updated` + `embeddings_count` + spot-check source file:line.
 - [ ] Output /tmp file for user review before proceeding to Stage 2
 
 ### Stage 2 — Issue Creation (Main Agent from /tmp Research)
@@ -53,6 +54,7 @@
 - [ ] Implement all phases from issue Acceptance Criteria
 - [ ] Commit after EACH file change: `git add {file} && git commit -m "type: description (#issue)" && git push`
 - [ ] Run Verification Loop (repeat until clean — see below)
+- [ ] **Graph-backed diff audit** (when graph available per STANDARDS.md "Structural Code Queries"): `mcp__code-review-graph__review base=<default-branch>` (use `main` or `master` per repo default) generates a diff-scoped context block (changed files + blast radius + untested-function warnings + wide-blast-radius flags). Feed this into ONE of the subagent audit prompts. Subagents still do the semantic wiring / intent / cross-document audits. Graph findings feed subagents, never replace them.
 - [ ] Run Ralph Review: Haiku → Sonnet → Opus (all 3 mandatory)
 - [ ] Merge to main BEFORE user review (protects work):
   - `git checkout main && git pull origin main` (check for conflicts — preserve BOTH)
@@ -83,9 +85,9 @@
 - [ ] Architecture reuse check: duplicated instead of reused?
 - [ ] Code duplication check: needs deduplication?
 - [ ] Fallback policy check: silent failures?
-- [ ] **Wiring check — 4 parts**:
-  1. Every new function/method is called from at least one caller (grep for function name in codebase)
-  2. Every config key added to YAML is read by code (grep for key name in source — zero results = dead config)
+- [ ] **Wiring check — 4 parts** (structural layer: `mcp__code-review-graph__query callers_of(<function>)` + `query impact(changed_files)` when graph available per STANDARDS.md "Structural Code Queries"; semantic layer: subagent verifies each caller handles the new contract correctly. Document both layers in the RESULT block. If graph unavailable / stale / unsupported-language, fall back to grep + subagent and document why.):
+  1. Every new function/method is called from at least one caller (`query callers_of(<name>)` first; grep fallback for unsupported languages)
+  2. Every config key added to YAML is read by code (grep for key name in source — zero results = dead config). YAML is unsupported by graph, so grep is the primary tool here.
   3. Every SQL query's column names exist in the target table (verify with `\d tablename` or migration file)
   4. Every None-producing code path: confirm callee's type annotation accepts `Optional` / has null guard
 - [ ] **Regression tests**: Run project test suite, verify no regressions
