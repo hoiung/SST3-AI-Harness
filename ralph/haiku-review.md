@@ -70,9 +70,13 @@ Fast, cheap surface validation. Catches 60% of issues.
 ### Bash Output Discipline (#406 F4.9)
 - [ ] If you ran any bash command producing > 200 lines (pytest, git diff, log tail, etc.), you wrapped it with `../scripts/tee-run.sh <label> -- <cmd>`. Return only the tee path + verdict in your RESULT block; do NOT paste the full output back to the main agent.
 
+### Optional: Code Graph Checks (if code-review-graph available)
+- [ ] Query blast radius for changed files — any unexpected downstream impacts?
+- [ ] Check for orphaned functions in changed modules
+
 ## Pass Criteria
 
-ALL checkboxes above verified with evidence.
+ALL checkboxes above verified with evidence. Code graph checks are optional — do not fail if MCP server unavailable.
 
 ## On Pass
 
