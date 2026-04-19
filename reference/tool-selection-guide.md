@@ -363,7 +363,7 @@ For any of the above → subagents remain the primary tool (see the 12 subagent-
 | Blast radius of editing `file.py`? | `mcp__code-review-graph__query action=impact files=["file.py"]` |
 | Any function over 200 lines? | `mcp__code-review-graph__query action=large_functions min_lines=200` |
 | Find tests covering `foo`? | `mcp__code-review-graph__query action=tests_for function=foo` |
-| Review for diff vs main? | `mcp__code-review-graph__review base=main` |
+| Review for diff vs default branch? | `mcp__code-review-graph__review base=<default-branch>` (use `main` or `master` per repo) |
 | Graph status? | `mcp__code-review-graph__config action=status` |
 
 See `../../docs/guides/code-review-graph-playbook.md` for full operational playbook (freshness recipe, fallback rules, embeddings policy, cadence governance).

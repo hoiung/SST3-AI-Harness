@@ -72,7 +72,7 @@ Fast, cheap surface validation. Catches 60% of issues.
 
 ### Preferred: Code Graph Checks (run when graph available and fresh)
 
-**Rollout note**: "Preferred" became the wording with Issue #419. Reviews in-flight at Issue #419 merge-time are grandfathered UNTIL the branch receives its next push; any review dispatched after that push follows the full wording below.
+**Rollout note**: "Preferred" became the wording with Issue #419. Reviews in-flight at Issue #419 merge-time are grandfathered UNTIL the branch's next push; any review dispatched after that push follows the full wording below.
 
 **Documentation-only PR exemption** (run FIRST — short-circuits the rest of this section): if the PR diff touches ONLY documentation / non-code files (Markdown, YAML, JSON, TOML, shell scripts, other unsupported languages per STANDARDS.md "Structural Code Queries"), skip this entire section. Document the skip reason in RESULT: `[GRAPH: skipped — doc-only PR]`. Proceed to standard Haiku surface checks. This is a PASS path, not a fallback.
 
