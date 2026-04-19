@@ -10,9 +10,9 @@
 
 **Prevention (automated — Issue #418)**:
 - `drift-manifest.json` lists every vendored file with required transforms (or `divergent + mirror_sha256` for hand-authored structural rewrites)
-- `scripts/propagate-mirrors.py --validate` runs in canonical pre-commit — fails when canonical edit is staged without mirrors synced
-- `scripts/check-mirror-drift.py` runs in each mirror pre-commit — fails when mirror drifted from canonical after expected transforms
-- `scripts/propagate-mirrors.py --apply` syncs mirrors in one command; error messages from both hooks include the exact invocation
+- `scripts/propagate-mirrors.py --validate` runs in canonical pre-commit — for `transforms` mode files, fails when canonical edit is staged without the mirror synced. **Caveat**: `divergent` mode compares mirror sha256 against the manifest-recorded hash only; canonical content never enters the comparison. Hand-edit divergent mirrors in the same commit and run `--apply` to refresh the hash.
+- `scripts/check-mirror-drift.py` runs in each mirror pre-commit — fails when mirror drifted from canonical after expected transforms, OR (divergent mode) when mirror sha256 no longer matches the recorded hash
+- `scripts/propagate-mirrors.py --apply` syncs transform-mode mirrors AND refreshes divergent-mode hashes; error messages from both hooks include the exact invocation
 - New canonical files: validator warns unless the file is in `unmirrored_canonical_files` allow-list or has a mirror entry
 
 **Prevention (behavioural — still apply alongside automation)**:
