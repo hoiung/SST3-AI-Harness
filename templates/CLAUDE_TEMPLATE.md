@@ -8,7 +8,7 @@
 
 **MANDATORY READING**:
 1. `standards/STANDARDS.md` (ALWAYS)
-2. `standards/ANTI-PATTERNS.md` (ALWAYS — 18 documented failure modes you must not repeat)
+2. `standards/ANTI-PATTERNS.md` (ALWAYS — 19 documented failure modes you must not repeat)
 3. `{repository-name}/CLAUDE.md` (ALWAYS - replace with repo root)
 
 **Reading Confirmation Checklist** (MUST display and complete):

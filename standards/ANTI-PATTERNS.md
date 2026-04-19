@@ -1,6 +1,6 @@
 # SST3 Anti-Patterns
 
-> 18 documented failure modes. Origin: Issue #79.
+> 19 documented failure modes. Origin: Issue #79.
 
 ## Anti-Pattern #1: Propagation Failures
 
@@ -376,6 +376,65 @@ For any change that touches pipeline / data-processing / orchestration / CLI-wir
 **Self-Healing**: If you catch yourself about to close a pipeline/wiring issue without running a real sample → run the sample first. If you already closed one → reopen, run the sample, and add the missing regression test in the same fix.
 
 **Enforcement**: STANDARDS.md "Testing Priority — Workflow Validation Gate"; `WORKFLOW.md` Verification Loop (canonical gate); `CLAUDE_TEMPLATE.md` behavioural rule bullet; `issue-template.md` PREREQUISITE CHECKPOINT includes sample-run confirmation; Ralph `sonnet-review.md` AP #18 checklist (three sub-checks covering scope, evidence, and mock-assertion discipline). Note: all five enforcement points are documentation-level + honour-system checklists — there is currently no CI job that blocks a merge when a pipeline-touching diff lacks a sample log. Adding such a CI gate is tracked as a future hardening task.
+
+---
+
+## Anti-Pattern #19: Structural Question Answered By Grep, Or Graph Result Trusted Without Source Check
+
+**Pattern (two sides of one coin)**:
+- (a) **Under-use**: dispatching an Explore subagent or running a multi-pass grep to answer a purely structural question (who calls X? callers/callees? blast radius of editing Y? dead functions? tests for Z?) in a language the graph supports, when a single `query` call would answer it authoritatively in sub-second time. This is the graph-specific instance of AP #10 ("Failure to Search Before Adding" / grep-before-writing) — AP #10 covers grep for existing files/rules, AP #19 extends the same discipline to graph queries.
+- (b) **Over-trust**: taking a graph result at face value — especially a "no results" response — without a source spot-check. Silent failure modes include: stale graph (code changed since last build), unsupported-language drop (YAML/SQL/shell edits are invisible to the graph), cross-language boundary (Py→HTTP→Rust contract), and keyword-fallback masquerading as semantic search when `embeddings_count=0`. This is the graph-specific instance of AP #11b ("Applying without false-positive check") + AP #14c ("Main agent verifies swarm output against source") — those APs cover audit findings and subagent output respectively; AP #19 extends the same verification discipline to graph tool output.
+
+**Why it happens**:
+- Under-use: agents default to the subagent pattern from muscle memory; the graph isn't mentioned in WORKFLOW/Leader/SST3-solo decision points.
+- Over-trust: structured JSON with `status: ok` reads as authoritative; the 5 tools' help text doesn't call out freshness or language-coverage gaps per call.
+
+**Evidence (file:line citations — 12 subagent-only moments that must NOT be demoted by a "graph-first" rule)**:
+1. Voice Content Protection + AI-tells — `STANDARDS.md:357-377` + `../scripts/voice_rules.py`
+2. Intentional-vs-accidental architecture — `STANDARDS.md:183` + `ANTI-PATTERNS.md:198-206` (AP #11b)
+3. Research Applied Collectively (cross-lens) — `STANDARDS.md:158-171` (Rule #9)
+4. Chat-history scope-drift / opposite-scoping — `WORKFLOW.md:41-42` (Stage 3)
+5. False-positive sweep for confirmed violations — `ANTI-PATTERNS.md:203`, `user-review-checklist.md:71-77`
+6. Scope vs audit 100% alignment — `WORKFLOW.md:39`, `issue-template.md:121-126`
+7. Overengineering / out-of-scope detection — `WORKFLOW.md:40`, `issue-template.md:223`
+8. Design rationale explanation — `STANDARDS.md:87`, `user-review-checklist.md:106-107`
+9. Factual claims provenance validation — `STANDARDS.md:111-157` (user-assertion rule)
+10. YAML/JSON/SQL/shell/TOML/Dockerfile/Jinja/HTML/CSS semantic content audits — `STANDARDS.md:239` (unsupported-languages list in "Structural Code Queries")
+11. Markdown voice-prose AI-tells — `STANDARDS.md:357` (Voice Content Protection), `ANTI-PATTERNS.md:270-285` (AP #15)
+12. Acceptance-criteria prose → code file:line evidence mapping — `WORKFLOW.md:82`, `user-review-checklist.md:9-15`
+
+**How to apply**:
+- Before answering a structural question: run the STANDARDS.md "Structural Code Queries" pre-query safety gate. If it passes, use the graph. If it fails on freshness, `graph update`. If it fails on language, use subagents.
+- **Mechanical per-query spot-check (not judgment)**: after EVERY `callers_of` / `callees_of` / `impact` / `inheritors_of` call, Read one result's source line and record `spot-check: <file:line>` in the RESULT block. After every `search` call with `embeddings_count=0`, Read TWO results (keyword-fallback false-positive risk is higher). "I'll spot-check the important ones" is not compliance — every query gets a check.
+- "No matches" in an area that includes unsupported-language files (YAML/SQL/shell/TOML/Dockerfile/Jinja/HTML/CSS) → explicitly broaden to subagent exploration before drawing a negative conclusion. Graph is blind to non-code.
+- RESULT block discipline (per STANDARDS.md Subagent Orchestration): when a graph query was used, record the query type + target, `last_updated`, `embeddings_count`, spot-check source file:line, and result count. When graph was unavailable or unsupported, record WHY it was skipped.
+
+**Do / Don't**:
+- ✓ DO: run graph `query callers_of` / `query impact` for structural questions in supported languages when the pre-gate passes
+- ✓ DO: spot-check EVERY graph result by reading source — mechanical, not judgment call (per-query, not per-batch)
+- ✓ DO: document graph-call output (query, target, `last_updated`, `embeddings_count`, result count, spot-check file:line) in the RESULT block
+- ✓ DO: explicitly broaden to subagent when "no results" lands in an area with unsupported-language files
+- ✓ DO: cap `impact max_depth=1` by default (depth-2 fans out to 1000+ nodes on shared hooks/utils; wrap in subagent with summarisation)
+- ✓ DO: check `embeddings_count` BEFORE using `search` on non-literal-identifier queries — keyword-fallback is silent
+- ✗ DON'T: dispatch Explore subagents for who-calls / blast-radius questions in supported languages when the graph is fresh
+- ✗ DON'T: trust `status: ok` JSON as authoritative without a source spot-check
+- ✗ DON'T: silently skip graph checks when available — document the skip reason
+- ✗ DON'T: apply a "graph-first" rule to any of the 12 subagent-only moments above
+- ✗ DON'T: invoke `large_functions` during Sanity Check on unchanged-function-size diffs (lint noise)
+- ✗ DON'T: use `search` on verb-phrases / multi-word queries when `embeddings_count=0` (keyword fallback returns garbage)
+
+**Enforcement — split by tier** (Haiku is surface-check speed, Sonnet+Opus do deep reasoning):
+- **Ralph Tier 1 (Haiku) — under-use surface check only**: was graph attempted for a structural question in a supported language, or is a skip reason documented in the RESULT block? Haiku does NOT verify source spot-checks — that would require reading code at Sonnet depth.
+- **Ralph Tier 2 (Sonnet) — under-use + over-trust logic check**: if graph was used, was at least one result spot-checked by reading source (evidence: file:line in the RESULT block)? If graph was available but not used for a structural question, FAIL.
+- **Ralph Tier 3 (Opus) — full AP #19 compliance**: includes Sonnet checks plus: no false-negative from "no results" in areas with unsupported-language files; no false confidence from structured JSON; graph freshness documented.
+- Subagent-only moments listed in STANDARDS.md "Structural Code Queries" section are explicitly out of AP #19 scope — they are correctly solved by subagents.
+- **"Graph available" is defined precisely**: `config status` returns `total_nodes > 0` AND `last_updated` within 24 h. Empty or stale graphs count as "unavailable" for Ralph FAIL purposes — document the reason in RESULT and proceed with subagent fallback.
+
+**Self-Healing**: If you catch yourself reaching for `Agent(Explore)` on a who-calls question in a supported language with a fresh graph → stop, run the graph query first, narrow the subagent prompt with the graph result. If you catch yourself trusting a "no results" without spot-checking → read one matching file from the area and confirm, then proceed.
+
+**Cross-reference**: AP #10 (grep-before-writing), AP #11b (false-positive sweep), AP #14c (main agent verifies swarm output against source). AP #19 extends those disciplines to graph tool output.
+
+**See also**: `STANDARDS.md` "Structural Code Queries" (canonical rule + 5-item pre-query gate), `../reference/tool-selection-guide.md` "Decision Tree: Code-Understanding Queries" (4-quadrant matrix + edge cases + invocation reference), `../docs/guides/code-review-graph-playbook.md` (operational recipe: freshness, fallback, embeddings, cadence).
 
 ---
 
