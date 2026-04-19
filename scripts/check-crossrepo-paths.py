@@ -58,6 +58,10 @@ class CrossRepoPathChecker:
 
         # Patterns to catch (backticked paths referencing SST3 files)
         # Match backticked paths like `SST3/...`, `../templates/...`, etc.
+        # Extended 2026-04-19 (#420 Phase 2 item 17) to cover blind spots:
+        # - `../SST3/...` (leading `../` but missing `dotfiles/` prefix)
+        # - `dotfiles/SST3/...` (dotfiles prefix but missing leading `../`)
+        # Both slipped through the original bare-SST3 / ../<subdir> patterns.
         self.violation_patterns = [
             r'`SST3/(workflow|templates|reference|standards|scripts)/',
             r'`\.\./workflow/',
@@ -65,6 +69,8 @@ class CrossRepoPathChecker:
             r'`\.\./reference/',
             r'`\.\./standards/',
             r'`\.\./scripts/',
+            r'`\.\./SST3/',
+            r'`dotfiles/SST3/',
         ]
 
         # Exception patterns (paths that are correct)
