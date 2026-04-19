@@ -120,9 +120,14 @@ Medium-depth validation. Catches 30% of issues missed by Haiku.
 - [ ] If in-scope: evidence of a real-CLI sample invocation exists — either a log file path, or an Issue comment with exit code + row-count + audit verdict. Exit code 0 alone is NOT sufficient (history of exit-0 runs writing zero rows). The proof must show rows landed + downstream consumers succeeded.
 - [ ] If in-scope: any mock used in the fix's tests uses explicit `call_args.kwargs["<key>"] == <expected>` assertions — NOT a `**kwargs`-swallowing mock that would pass regardless of whether the code actually propagated the arg.
 
+### Optional: Code Graph Checks (if code-review-graph available)
+- [ ] Verify blast radius covers all callers/callees of changed functions
+- [ ] Search for duplicate implementations of new logic via graph search
+- [ ] Check callers_of for any modified function — are all call sites handling the change?
+
 ## Pass Criteria
 
-ALL checkboxes above verified with evidence.
+ALL checkboxes above verified with evidence. Code graph checks are optional — do not fail if MCP server unavailable.
 
 ## On Pass
 
