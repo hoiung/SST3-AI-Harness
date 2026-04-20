@@ -9,7 +9,8 @@
 ### Stage 1 — Research (Subagent Swarm → /tmp)
 
 - [ ] Check `docs/research/` for existing research on this domain first
-- [ ] **Pre-swarm graph gate** (STANDARDS.md "Structural Code Queries"): if the research topic is structural code in a supported language, run `mcp__code-review-graph__config action=status` + relevant `query` / `impact` BEFORE launching the swarm. Use graph findings to SEED / NARROW / VALIDATE subagent angles — not to replace swarm coverage. If the topic is semantic / voice / intent / cross-document / non-code (one of the 12 subagent-only moments), skip graph; go straight to swarm.
+- [ ] **MANDATORY freshness CHECK at Stage 1 top**: run `mcp__code-review-graph__config action=status` unconditionally and record `last_updated` + `total_nodes` + `embeddings_count` in the research file — audit trail for Stage 6 reviewers, even on 12-moments topics. If structural-code topic AND graph stale (`last_updated` older than HEAD or null), ALSO run `mcp__code-review-graph__graph action=update` before any Stage-1 graph query.
+- [ ] **Pre-swarm graph gate** (STANDARDS.md "Structural Code Queries"): if the research topic is structural code in a supported language, run relevant `query` / `impact` BEFORE launching the swarm. Use graph findings to SEED / NARROW / VALIDATE subagent angles — not to replace swarm coverage. If the topic is semantic / voice / intent / cross-document / non-code (one of the 12 subagent-only moments), skip the structural queries; go straight to swarm. (The `config status` freshness CHECK above still runs unconditionally for audit trail.)
 - [ ] Launch MANY parallel subagents, each with focused area (5 files max per subagent). Subagents remain required for the 12 subagent-only moments.
 - [ ] Main context = orchestrator only — NEVER read source files directly in main context
 - [ ] Research phase must use <30% of context budget

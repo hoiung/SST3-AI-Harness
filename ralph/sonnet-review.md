@@ -131,7 +131,7 @@ Preconditions (code-touching PRs, run once): `config status` returns `total_node
 - [ ] For each modified function: `graph query callers_of(<function_name>)` → list all call sites; verify each handles the changed signature / behaviour (subagent reads each caller to verify intent — graph narrows, subagent confirms).
 - [ ] For each modified function: `graph query callees_of(<function_name>)` → confirm no newly-called functions have incompatible contracts (null-safety, config access).
 - [ ] `graph query search(pattern)` for duplicate implementations: search for new calculation / parsing / schema-handling logic in codebase — confirm it doesn't already exist.
-- [ ] **AP #19 over-trust check**: if graph was used, one result spot-checked by reading source. Record the spot-check file:line in the RESULT block.
+- [ ] **AP #19 under-use + over-trust check**: (a) **under-use**: every subagent RESULT block discussing graph queries starts with `mcp_graph_available: yes|no` (AP #19 L435). If `yes` + no graph-query evidence line = FAIL (lazy fallback). If `no` + grep fallback = PASS. (b) **over-trust**: if graph was used, one result spot-checked by reading source — record the spot-check file:line in the RESULT block.
 
 **Fallback clause (retry-aware, evidence-required)**: if first graph call fails, retry once. If second fails, the RESULT block MUST include the Explore-subagent's RESULT block demonstrating manual call-graph audit was actually executed (e.g. "Layer 1 subagent checked 5 call sites, 3 caller contracts verified compatible, 2 flagged for semantic review"). Main RESULT references it as `[graph unavailable: <reason>] [subagent fallback: <subagent-id>]`. Documenting only `[graph unavailable]` without the subagent RESULT block = silent skip = FAIL.
 
