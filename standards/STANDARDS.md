@@ -209,7 +209,7 @@ Every swarm subagent ends its return with a fenced block:
 - scope_gaps: [...]
 ```
 
-Main agent parses the RESULT block; subagent prose body is informational. Reduces typical 4-8K-token return per subagent to ~500 tokens with zero signal loss because every claim already has provenance per Rule 5 above.
+Main agent parses the RESULT block; subagent prose body is informational. Reduces typical 4-8K-token return per subagent to ~500 tokens with zero signal loss because every claim already has provenance per Rule 5 above. **When a subagent discusses graph queries, prepend `mcp_graph_available: yes|no` as the FIRST line** — AP #19 L435 (Ralph Tier 1 uses this to discriminate "no MCP access" from "lazy fallback").
 
 ### Bash Output Budgets (#406 F4.7)
 
