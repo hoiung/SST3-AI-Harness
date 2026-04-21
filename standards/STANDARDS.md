@@ -182,6 +182,7 @@ See: ../workflow/WORKFLOW.md (Stage 1 — Research) for research-specific critic
 5. **Factually provable AND documented**: every claim/figure/decision must be provable AND the proof method (file:line, command, query, source-doc reference) must be documented inline so future audits can re-verify it without re-deriving from scratch.
 6. **Prevent false-positive flagging by design**: when a section is intentional architectural design (defence-in-depth, intentional duplication, specialised verbosity), document it inline so future audits skip it.
 7. **No stingy exceptions**: "to save time" / "to save tokens" / "the task is small" are NOT valid reasons to dispatch fewer subagents. Cost is not a constraint; quality is.
+8. **Orchestrator MUST embed graph-tool caveats in subagent prompts, not just in the RESULT schema**. When dispatching a subagent that may invoke graph queries, the orchestrator's prompt MUST explicitly name the known caveats: (a) `mcp_graph_available: yes|no` as first RESULT line (AP #19 L435); (b) `keyword_fallback: true` when `embeddings_count=0`; (c) current `last_updated` timestamp; (d) freshness status vs HEAD. The RESULT schema is a receipt check — the prompt-embedded reminders are the primary trigger. Author-time drift (orchestrator writes the rule but forgets to embed it in dispatched prompts) is the documented failure mode (field evidence: 2x corroboration). Consumer-time compliance is validated when orchestrator DOES embed.
 
 **Procedural minimum** for any audit-driven change to a multi-source artefact:
 1. Layer 1 swarm (sized to cover every angle of the audit): identify violations
@@ -239,10 +240,40 @@ For structural code questions (callers, callees, imports, inheritance, blast rad
 3. Target file / project language is in the supported list above. If not (Markdown, YAML, JSON, SQL, TOML, shell, HTML, Jinja, Dockerfile, etc.), skip graph; use subagent exploration.
 4. If using `search`, check `embeddings_count`. If 0, treat results as keyword substring — NOT semantic similarity.
 5. Spot-check one graph result by reading source before drawing conclusions. "Never Assume — Always Check" applies to graph output the same as to memory or subagent summaries.
+6. **Data-layer boundary**: if the structural question spans a data-layer boundary (ORM ↔ SQL, HTTP ↔ service, JSONB ↔ Python type, serialisation round-trip, enum ↔ DB literal), graph alone is INSUFFICIENT — graph parses AST, not DB state / schema drift / runtime types. Verify per STANDARDS.md "Contract Verification" + AP #18 real-DB sample invocation. Field evidence: persistent-state write hot-fix (JSONB schema drift between planned-state and realized-state tables) caught only by real-DB invocation.
 
 Graph is **NOT a replacement** for subagents. The following workflow moments remain subagent-only: voice content protection and AI-tell detection; intentional-vs-accidental architecture distinction; Research-Applied-Collectively cross-lens checks; chat-history scope-drift / opposite-scoping checks; false-positive sweep for confirmed violations; scope-vs-audit 100 % alignment; overengineering / out-of-scope detection; design rationale explanation; factual-claims provenance validation; YAML/JSON/SQL/shell/TOML semantic content audits; Markdown voice-prose AI-tells; acceptance-criteria prose → code file:line evidence mapping. See ANTI-PATTERNS.md AP #19.
 
 See also `../reference/tool-selection-guide.md` "Decision Tree: Code-Understanding Queries" and `../docs/guides/code-review-graph-playbook.md`.
+
+### Double-Guardrail Principle
+
+**Principle**: every `/Leader` invocation verifies work against BOTH guardrails — the cross-cutting SST3 canonical (STANDARDS.md + ANTI-PATTERNS.md + WORKFLOW.md + project CLAUDE.md) AND the invoked-skill's domain canonical. Skill-specific rules are NOT suggestions; they are load-bearing canonical, equal in authority to SST3 standards within the skill's domain. Single-guardrail `/Leader` runs on non-SST3-infrastructure work operate with half their guardrails missing.
+
+**Failure mode**: `/Leader 1-6` on a blog / CV / eBay / claude-api task passes every SST3 check but silently violates the skill's domain canonical — banned voice words slip through, Seagate series HARD CONTRACT breached, prompt-caching not wired, claude-api model ID stale. Deliverable looks clean against SST3; fails against skill.
+
+**Invoked-skill canonical by domain** (load-bearing references — see skill definitions for the full rules; this table is a pointer, not a restate):
+
+| Skill | Canonical rules |
+|---|---|
+| `blog` / `job-hunter` / CV / LinkedIn | `voice_rules.py` banned words + KEEP_LIST; `iamhoi` / `iamhoi-skipend` marker wrapping; `check_voice_tells.py` exit 0 |
+| `ebay-seller-tool` | Seagate series HARD CONTRACT; 21-field listing contract; SMART gate; dual-path BOTH directions; never-dispute-customer |
+| `claude-api` | Prompt caching wired on every cacheable prompt; model IDs current (no retired models); SDK idioms |
+| `SST3-solo` / `Leader` | Cross-cutting SST3 canonical + AP #19 12-moments carve-out + stage-order discipline |
+| Project-specific | Paper/live parity; never-touch-production-positions; RTH-only E2E; per-project CLAUDE.md rules |
+
+**Stage-by-stage integration**:
+
+- **Stage 1**: step 0a — identify invoked skill + record `invoked_skill` + `skill_canonical_files` in the research file (alongside graph freshness / CHECK metadata). This is the FIRST LINK of the chain; every downstream stage reads from this.
+- **Stage 2**: draft-write time — the issue draft itself MUST NOT violate skill canonical (no voice-banned words in an acceptance criterion for a blog task; no Seagate series mislabel in eBay scope; no retired model IDs in a claude-api task). Main agent is responsible at Stage 2; Stage 3 then verifies via subagent.
+- **Stage 3**: one subagent angle verifies the issue draft against invoked-skill canonical (layer 1 scope-compliance; main agent verifies against source).
+- **Stage 4**: implementation-write time — every edit must be skill-canonical compliant AT the edit, not only at the verification pass. Same responsibility as Stage 2 for the main agent; Ralph Tier 2/3 verify.
+- **Stage 5 Gate 1**: run the skill's own verification hooks (voice guard, eBay 21-field grep + SMART test, prompt-caching verify, project pre-commit hooks). Evidence: pass/fail + output in issue comment.
+- **Stage 6**: one subagent angle audits skill-canonical compliance in the delivered work, reading `invoked_skill` + `skill_canonical_files` from Stage 1 research file; same verify-against-source discipline as graph-backed audit.
+
+**Enforcement**: Leader.md Guardrails block (all stages) + Stage 3 subagent angle list + Stage 5 Gate 1 checkbox + Stage 6 appendix. Absence of skill-canonical checking on a non-SST3-infrastructure task = violation.
+
+**Evidence**: field-tested observation (latest round absorption issue) — "Leader 1-6 should incorporate checking against the workflow of the skills that been invoked too, otherwise it just checks SST3 workflow and standard and anti-patterns ... The SST3 should also have this integrated, so it's like a double guardrail." Pre-existing research: `docs/research/LEADER_SKILL_ENGINEERING.md` (AI-to-AI prompt engineering + Stage-4 conflation fix + Ralph tier design).
 
 ### Contract Verification — Three Contracts (Issue #1407 post-mortem)
 
