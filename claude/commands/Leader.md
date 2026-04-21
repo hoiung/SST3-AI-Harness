@@ -237,6 +237,6 @@ Subagents audit everything the main agent produced. Main agent produced the work
 8. Report to user: findings, fixes, regression test results, final state. Record `last_updated` + `total_nodes` + `embeddings_count` in the Stage 5 checkpoint comment — parity with Stage 1a audit trail (TC-10 S3). Reviewers need the same graph-state audit at Stage 5 entry as at Stage 1 entry.
 
 **DO**: Require specific findings from every subagent (file:line, evidence). Fix everything found. Run regression tests.
-**DON'T**: Accept "looks fine" from subagents. Defer fixes. Skip regression tests. Fire-and-forget.
+**DON'T**: Accept "looks fine" from subagents. Defer fixes. Skip regression tests. Fire-and-forget. Create new GitHub issues autonomously — propose Stage 5 findings as comments on the parent issue; creating new issues requires explicit user authorization in chat (AP #21, added #431 Phase 2b).
 
 **SIGN-OFF**: When done, tell the user: "Stage 5 (Post-Implementation Review) complete. All work audited, fixes applied, regression tests passed. Issue [URL] is done. Close the issue when satisfied."
