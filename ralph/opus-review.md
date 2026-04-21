@@ -20,6 +20,9 @@ Thorough architectural review. Catches 10% of issues missed by Haiku+Sonnet.
 - [ ] Modularity standards met
 - [ ] LMCE principles applied
 
+### Governance — Checkbox-MCP Drift Audit (AP #20)
+- [ ] **Governance drift audit**: check whether the agent demonstrated the "update-as-you-go" discipline or batch-reported via comments. Pull the issue-body PATCH event log via `mcp__github-checkbox__get_issue_events` (ToolSearch-bootstrap if deferred per `../standards/STANDARDS.md` "MCP Tool Schema Loading") and the solo-branch git log. **Timestamps of checkbox PATCH events should interleave with implementation commits, not cluster at the end**. Flag batching as AP #20 drift even if the final state is clean — clean state at end is necessary but not sufficient; the cadence matters. Canonical failure mode: `../standards/ANTI-PATTERNS.md` **AP #20**; canonical evidence patterns: `../reference/tool-selection-guide.md` Example 2.
+
 ### STANDARDS.md Violation Scan (Architectural)
 
 > Deep analysis for the 5 common culprits across entire implementation. Category names + framing canonical in [`_common-culprits.md`](_common-culprits.md) (#406 F3.4).

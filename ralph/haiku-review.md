@@ -18,6 +18,9 @@ Fast, cheap surface validation. Catches 60% of issues.
 - [ ] All "Acceptance Criteria" checkboxes have evidence
 - [ ] No unchecked mandatory checkboxes
 
+### Governance — Checkbox-MCP Evidence Audit (AP #20)
+- [ ] **Checkbox-MCP evidence audit**: sample 3 random `[x]` boxes from the issue body; for each, verify the evidence text matches a `mcp__github-checkbox__update_issue_checkbox` invocation pattern (present in the issue-body PATCH event log via `mcp__github-checkbox__get_issue_events`, not comment-only narrative). **Fail if any checked box has narrative-only evidence**. Rule + evidence patterns: `../reference/tool-selection-guide.md` Example 2; canonical loading via ToolSearch: `../standards/STANDARDS.md` "MCP Tool Schema Loading"; failure mode: `../standards/ANTI-PATTERNS.md` **AP #20**.
+
 ### Commits (current branch only — don't audit pre-branch history)
 - [ ] All commits on the current solo branch reference issue number (#X)
 - [ ] Commit format: `type: description (#issue)`
