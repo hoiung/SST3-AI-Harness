@@ -406,6 +406,7 @@ For any change that touches pipeline / data-processing / orchestration / CLI-wir
 **How to apply**:
 - Before answering a structural question: run the STANDARDS.md "Structural Code Queries" pre-query safety gate. If it passes, use the graph. If it fails on freshness, `graph update`. If it fails on language, use subagents.
 - **Mechanical per-query spot-check (not judgment)**: after EVERY `callers_of` / `callees_of` / `impact` / `inheritors_of` call, Read one result's source line and record `spot-check: <file:line>` in the RESULT block. After every `search` call with `embeddings_count=0`, Read TWO results (keyword-fallback false-positive risk is higher). "I'll spot-check the important ones" is not compliance — every query gets a check.
+- **At parallel-subagent scale (≥5 concurrent subagents)**: subagents STILL embed per-query spot-checks in their RESULT blocks (Rule unchanged). But the main agent verifies ONE spot-check per SUBAGENT on receipt (not one per query). Only findings that DRIVE A SCOPE CHANGE require main-agent per-query verification before acting. This reduces main-agent verification load from O(N_subagents × N_queries) to O(N_subagents) + O(scope-changing-findings). Preserves rigour where it matters; removes ritual where it does not. Field evidence: per-query main-agent verification breaks at 9 concurrent subagents.
 - "No matches" in an area that includes unsupported-language files (YAML/SQL/shell/TOML/Dockerfile/Jinja/HTML/CSS) → explicitly broaden to subagent exploration before drawing a negative conclusion. Graph is blind to non-code.
 - RESULT block discipline (per STANDARDS.md Subagent Orchestration): when a graph query was used, the RESULT block **MUST** record the query type + target, `last_updated`, `embeddings_count`, spot-check source file:line, and result count. When graph was unavailable or unsupported, the RESULT block MUST record WHY it was skipped. If `embeddings_count=0` AND the query was `search`, the RESULT block MUST ALSO include `keyword_fallback: true` so reviewers don't misread keyword matches as semantic similarity.
 
@@ -417,12 +418,19 @@ For any change that touches pipeline / data-processing / orchestration / CLI-wir
 - ✓ DO: explicitly broaden to subagent when "no results" lands in an area with unsupported-language files
 - ✓ DO: cap `impact max_depth=1` by default (depth-2 fans out to 1000+ nodes on shared hooks/utils; wrap in subagent with summarisation)
 - ✓ DO: check `embeddings_count` BEFORE using `search` on non-literal-identifier queries — keyword-fallback is silent
+- ✓ DO: after `callers_of` / `callees_of` returns `not_found`, run `search <symbol>` FIRST to check whether the symbol exists as any node type. If `search` returns 0 too → grep. NEVER treat `not_found` as authoritative "no callers" — it conflates "symbol not indexed" with "zero callers". Specific non-indexed classes observed in field testing: instance methods (use fully-qualified `file.py::Class.method` form, not `file.py::method`), Pydantic validators, framework-decorator-registered routes (`@router.get/post`, `@app.get`, `@celery.task`). Upstream disambiguation tracked at the `not_found` response-shape issue.
 - ✗ DON'T: dispatch Explore subagents for who-calls / blast-radius questions in supported languages when the graph is fresh
 - ✗ DON'T: trust `status: ok` JSON as authoritative without a source spot-check
 - ✗ DON'T: silently skip graph checks when available — document the skip reason
 - ✗ DON'T: apply a "graph-first" rule to any of the 12 subagent-only moments above
 - ✗ DON'T: invoke `large_functions` during Sanity Check on unchanged-function-size diffs (lint noise)
-- ✗ DON'T: trust `callers_of` / `callees_of` result when the target file contains dynamic dispatch — specifically `asyncio.to_thread(func, ...)`, `asyncio.ensure_future(func, ...)`, `map(func, ...)`, `functools.partial(func, ...)`, decorator-based routing, dict-of-Callable registries, `getattr(obj, name)()`. Grep the target file for these patterns as a belt-and-braces (for Python, e.g. `grep -E "asyncio.to_thread|asyncio.ensure_future|functools.partial"`). Field-tested: 2 independent round-4 agents hit silent-miss on `to_thread` — graph returned 1 caller, reality was 3.
+- ✗ DON'T: trust `callers_of` / `callees_of` result when the target file contains dynamic dispatch. Five known subtypes (field evidence: 5x corroboration across rounds):
+  1. **async indirection**: `asyncio.to_thread(func, ...)`, `asyncio.ensure_future(func, ...)`, `map(func, ...)`, `functools.partial(func, ...)`
+  2. **dict-of-Callable registries** and `getattr(obj, name)()` lookups
+  3. **f-string-constructed identifiers** + `getattr`: e.g. `handler = getattr(self, f"handle_{event_type}")` — grep the prefix (`handle_`) not the full name
+  4. **decorator-based routing**: FastAPI `@router.get/post/put/delete/patch`, Flask `@app.get/post/route`, Celery `@celery.task` / `@task`, Django `@path` registrations, pytest `@pytest.fixture`/`@pytest.mark.parametrize`
+  5. **class-based dispatch**: generic `__call__`, `__getitem__` indirection, metaclass-registered handlers
+  Grep the target file for these patterns as a belt-and-braces (Python, e.g. `grep -E "asyncio.to_thread|asyncio.ensure_future|functools.partial|@router|@app\.|@celery|getattr"`). Field-tested: 2 independent agents hit silent-miss on `to_thread` — graph returned 1 caller, reality was 3. Subsequent rounds add f-string + FastAPI `@router` as distinct subtypes.
 - ✗ DON'T: use `search` on verb-phrases / multi-word queries when `embeddings_count=0` (keyword fallback returns garbage)
 
 **Enforcement — split by tier** (Haiku is surface-check speed, Sonnet+Opus do deep reasoning):

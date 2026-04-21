@@ -10,11 +10,11 @@
 
 - [ ] Check `docs/research/` for existing research on this domain first
 - [ ] **MANDATORY freshness CHECK at Stage 1 top**: run `mcp__code-review-graph__config action=status` unconditionally and record `last_updated` + `total_nodes` + `embeddings_count` in the research file — audit trail for Stage 6 reviewers, even on 12-moments topics. If structural-code topic AND graph stale (`last_updated` older than HEAD or null), ALSO run `mcp__code-review-graph__graph action=update` before any Stage-1 graph query.
-- [ ] **Pre-swarm graph gate** (STANDARDS.md "Structural Code Queries"): if the research topic is structural code in a supported language, run relevant `query` / `impact` BEFORE launching the swarm. Use graph findings to SEED / NARROW / VALIDATE subagent angles — not to replace swarm coverage. If the topic is semantic / voice / intent / cross-document / non-code (one of the 12 subagent-only moments), skip the structural queries; go straight to swarm. (The `config status` freshness CHECK above still runs unconditionally for audit trail.)
+- [ ] **Pre-swarm graph SEED** (STANDARDS.md "Structural Code Queries"): if the research topic is structural code in a supported language, use graph to DEFINE scope BEFORE dispatching the swarm — not to verify pre-formed scope AFTER. Run `query callers_of` / `search` on every symbol the USER MENTIONED in the task description, plus `impact` on user-named files. Feed the resulting evidence into subagent prompts so layer-1 angles are scoped to real call-sites / symbols / blast-radius — not hypothesis. Graph SEEDS the swarm; it does NOT replace its different-angle coverage. Skip-condition: if the topic is semantic / voice / intent / cross-document / non-code (one of the 12 subagent-only moments), skip graph queries; go straight to swarm. (The `config status` freshness CHECK above still runs unconditionally for audit trail.)
 - [ ] Launch MANY parallel subagents, each with focused area (5 files max per subagent). Subagents remain required for the 12 subagent-only moments.
 - [ ] Main context = orchestrator only — NEVER read source files directly in main context
 - [ ] Research phase must use <30% of context budget
-- [ ] Main agent collates all subagent findings into /tmp file containing: **findings + gaps + plan**. Record any graph calls used + `last_updated` + `embeddings_count` + spot-check source file:line.
+- [ ] Main agent collates all subagent findings into /tmp file containing: **findings + gaps + plan**. Record any graph calls used + `last_updated` + `embeddings_count` + spot-check source file:line. Also record `graph_applicable: true|false (reason: <class>)` — downstream stages MUST read this field and NOT re-derive the classification independently (single-declaration-carries-forward).
 - [ ] Output /tmp file for user review before proceeding to Stage 2
 
 ### Stage 2 — Issue Creation (Main Agent from /tmp Research)
@@ -93,7 +93,7 @@
   4. Every None-producing code path: confirm callee's type annotation accepts `Optional` / has null guard
 - [ ] **Regression tests**: Run project test suite, verify no regressions
 - [ ] **Quality scan**: No inefficiencies, no bottlenecks, no memory leaks, no dead code, STANDARDS.md compliant
-- [ ] **AP #18 Sample Invocation Gate**: if the change touches pipeline / data-processing / orchestration / CLI-wiring / cross-module function-arg propagation → a REAL-CLI sample invocation (8-item liquid basket, real DB) must be run BEFORE close. Exit code 0 alone insufficient — verify row-count landed, downstream consumers succeeded, audit queries OK. Document the sample log path + verification queries in an Issue comment. If NOT in-scope, document the scope-skip reason. Canonical: ANTI-PATTERNS.md #18 + STANDARDS.md "Testing Priority — Workflow Validation Gate".
+- [ ] **AP #18 Sample Invocation Gate**: if the change touches pipeline / data-processing / orchestration / CLI-wiring / cross-module function-arg propagation / **persistent-state write (JSONB schema mutation, SQL literal drift across SET and READ sites, DB column rename, enum-value drift)** → a REAL-CLI sample invocation (8-item liquid basket, real DB) must be run BEFORE close. Exit code 0 alone insufficient — verify row-count landed, downstream consumers succeeded, audit queries OK. Document the sample log path + verification queries in an Issue comment. If NOT in-scope, document the scope-skip reason. Canonical: ANTI-PATTERNS.md #18 + STANDARDS.md "Testing Priority — Workflow Validation Gate".
 
 ## Branch & Commit Discipline
 
