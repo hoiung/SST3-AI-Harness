@@ -5,7 +5,7 @@ domain: tool_selection
 type: guide
 topics: [mcp-tools, github-mcp, checkbox-mcp, gh-cli, code-review-graph, tool-selection]
 use_when: "Choosing between MCP tools, subagents, and CLI tools for GitHub operations OR code-understanding queries"
-last_updated: 2026-04-19
+last_updated: 2026-04-21
 sources:
   - Internal SST3 workflow patterns
   - GitHub MCP server documentation
@@ -26,6 +26,12 @@ SST3 workflow provides THREE methods for GitHub interactions:
 1. **Checkbox MCP**: Progressive checkbox updates with evidence (local Python server)
 2. **GitHub MCP**: Issue body editing, sub-issues, comments (configured in `~/.claude.json`)
 3. **gh CLI**: Complex queries, dependencies, fallback operations (always available)
+
+---
+
+## Deferred Tools & ToolSearch
+
+MCP tool schemas may be **deferred** by the Claude Code harness — tools appear as names only at session start and must be loaded via `ToolSearch` with `select:<tool_name>` before invocation. See `../dotfiles/SST3/standards/STANDARDS.md` section "**MCP Tool Schema Loading (Deferred Tools + ToolSearch)**" for the canonical rule, generic + github-checkbox load patterns, and fail-mode handling. This is cross-linked, not duplicated — STANDARDS.md is the single source of truth for the rule.
 
 ---
 
@@ -234,6 +240,65 @@ gh api graphql -f query='mutation { addSubIssue(input: {...}) }'
 ---
 
 ## Examples from SST3 Workflow
+
+### Example 1: Progress Update Comment
+
+**Scenario**: Phase 2 complete on Issue #364. Post checkpoint with files modified + next steps.
+
+**Tool Selection**: GitHub MCP `add_issue_comment` for narrative; Checkbox MCP `update_issue_checkbox` for per-criterion evidence.
+
+**Code**:
+```python
+# Narrative checkpoint comment
+mcp__github__add_issue_comment(
+    issue_number=364,
+    owner="hoiung",
+    repo="dotfiles",
+    body="## Checkpoint: Phase 2 complete\n- Files modified: ...\n- Next steps: Phase 3 ..."
+)
+
+# Per-criterion evidence for each Phase 2 acceptance item
+mcp__github-checkbox__update_issue_checkbox(
+    issue_number=364,
+    checkbox_text="Add new STANDARDS.md section 'MCP Tool Schema Loading'",
+    evidence="Added section STANDARDS.md:552-601 with deferred-tool rule + ToolSearch pattern"
+)
+```
+
+### Example 2: Stage 4 Checkbox Update (Evidence Patterns — CANONICAL)
+
+**Scenario**: Acceptance Criteria checkbox "Read STANDARDS.md (entire file)" on Issue #364.
+
+**Tool Selection**: Checkbox MCP (native evidence-based, atomic, no race conditions).
+
+**Code**:
+```python
+mcp__github-checkbox__update_issue_checkbox(
+    issue_number=364,
+    checkbox_text="Read STANDARDS.md (entire file)",
+    evidence="Reviewed 909 lines, applied LMCE/JBGE + Double-Guardrail principles"
+)
+```
+
+**Evidence patterns by deliverable type** — CANONICAL table (post-#429, replaces archived `../dotfiles/SST3/archive/ORCHESTRATOR.md:738-763`; all other files reference this location by section name):
+
+| Deliverable Type | Evidence Pattern |
+|---|---|
+| File created   | `Created [path] with [sections/functions]` |
+| File modified  | `Modified [path] lines [X-Y]: [change]` |
+| Analysis       | `Analyzed [scope]: Found [key findings]` |
+| Test           | `Ran [command]: [results]` |
+| Validation     | `Verified [criteria]: [outcome]` |
+| Posted update  | `Posted to Issue #X: [URL or description]` |
+
+**When to invoke**:
+- ✓ After completing each deliverable
+- ✓ After verification passes
+- ✓ After file creation/modification documented
+- ✗ NOT in bulk at stage end
+- ✗ NOT before work is complete
+
+**Deferred-tool bootstrap**: if `mcp__github-checkbox__*` tools are deferred, load schemas first via `ToolSearch(select:mcp__github-checkbox__update_issue_checkbox,...)` per `../dotfiles/SST3/standards/STANDARDS.md` "MCP Tool Schema Loading".
 
 ### Example 3: Create Sub-Issue Relationship
 
