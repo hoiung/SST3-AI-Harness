@@ -100,7 +100,7 @@
 
 - Related Issues: #X, #Y
 - Documentation: [link]
-- Graph queries used (when structural-code topic, per AP #19 RESULT discipline): list every `callers_of` / `impact` / `search` call — target, result count, `last_updated`, `embeddings_count`, and one spot-check source file:line per query. Makes Stage 3 + Stage 6 re-verification trivial.
+- Graph queries used (when structural-code topic, per AP #19 RESULT discipline): list every `callers_of` / `impact` / `search` call — target, result count, `last_updated`, `embeddings_count`, and one spot-check source file:line per query. Makes Stage 3 + Stage 5 re-verification trivial.
 
 ---
 

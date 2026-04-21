@@ -324,9 +324,8 @@ The `/Leader` command creates the GitHub Issue for you in Stage 3. Do NOT create
 2. **Invoke `/Leader 2`** (Issue Draft). Main orchestrator drafts the Issue body against [`templates/issue-template.md`](templates/issue-template.md); subagents verify coverage.
 3. **Invoke `/Leader 3`** (Sanity Check + Issue Creation). Subagents triple-check the draft against the research, then `gh` creates the Issue. You will receive the Issue number (e.g. `#42`).
 4. **Create the solo branch NOW that you know the Issue number**: `git checkout -b solo/issue-42-readme-typo`.
-5. **Invoke `/Leader 4`** (Implement). Main orchestrator applies the fix, commits per file, pushes, runs the Verification Loop, then runs the 3-tier Ralph Review (Haiku, Sonnet, Opus).
-6. **Invoke `/Leader 5`** (Ship It). Merge to main after Ralph passes, post the user-review-checklist.
-7. **Invoke `/Leader 6`** (Final Review). Subagent swarm audits the implementation end-to-end. Fix any findings, close the Issue.
+5. **Invoke `/Leader 4`** (Implement). Main orchestrator applies the fix, commits per file, pushes, runs the Verification Loop (Gate 1), then runs the 3-tier Ralph Review (Haiku, Sonnet, Opus), then merges to main (Gate 2) after Ralph passes, and posts the user-review-checklist (Gate 3).
+6. **Invoke `/Leader 5`** (Post-Implementation Review). Subagent swarm audits the implementation end-to-end. Fix any findings, close the Issue.
 
 Commands live at [`claude/commands/Leader.md`](claude/commands/Leader.md) and [`claude/commands/SST3-solo.md`](claude/commands/SST3-solo.md). Either user-scope them by copying to `~/.claude/commands/` or keep them repo-scoped under `.claude/commands/` in your own project.
 

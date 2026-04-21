@@ -267,11 +267,10 @@ See also `../reference/tool-selection-guide.md` "Decision Tree: Code-Understandi
 - **Stage 1**: step 0a — identify invoked skill + record `invoked_skill` + `skill_canonical_files` in the research file (alongside graph freshness / CHECK metadata). This is the FIRST LINK of the chain; every downstream stage reads from this.
 - **Stage 2**: draft-write time — the issue draft itself MUST NOT violate skill canonical (no voice-banned words in an acceptance criterion for a blog task; no Seagate series mislabel in eBay scope; no retired model IDs in a claude-api task). Main agent is responsible at Stage 2; Stage 3 then verifies via subagent.
 - **Stage 3**: one subagent angle verifies the issue draft against invoked-skill canonical (layer 1 scope-compliance; main agent verifies against source).
-- **Stage 4**: implementation-write time — every edit must be skill-canonical compliant AT the edit, not only at the verification pass. Same responsibility as Stage 2 for the main agent; Ralph Tier 2/3 verify.
-- **Stage 5 Gate 1**: run the skill's own verification hooks (voice guard, eBay 21-field grep + SMART test, prompt-caching verify, project pre-commit hooks). Evidence: pass/fail + output in issue comment.
-- **Stage 6**: one subagent angle audits skill-canonical compliance in the delivered work, reading `invoked_skill` + `skill_canonical_files` from Stage 1 research file; same verify-against-source discipline as graph-backed audit.
+- **Stage 4**: implementation-write time — every edit must be skill-canonical compliant AT the edit + Ralph Tier 2/3 verify + Gate 1 Verification Loop runs the skill's own verification hooks (voice guard, eBay 21-field grep + SMART test, prompt-caching verify, project pre-commit hooks) with evidence in issue comment.
+- **Stage 5**: Post-Implementation Review subagent angle audits skill-canonical compliance in the delivered work, reading `invoked_skill` + `skill_canonical_files` from Stage 1 research file; same verify-against-source discipline as graph-backed audit.
 
-**Enforcement**: Leader.md Guardrails block (all stages) + Stage 3 subagent angle list + Stage 5 Gate 1 checkbox + Stage 6 appendix. Absence of skill-canonical checking on a non-SST3-infrastructure task = violation.
+**Enforcement**: Leader.md Guardrails block (all stages) + Stage 3 subagent angle list + Stage 4 Gate 1 checkbox + Stage 5 Post-Implementation Review appendix. Absence of skill-canonical checking on a non-SST3-infrastructure task = violation.
 
 **Evidence**: field-tested observation (latest round absorption issue) — "Leader 1-6 should incorporate checking against the workflow of the skills that been invoked too, otherwise it just checks SST3 workflow and standard and anti-patterns ... The SST3 should also have this integrated, so it's like a double guardrail." Pre-existing research: `docs/research/LEADER_SKILL_ENGINEERING.md` (AI-to-AI prompt engineering + Stage-4 conflation fix + Ralph tier design).
 
