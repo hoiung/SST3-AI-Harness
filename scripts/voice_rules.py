@@ -67,6 +67,26 @@ KEEP_LIST: tuple[str, ...] = (
     "attention to detail",
     "fundamentals",
     "fall in love",
+    # align* family — Hoi's natural vocabulary for project timeline /
+    # expectation management. Whitelisted 2026-04-22 per meta-rule
+    # "if I type it, I use it" (see memory/feedback_if_i_type_it_i_use_it.md).
+    "align",
+    "alignment",
+    "aligned",
+    "aligning",
+    "aligns",
+    "alignments",
+    # Additional whitelist 2026-04-22 — Hoi confirmed these are his natural
+    # vocabulary in the same conversation (enterprise/project words he uses
+    # in emails, chats, prep). Same meta-rule as align*.
+    "synergy", "synergies",
+    "leverage", "leveraging", "leveraged",
+    "robust",
+    "landscape",
+    "dynamic",
+    "deliverable", "deliverables",
+    "bandwidth",
+    "actionable",
 )
 
 # ---------------------------------------------------------------------------
@@ -78,33 +98,24 @@ KEEP_LIST: tuple[str, ...] = (
 BANNED_WORDS: tuple[str, ...] = (
     # Single-word AI/CV-speak
     "delve", "delving", "delved",
-    "leverage", "leveraging", "leveraged",
     "spearhead", "spearheading", "spearheaded",
-    "synergy", "synergies",
     "stakeholder", "stakeholders",
-    "robust",
     "seamless", "seamlessly",
     "cutting-edge",
     "innovative",
     "impactful",
     "facilitate", "facilitating", "facilitated",
-    "harness", "harnessing",
     "furthermore",
     "moreover",
     "pivotal",
     "tapestry",
-    "landscape",
     "realm",
     "underscore", "underscores", "underscoring",
     "meticulous", "meticulously",
     "beacon",
     "testament",
-    "dynamic",
     "holistic", "holistically",
     "ecosystem",
-    "deliverable", "deliverables",
-    "bandwidth",
-    "actionable",
     "iterate", "iterating",
     "unpack", "unpacking",
     "utilize", "utilizing", "utilized", "utilise", "utilising", "utilised",
@@ -118,8 +129,6 @@ BANNED_WORDS: tuple[str, ...] = (
     "touch base",
     "circle back",
     "moving forward",
-    "align",
-    "alignment",
     "at scale",
     "gain traction",
     "reach out",
