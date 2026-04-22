@@ -24,6 +24,27 @@ cvt = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(cvt)
 
 
+# Self-healing test samples. Pulled dynamically from the live lists so
+# tests do not drift when BANNED_WORDS or KEEP_LIST are amended. Filtered
+# to simple single-word entries (no hyphens, no spaces) so test strings
+# can be built without regex-escape or phrase-match edge cases.
+_SIMPLE_BANNED = [w for w in vr.BANNED_WORDS if "-" not in w and " " not in w]
+_SIMPLE_KEEP = [w for w in vr.KEEP_LIST if "-" not in w and " " not in w]
+
+# Hard fail if the lists ever run out of simple samples — the tests below
+# need at least 2 banned samples and 1 keep sample.
+assert len(_SIMPLE_BANNED) >= 2, (
+    f"BANNED_WORDS needs ≥2 single-word entries for tests, found {len(_SIMPLE_BANNED)}"
+)
+assert len(_SIMPLE_KEEP) >= 1, (
+    f"KEEP_LIST needs ≥1 single-word entry for tests, found {len(_SIMPLE_KEEP)}"
+)
+
+BANNED_SAMPLE = _SIMPLE_BANNED[0]
+BANNED_SAMPLE_2 = _SIMPLE_BANNED[1]
+KEEP_SAMPLE = _SIMPLE_KEEP[0]
+
+
 # 1. extract_voice_regions hard fails (state machine, vendored)
 class TestRegions:
     def test_happy_path(self):
@@ -88,12 +109,32 @@ class TestCutoffFilter:
 
 # 4. Banned word boundary parity with canonical
 class TestParityWithCanonical:
-    def test_facilitate_vs_face(self):
-        # Uses `facilitate` (still banned) now that `deliverable` was
-        # whitelisted 2026-04-22 per memory/feedback_if_i_type_it_i_use_it.md.
-        # Same principle: word-boundary match on banned form, not partial.
-        assert vr.BANNED_WORDS_PATTERN.search("facilitate")
-        assert not vr.BANNED_WORDS_PATTERN.search("we face the problem")
+    def test_banned_sample_matches_with_word_boundary(self):
+        # Exact banned word matches.
+        assert vr.BANNED_WORDS_PATTERN.search(BANNED_SAMPLE)
+        # Same banned word with letters appended does NOT match — `\b` boundary.
+        # Suffix "xxyy" chosen because it cannot form any other banned word.
+        assert not vr.BANNED_WORDS_PATTERN.search(f"{BANNED_SAMPLE}xxyy")
+
+    def test_keep_sample_not_matched(self):
+        # KEEP_LIST words must never be matched by the BANNED_WORDS regex.
+        # This is the lens-facing half of the overlap invariant (see
+        # test_no_banned_keep_overlap for the set-theoretic half).
+        assert not vr.BANNED_WORDS_PATTERN.search(KEEP_SAMPLE)
+
+    def test_no_banned_keep_overlap(self):
+        # Explicit pytest of the overlap invariant that voice_rules.py
+        # enforces at import time. Duplicating it here makes the invariant
+        # a discoverable, named test rather than a module-load crash that
+        # readers might not know exists. Future regressions fail here with
+        # a readable diagnostic instead of a cryptic import error.
+        banned = {w.lower() for w in vr.BANNED_WORDS}
+        keep = {w.lower() for w in vr.KEEP_LIST}
+        overlap = banned & keep
+        assert not overlap, (
+            f"BANNED_WORDS and KEEP_LIST overlap on: {sorted(overlap)}. "
+            "A word cannot be both banned and whitelisted."
+        )
 
     def test_cutoff_constant(self):
         assert vr.HOIBOY_CUTOFF_DATE == date(2026, 4, 7)
@@ -103,20 +144,28 @@ class TestParityWithCanonical:
 class TestDecisionMatrix:
     def test_default_skip(self, tmp_path):
         f = tmp_path / "anything.md"
-        # Uses `delve` + `facilitate` — both still banned. `leverage` was
-        # whitelisted 2026-04-22 so it no longer proves a default-skip case.
-        f.write_text("delve and facilitate everywhere\n", encoding="utf-8")
+        # Two live banned-word samples. Default behaviour without iamhoi
+        # markers is SKIP, so scan_file returns an empty list even when
+        # the content is full of banned words.
+        f.write_text(
+            f"{BANNED_SAMPLE} and {BANNED_SAMPLE_2} everywhere\n",
+            encoding="utf-8",
+        )
         assert cvt.scan_file(f, tmp_path) == []
 
     def test_marker_scans_only_tagged(self, tmp_path):
         f = tmp_path / "x.md"
-        # Body inside iamhoi markers contains `facilitate` (still banned);
-        # outside markers contains `delve` + `seamless` (ignored by default
-        # SKIP). Swapped from `leverage`/`synergy` which are now whitelisted.
+        # Content structure: outside-markers → inside-markers → outside-markers.
+        # Only the region between <!-- iamhoi --> and <!-- iamhoiend --> should
+        # be scanned, so only BANNED_SAMPLE_2 (inside) triggers a finding.
         f.write_text(
-            "delve outside\n<!-- iamhoi -->\nfacilitate inside\n<!-- iamhoiend -->\nseamless after\n",
+            f"{BANNED_SAMPLE} outside\n"
+            "<!-- iamhoi -->\n"
+            f"{BANNED_SAMPLE_2} inside\n"
+            "<!-- iamhoiend -->\n"
+            f"{BANNED_SAMPLE} after\n",
             encoding="utf-8",
         )
         findings = cvt.scan_file(f, tmp_path)
         assert len(findings) == 1
-        assert "facilitate" in findings[0].detail
+        assert BANNED_SAMPLE_2 in findings[0].detail
