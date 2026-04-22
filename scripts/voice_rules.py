@@ -87,6 +87,9 @@ KEEP_LIST: tuple[str, ...] = (
     "deliverable", "deliverables",
     "bandwidth",
     "actionable",
+    # Third pass same day — Hoi: "why is stakeholder there? I use that word".
+    # Same meta-rule. stakeholder/stakeholders moved here.
+    "stakeholder", "stakeholders",
 )
 
 # ---------------------------------------------------------------------------
@@ -99,7 +102,6 @@ BANNED_WORDS: tuple[str, ...] = (
     # Single-word AI/CV-speak
     "delve", "delving", "delved",
     "spearhead", "spearheading", "spearheaded",
-    "stakeholder", "stakeholders",
     "seamless", "seamlessly",
     "cutting-edge",
     "innovative",
