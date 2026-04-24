@@ -143,7 +143,8 @@ def blocklist_subset(text: str, ctx: dict) -> str:
     Data lines that happen to contain `[` (e.g. `ERROR_[42]`) do NOT match and
     are preserved as data.
 
-    ctx['repo'] is guaranteed non-empty by _validate_mirror (lines 247-250).
+    ctx['repo'] is guaranteed non-empty by _validate_mirror (see the non-empty-string
+    check for the 'repo' key in that function).
 
     Pure filter. Idempotent: applying twice yields the same result.
     """
