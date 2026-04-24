@@ -256,7 +256,7 @@ See also `../reference/tool-selection-guide.md` "Decision Tree: Code-Understandi
 
 | Skill | Canonical rules |
 |---|---|
-| `blog` / `job-hunter` / CV / LinkedIn | `voice_rules.py` banned words + KEEP_LIST; `iamhoi` / `iamhoi-skipend` marker wrapping; `check_voice_tells.py` exit 0 |
+| `blog` / `job-hunter` / CV / LinkedIn | `voice_rules.py` banned words + KEEP_LIST; `iamhoi` / `iamhoi-skipend` marker wrapping; `check-ai-writing-tells.py` exit 0 |
 | `ebay-seller-tool` | Seagate series HARD CONTRACT; 21-field listing contract; SMART gate; dual-path BOTH directions; never-dispute-customer |
 | `claude-api` | Prompt caching wired on every cacheable prompt; model IDs current (no retired models); SDK idioms |
 | `SST3-solo` / `Leader` | Cross-cutting SST3 canonical + AP #19 12-moments carve-out + stage-order discipline |
@@ -388,7 +388,7 @@ AP #12 builds the observability surfaces; AP #16 enforces reading them.
 
 **Principle**: Any prose written in Hoi's voice in any repo (CV, LinkedIn, cover letters, blog posts, profile docs) MUST be wrapped in `<!-- iamhoi -->` ... `<!-- iamhoiend -->` markers so the marker-driven voice guard can scan it. Default = SKIP. Untagged prose is silently unprotected.
 
-**Canonical source of truth**: `../scripts/voice_rules.py` (~80 banned words, banned phrases, KEEP_LIST, cutoff date 2026-04-07). Human companion: `cv-linkedin/VOICE_PROFILE.md` Sections 8 + 19. NEVER duplicate the rules — both `check-ai-writing-tells.py` (canonical) and any vendored copy (e.g. `hoiboy-uk/scripts/check_voice_tells.py`) import from `voice_rules.py` only.
+**Canonical source of truth**: `../scripts/voice_rules.py` (~80 banned words, banned phrases, KEEP_LIST, cutoff date 2026-04-07). Human companion: `cv-linkedin/VOICE_PROFILE.md` Sections 8 + 19. NEVER duplicate the rules — both `check-ai-writing-tells.py` (canonical) and any vendored copy (e.g. `hoiboy-uk/scripts/check-ai-writing-tells.py`) import from `voice_rules.py` only.
 
 **MUST**:
 - Wrap every new voice-prose paragraph in `<!-- iamhoi --> ... <!-- iamhoiend -->` before commit.
