@@ -47,5 +47,13 @@ jobs:
         markdownlint '**/*.md' --disable MD013 MD041 || echo "✓ Markdown files checked (warnings ignored)"
       continue-on-error: true
 
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Verify mirror drift manifest (hoiung/dotfiles#418)
+      run: python3 scripts/check-mirror-drift.py
+
     - name: Secret detection (blocking)
       run: python3 scripts/check-public-repo-secrets.py .
