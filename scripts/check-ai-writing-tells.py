@@ -2,11 +2,13 @@
 """
 Marker-driven voice guard for Hoi-voice content.
 
-Default = SKIP. A file is only scanned if:
-  (a) it contains <!-- iamhoi --> ... <!-- iamhoiend --> markers (region scan)
-  (b) OR it is in PUBLIC_FACING_GLOBS legacy whitelist (whole-file scan, back-compat)
+Default = SKIP. A file is scanned if:
+  (a) it is in PUBLIC_FACING_GLOBS (whole-file scan; takes precedence over markers)
+  (b) OR it contains <!-- iamhoi --> ... <!-- iamhoiend --> markers (region scan)
 
-Anything else is silently skipped.
+Anything else is silently skipped. Whitelisted files are scanned in full
+regardless of iamhoi markers, because 100% of their content is Hoi-voice
+and recruiter-facing.
 
 Rules: imported from voice_rules.py (single source of truth).
 Human-readable companion: cv-linkedin/VOICE_PROFILE.md Section 8 / 19.
@@ -46,10 +48,21 @@ from voice_rules import (
 
 fix_windows_console()
 
-# Legacy whole-file scan whitelist (back-compat — no migration friction).
-PUBLIC_FACING_GLOBS: tuple[str, ...] = (
+# Whole-file scan: files where 100% of content is Hoi-voice, recruiter-
+# facing. Takes precedence over iamhoi region scan. Per dotfiles#433
+# em-dash slip post-mortem (2026-04-24): CV Experience bullets sit
+# outside the Summary iamhoi block, so the original region-only scan
+# let em-dashes through. These files get scanned in full.
+WHOLE_FILE_SCAN_GLOBS: tuple[str, ...] = (
     "cv-linkedin/CV_AI_TRANSFORMATION.md",
     "cv-linkedin/CV_AI_TRANSFORMATION_FULL.md",
+)
+
+# Mixed content: metadata / instructional scaffolding around voice
+# copy-paste blocks. Rely on iamhoi markers around the actual voice
+# prose (the copy-paste blocks). Listed here for clarity only — the
+# region scan fires automatically when markers exist.
+REGION_SCAN_GLOBS: tuple[str, ...] = (
     "cv-linkedin/LINKEDIN_UPDATE_GUIDE.md",
     "cv-linkedin/AI_SKILLS_AND_PORTFOLIO.md",
 )
@@ -261,17 +274,26 @@ def is_exempt(file_path: Path, repo_root: Path) -> bool:
 
 
 def is_whitelisted(file_path: Path, repo_root: Path) -> bool:
+    """Whole-file scan whitelist — 100% Hoi-voice recruiter-facing files."""
     rel = str(file_path.relative_to(repo_root))
-    return rel in PUBLIC_FACING_GLOBS
+    return rel in WHOLE_FILE_SCAN_GLOBS
 
 
 def scan_file(file_path: Path, repo_root: Path) -> list[Finding]:
     """
     Decision matrix (default = SKIP):
-      iamhoi-exempt first line  -> SKIP
-      iamhoi markers present    -> scan tagged regions
-      legacy whitelist          -> scan whole file (back-compat)
+      iamhoi-exempt path        -> SKIP
+      whitelisted file          -> scan whole file (markers are doc-only here)
+      iamhoi markers present    -> scan tagged regions only
       otherwise                 -> SKIP
+
+    Whitelisted files (PUBLIC_FACING_GLOBS) take precedence over region
+    scanning: the whole file is Hoi-voice content, so the whole file is
+    scanned even if iamhoi markers exist elsewhere in the document.
+    Previously the region branch short-circuited the whole-file scan,
+    which let em-dashes slip through in CV Experience bullets that sit
+    outside the Summary iamhoi block. See dotfiles#433 em-dash slip
+    post-mortem (2026-04-24).
     """
     if is_exempt(file_path, repo_root):
         return []
@@ -286,6 +308,13 @@ def scan_file(file_path: Path, repo_root: Path) -> list[Finding]:
 
     file_str = str(file_path)
 
+    if is_whitelisted(file_path, repo_root):
+        is_cv = file_path.name.startswith("CV_AI_TRANSFORMATION")
+        numbered = list(enumerate(text.split("\n"), 1))
+        findings = _check_lines(numbered, file_str)
+        findings.extend(_check_bold_bullets(text, file_str, is_cv))
+        return findings
+
     try:
         regions = extract_voice_regions(text)
     except ValueError as e:
@@ -293,13 +322,6 @@ def scan_file(file_path: Path, repo_root: Path) -> list[Finding]:
 
     if regions:
         return _check_lines(regions, file_str)
-
-    if is_whitelisted(file_path, repo_root):
-        is_cv = file_path.name.startswith("CV_AI_TRANSFORMATION")
-        numbered = list(enumerate(text.split("\n"), 1))
-        findings = _check_lines(numbered, file_str)
-        findings.extend(_check_bold_bullets(text, file_str, is_cv))
-        return findings
 
     return []
 
@@ -332,7 +354,7 @@ def main() -> int:
             elif p.exists() and p.suffix == ".md":
                 files_to_scan.append(p)
     else:
-        for glob_pattern in PUBLIC_FACING_GLOBS:
+        for glob_pattern in (*WHOLE_FILE_SCAN_GLOBS, *REGION_SCAN_GLOBS):
             for p in repo_root.glob(glob_pattern):
                 if p.exists():
                     files_to_scan.append(p)
