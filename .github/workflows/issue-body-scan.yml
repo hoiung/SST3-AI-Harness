@@ -22,11 +22,14 @@ on:
   pull_request:
     types: [opened, edited]
 
-permissions:
-  contents: read
-
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # On issues/issue_comment events github.ref is the default-branch ref for every
+  # event, so grouping by ref alone collapses every issue into one slot and
+  # cancel-in-progress:true silently drops concurrent legitimate scans. Scope the
+  # group by event_name + issue/PR number so each issue / PR gets its own queue.
+  # GitHub uses a single numeric sequence for issues and PRs, so event_name is
+  # also needed to keep issue #N and PR #N in separate slots. (#442 Stage 5.)
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.issue.number || github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:

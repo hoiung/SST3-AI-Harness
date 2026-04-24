@@ -20,6 +20,11 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
+      with:
+        # Commit-message-scan step below uses `git log <since>..HEAD` against
+        # the push's `before` sha. Default shallow-clone depth=1 misses that
+        # history and errors exit 128; fetch full history for this run.
+        fetch-depth: 0
 
     - name: Set up Node.js
       uses: actions/setup-node@v6
