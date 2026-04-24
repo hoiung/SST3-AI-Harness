@@ -541,11 +541,67 @@ def report_findings(
 # Main
 # ---------------------------------------------------------------------------
 
+def scan_text_content(
+    text: str,
+    source_label: str,
+    blocklist: Set[str],
+    allowlist: Set[str],
+) -> List[Finding]:
+    """Scan arbitrary text content (issue body, commit message, etc.) line-by-line."""
+    findings: List[Finding] = []
+    synthetic_path = Path(source_label)
+    for line_num, line in enumerate(text.splitlines(), start=1):
+        line_findings = scan_line(line, line_num, synthetic_path, blocklist, allowlist)
+        findings.extend(line_findings)
+    return findings
+
+
+def fetch_issue_or_pr_body(repo: str, number: int) -> str:
+    """Fetch issue or PR body + comments via gh CLI. Returns concatenated text."""
+    result = subprocess.run(
+        ["gh", "api", f"repos/{repo}/issues/{number}"],
+        capture_output=True, text=True, check=True,
+    )
+    import json as _json
+    issue = _json.loads(result.stdout)
+    parts = [f"TITLE: {issue.get('title', '')}", f"BODY:\n{issue.get('body', '')}"]
+    # Also fetch all comments
+    comments_result = subprocess.run(
+        ["gh", "api", f"repos/{repo}/issues/{number}/comments", "--paginate"],
+        capture_output=True, text=True, check=True,
+    )
+    for comment in _json.loads(comments_result.stdout):
+        parts.append(f"COMMENT {comment['id']}:\n{comment.get('body', '')}")
+    return "\n\n".join(parts)
+
+
+def fetch_commit_messages_since(since_sha: str) -> List[tuple[str, str]]:
+    """Fetch commit messages from `since_sha` to HEAD. Returns list of (sha, message)."""
+    result = subprocess.run(
+        ["git", "log", f"{since_sha}..HEAD", "--format=%H%x00%B%x1e"],
+        capture_output=True, text=True, check=True,
+    )
+    commits = []
+    for entry in result.stdout.split("\x1e"):
+        entry = entry.strip()
+        if not entry:
+            continue
+        sha, _, body = entry.partition("\x00")
+        if sha:
+            commits.append((sha.strip(), body.strip()))
+    return commits
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Detect secrets and sensitive data in public repos"
     )
-    parser.add_argument("path", help="Path to scan (file or directory)")
+    parser.add_argument(
+        "path",
+        nargs="?",
+        default=".",
+        help="Path to scan (file or directory). Ignored in --scan-issue-body / --scan-commit-messages modes.",
+    )
     parser.add_argument(
         "--staged-only",
         action="store_true",
@@ -555,12 +611,35 @@ def main() -> int:
         "--allowlist",
         help="Path to .secret-allowlist file",
     )
+    parser.add_argument(
+        "--scan-issue-body",
+        action="store_true",
+        help="Scan issue/PR body + comments via gh API. Requires --issue-number.",
+    )
+    parser.add_argument(
+        "--issue-number",
+        type=int,
+        help="GitHub issue or PR number for --scan-issue-body mode.",
+    )
+    parser.add_argument(
+        "--repo",
+        help="Repository in owner/repo format (default: current repo). Used by --scan-issue-body.",
+    )
+    parser.add_argument(
+        "--scan-commit-messages",
+        action="store_true",
+        help="Scan commit messages in the range <--since>..HEAD. Never prints matched content to stdout.",
+    )
+    parser.add_argument(
+        "--since",
+        help="Starting commit SHA for --scan-commit-messages mode (exclusive).",
+    )
 
     args = parser.parse_args()
     start_time = time.monotonic()
 
     scan_path = Path(args.path)
-    if not scan_path.exists():
+    if not (args.scan_issue_body or args.scan_commit_messages) and not scan_path.exists():
         print(f"Error: Path does not exist: {args.path}", file=sys.stderr)
         return 1
 
@@ -582,6 +661,64 @@ def main() -> int:
 
     allowlist_path = Path(args.allowlist) if args.allowlist else repo_root / ".secret-allowlist"
     allowlist = load_file_set(allowlist_path)
+
+    # --scan-issue-body mode: fetch issue body + comments, scan text content.
+    # Design rule: NEVER print matched content to stdout (would amplify leak
+    # publicly via GitHub Actions logs). Print only line numbers + categories.
+    if args.scan_issue_body:
+        if not args.issue_number:
+            print("Error: --scan-issue-body requires --issue-number", file=sys.stderr)
+            return 1
+        repo = args.repo
+        if not repo:
+            try:
+                r = subprocess.run(
+                    ["gh", "repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner"],
+                    capture_output=True, text=True, check=True,
+                )
+                repo = r.stdout.strip()
+            except (subprocess.CalledProcessError, FileNotFoundError) as e:
+                print(f"Error: Could not resolve repo (use --repo): {e}", file=sys.stderr)
+                return 1
+        try:
+            body_text = fetch_issue_or_pr_body(repo, args.issue_number)
+        except (subprocess.CalledProcessError, FileNotFoundError) as e:
+            print(f"Error: Could not fetch issue #{args.issue_number}: {e}", file=sys.stderr)
+            return 1
+        findings = scan_text_content(body_text, f"{repo}#{args.issue_number}", blocklist, allowlist)
+        if findings:
+            # Print line numbers + categories ONLY; never echo the matched content.
+            print(f"FAIL: {len(findings)} secret-blocklist match(es) in {repo}#{args.issue_number}")
+            for f in findings:
+                print(f"  line {f.line_num} category={f.category}: {f.message}")
+            print("Evidence withheld from this log to prevent public amplification.")
+            return 1
+        print(f"PASS: No secrets detected in {repo}#{args.issue_number}")
+        return 0
+
+    # --scan-commit-messages mode: fetch messages in range, scan each one.
+    if args.scan_commit_messages:
+        if not args.since:
+            print("Error: --scan-commit-messages requires --since <sha>", file=sys.stderr)
+            return 1
+        try:
+            commits = fetch_commit_messages_since(args.since)
+        except (subprocess.CalledProcessError, FileNotFoundError) as e:
+            print(f"Error: Could not fetch commits since {args.since}: {e}", file=sys.stderr)
+            return 1
+        total_findings = 0
+        for sha, message in commits:
+            findings = scan_text_content(message, sha, blocklist, allowlist)
+            if findings:
+                total_findings += len(findings)
+                print(f"FAIL: {len(findings)} secret-blocklist match(es) in commit {sha[:12]}")
+                for f in findings:
+                    print(f"  line {f.line_num} category={f.category}: {f.message}")
+        if total_findings > 0:
+            print("Evidence withheld from this log to prevent public amplification.")
+            return 1
+        print(f"PASS: No secrets detected in {len(commits)} commit message(s) since {args.since[:12]}")
+        return 0
 
     # Collect files to scan
     if args.staged_only:
