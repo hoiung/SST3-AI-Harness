@@ -281,7 +281,7 @@ python SST3/scripts/check-fallbacks.py --severity warning .
 
 **Self-Healing**: Pre-commit + CI catch unprotected violations only inside marker regions. Untagged regressions surface at user review. When that happens: wrap the offending paragraph in markers, fix the violation inside, re-run hook, document why the section was previously untagged.
 
-**Enforcement**: `check-ai-writing-tells.py` + `check_voice_tells.py` (vendored), `validate.yml` voice-tells job (dotfiles), `ci.yml` voice-tells step (hoiboy-uk), `voice-rules-drift` cmp hook (hoiboy-uk pre-commit). STANDARDS.md "Voice Content Protection (Marker-Driven)" section.
+**Enforcement**: `check-ai-writing-tells.py` + `check-ai-writing-tells.py` (hoiboy-uk vendored), `validate.yml` voice-tells job (dotfiles), `ci.yml` voice-tells step (hoiboy-uk), `voice-rules-drift` cmp hook (hoiboy-uk pre-commit). STANDARDS.md "Voice Content Protection (Marker-Driven)" section.
 
 ---
 
