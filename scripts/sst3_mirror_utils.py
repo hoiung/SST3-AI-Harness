@@ -265,6 +265,39 @@ def validate_manifest(data: Any) -> None:
     seen_canonicals: set[str] = set()
     for i, entry in enumerate(data["vendored_files"]):
         _validate_entry(entry, i, seen_canonicals)
+    unmirrored = data.get("unmirrored_canonical_files", [])
+    if not isinstance(unmirrored, list):
+        raise ManifestError("unmirrored_canonical_files must be list")
+    for i, entry in enumerate(unmirrored):
+        _validate_unmirrored_entry(entry, i)
+
+
+def _validate_unmirrored_entry(entry: Any, index: int) -> None:
+    """Enforce `unmirrored_canonical_files` entry schema.
+
+    Accepts plain strings (canonical-path back-compat) OR objects
+    `{path: non-empty str, reason: non-empty str}` documenting intentional
+    per-repo divergence (#442 GAP 3.1 / 3.4a). Anything else raises.
+    """
+    prefix = f"unmirrored_canonical_files[{index}]"
+    if isinstance(entry, str):
+        if not entry:
+            raise ManifestError(f"{prefix} string entry must be non-empty")
+        return
+    if not isinstance(entry, dict):
+        raise ManifestError(
+            f"{prefix} must be a string path or object with 'path' + 'reason' keys; "
+            f"got {type(entry).__name__}"
+        )
+    path = entry.get("path")
+    if not isinstance(path, str) or not path:
+        raise ManifestError(f"{prefix}.path must be non-empty string")
+    reason = entry.get("reason")
+    if not isinstance(reason, str) or not reason:
+        raise ManifestError(
+            f"{prefix}.reason must be non-empty string "
+            f"(documents why {path} is intentionally not mirrored)"
+        )
 
 
 def _validate_entry(entry: Any, index: int, seen: set[str]) -> None:
