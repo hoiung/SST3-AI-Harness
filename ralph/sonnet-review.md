@@ -23,6 +23,9 @@ Medium-depth validation. Catches 30% of issues missed by Haiku.
 - [ ] No scope shortfall (missing requested features)
 - [ ] All phases completed per Acceptance Criteria
 
+### Governance — Checkbox-MCP Coverage Gate (AP #20)
+- [ ] **Governance enforcement gate**: run `mcp__github-checkbox__get_issue_checkboxes` on the issue and cross-reference against phase completions. **Any phase-complete-but-checkbox-unchecked state = FAIL (AP #20 violation)**. If the tool is deferred, load via `ToolSearch(select:mcp__github-checkbox__get_issue_checkboxes)` per `../standards/STANDARDS.md` "MCP Tool Schema Loading" — bootstrap before running the gate. Rule: `../standards/ANTI-PATTERNS.md` **AP #20**; canonical evidence patterns: `../reference/tool-selection-guide.md` Example 2.
+
 ### Fail Fast Policy
 - [ ] No silent fallbacks (errors fail loudly)
 - [ ] No fake defaults (missing config = error, not default)
