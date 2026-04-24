@@ -66,6 +66,9 @@ _TRADING_TERM_PATTERNS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"\bbacktest\s*/\s*SL1\s*/\s*SL2\b"), "data-processing"),
 ]
 _PRIVATE_PATH_RE = re.compile(r"logs/sample_\d+_validation\.log")
+# Strict start-of-line match — only lines of the form `# [identifier]` (optional trailing whitespace).
+# Data lines containing `[` (e.g. `ERROR_[42]`) do NOT match and are preserved as data. (#441 Phase 2 defensive regex.)
+_BLOCKLIST_SECTION_HEADER_RE = re.compile(r"^# \[([a-zA-Z0-9_-]+)\]\s*$")
 
 
 def path_scrub(text: str, ctx: dict) -> str:
@@ -124,13 +127,54 @@ def user_quote_scrub(text: str, ctx: dict) -> str:
     return _USER_QUOTE_RE.sub("", text)
 
 
+def blocklist_subset(text: str, ctx: dict) -> str:
+    """Filter canonical blocklist to repo-specific subset via ctx['repo'].
+
+    Canonical file uses section headers `# [<tag>]` on their own line to mark
+    per-repo sections. Two relevant tags:
+      - `[shared]` — emitted to every mirror
+      - `[<ctx['repo']>]` — emitted to that repo only
+
+    Lines BEFORE any section header (preamble: GENERATED header, comments) are
+    passed through to every mirror. Lines inside a non-matching section are
+    dropped.
+
+    Section-header detection uses strict regex `^# \\[([a-zA-Z0-9_-]+)\\]\\s*$`.
+    Data lines that happen to contain `[` (e.g. `ERROR_[42]`) do NOT match and
+    are preserved as data.
+
+    ctx['repo'] is guaranteed non-empty by _validate_mirror (lines 247-250).
+
+    Pure filter. Idempotent: applying twice yields the same result.
+    """
+    target = ctx.get("repo", "")
+    out_lines: list[str] = []
+    current_section: str | None = None  # None = preamble
+
+    for line in text.splitlines(keepends=False):
+        m = _BLOCKLIST_SECTION_HEADER_RE.match(line)
+        if m:
+            current_section = m.group(1)
+            if current_section in ("shared", target):
+                out_lines.append(line)
+            continue
+        if current_section is None or current_section in ("shared", target):
+            out_lines.append(line)
+
+    result = "\n".join(out_lines)
+    if text.endswith("\n") and not result.endswith("\n"):
+        result += "\n"
+    return result
+
+
 TRANSFORMS: dict[str, TransformFn] = {
-    "path_scrub": path_scrub,
+    "blocklist_subset": blocklist_subset,
     "issue_url_scrub": issue_url_scrub,
-    "repo_ref_scrub": repo_ref_scrub,
-    "project_name_scrub": project_name_scrub,
-    "trading_term_scrub": trading_term_scrub,
+    "path_scrub": path_scrub,
     "private_path_scrub": private_path_scrub,
+    "project_name_scrub": project_name_scrub,
+    "repo_ref_scrub": repo_ref_scrub,
+    "trading_term_scrub": trading_term_scrub,
     "user_quote_scrub": user_quote_scrub,
 }
 
@@ -406,7 +450,13 @@ def assert_idempotent() -> None:
         "auto_pb_swing_trader and tradebook_GAS. "
         "pipeline / backtest / SL1 / SL2 / orchestration. "
         'User quote: *"example"*\n'
-        "logs/sample_1234_validation.log for reference."
+        "logs/sample_1234_validation.log for reference.\n"
+        "# [shared]\n"
+        "shared-entry-1\n"
+        "# [other-repo]\n"
+        "should-not-appear-in-test-subset\n"
+        "# [test]\n"
+        "test-specific-entry\n"
     )
     ctx = {"repo": "test", "canonical": "test", "path": "test"}
     for name, fn in TRANSFORMS.items():
