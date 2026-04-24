@@ -19,7 +19,7 @@ sys.path.insert(0, str(HERE))
 
 import voice_rules as vr  # noqa: E402
 
-_spec = importlib.util.spec_from_file_location("cvt", HERE / "check_voice_tells.py")
+_spec = importlib.util.spec_from_file_location("cvt", HERE / "check-ai-writing-tells.py")
 cvt = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(cvt)
 

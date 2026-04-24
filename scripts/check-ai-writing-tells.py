@@ -20,6 +20,7 @@ Exit codes: 0 = clean, 1 = findings (block commit / fail CI)
 from __future__ import annotations
 
 import sys
+from datetime import date
 from pathlib import Path
 
 from sst3_utils import fix_windows_console
@@ -31,6 +32,7 @@ from voice_rules import (
     BOLD_BULLET_THRESHOLD_DEFAULT,
     EM_DASH,
     Finding,
+    FRONTMATTER_DATE_PATTERN,
     MARKER_CLOSE_HASH,
     MARKER_CLOSE_HTML,
     MARKER_EXEMPT_HASH,
@@ -340,6 +342,34 @@ TYPE_LABELS = {
     "MARKER_ERROR": "Voice Guard Marker Error (hard fail)",
     "READ_ERROR": "File Read Error",
 }
+
+
+def parse_post_date(file_path: Path) -> date | None:
+    """
+    Parse the frontmatter `date:` field via stdlib regex (NOT PyYAML).
+    Returns date or None if file has no frontmatter date field.
+    Hard-fails (raises ValueError) on malformed `date:` lines.
+    """
+    try:
+        text = file_path.read_text(encoding="utf-8-sig")
+    except (OSError, UnicodeDecodeError):
+        return None
+    # Look only inside the first YAML frontmatter block (between --- markers)
+    # to avoid matching `date:` strings deeper in the body.
+    if not text.startswith("---"):
+        return None
+    end = text.find("\n---", 3)
+    if end == -1:
+        raise ValueError(f"{file_path}: unterminated frontmatter")
+    front = text[3:end]
+    if "date:" not in front:
+        return None
+    m = FRONTMATTER_DATE_PATTERN.search(front)
+    if not m:
+        raise ValueError(
+            f"{file_path}: malformed frontmatter `date:` (must be YYYY-MM-DD)"
+        )
+    return date.fromisoformat(m.group(1))
 
 
 def main() -> int:
