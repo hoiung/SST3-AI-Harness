@@ -721,6 +721,8 @@ python -m pytest SST3/scripts/test_rollout_core.py -v
 
 **Schema**: `{version, canonical_root, unmirrored_canonical_files, transforms_doc, vendored_files: [{canonical, mirrors: [{repo, path, transforms: [] OR divergent + mirror_sha256}]}]}`
 
+`unmirrored_canonical_files` entries may be either (a) plain string paths for canonical files the validator should ignore, or (b) objects `{path: non-empty str, reason: non-empty str}` documenting intentional per-repo divergence (the validator enforces both fields on object entries; see `_validate_unmirrored_entry` in `sst3_mirror_utils.py`).
+
 **Two drift modes per mirror entry**:
 1. `transforms: [...]` — deterministic. `apply(canonical) == mirror`. Empty list means byte-identical.
 2. `divergent: true` + `mirror_sha256: "<64-hex>"` — hash-pinned. Used for hand-authored structural rewrites (evidence scrubs, voice rule rewrites) that cannot round-trip from canonical.
