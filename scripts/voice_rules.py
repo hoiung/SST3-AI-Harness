@@ -8,7 +8,7 @@ Canonical Python copy of the rules described in the human-readable companion
 
 This module is consumed by:
   - dotfiles/SST3/scripts/check-ai-writing-tells.py  (canonical hook)
-  - hoiboy-uk/scripts/check_voice_tells.py           (vendored byte-identical)
+  - hoiboy-uk/scripts/check-ai-writing-tells.py           (vendored byte-identical)
   - hoiboy-uk/scripts/voice_rules.py                 (vendored byte-identical)
 
 Drift between canonical and vendored copies is enforced by a `cmp -s` bash
