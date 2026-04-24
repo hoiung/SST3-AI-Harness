@@ -39,7 +39,7 @@ Add to your `.mcp.json`:
       "command": "uv",
       "args": [
         "--directory",
-        "/path/to/SST3-AI-Harness/mcp-servers/github-checkbox",
+        "/path/to/sst3-ai-harness/mcp-servers/github-checkbox",
         "run",
         "python",
         "server.py"
