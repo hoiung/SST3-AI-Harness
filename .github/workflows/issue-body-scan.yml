@@ -1,0 +1,59 @@
+name: Issue/PR body secret scan
+
+# Closes the 2026-04-22 leak class (memory: feedback_public_artefact_leaks_in_issues.md).
+# Scans issue bodies, issue comments, PR bodies, and PR review comments for .secret-blocklist matches.
+#
+# Alert-mechanism design rule (Issue hoiung/dotfiles#438):
+#   - NEVER auto-comment on the public issue when a match is detected — that amplifies
+#     the leaked content via a second public surface. Fail the workflow run loudly
+#     instead (red X in the run list, notifies Hoi via configured GH notifications).
+#   - The script itself suppresses matched content from stdout; only line numbers
+#     + categories are printed to the Actions log.
+#
+# Canonical template: dotfiles/github/workflows/issue-body-scan.yml (#442 GAP 2.1a).
+# Propagated to each public mirror's .github/workflows/issue-body-scan.yml via
+# drift-manifest.json vendored_files entry. DO NOT hand-edit mirror copies.
+
+on:
+  issues:
+    types: [opened, edited]
+  issue_comment:
+    types: [created, edited]
+  pull_request:
+    types: [opened, edited]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    name: Scan issue/PR body for secrets
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Scan issue/PR body + comments
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          NUMBER="${{ github.event.issue.number || github.event.pull_request.number }}"
+          if [ -z "$NUMBER" ]; then
+            echo "No issue/PR number in event context; skipping scan."
+            exit 0
+          fi
+          python3 scripts/check-public-repo-secrets.py \
+            --scan-issue-body \
+            --issue-number "$NUMBER" \
+            --repo "${{ github.repository }}"

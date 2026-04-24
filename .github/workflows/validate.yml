@@ -57,3 +57,21 @@ jobs:
 
     - name: Secret detection (blocking)
       run: python3 scripts/check-public-repo-secrets.py .
+
+    - name: Commit-message secret scan — push events (blocking)
+      if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        python3 scripts/check-public-repo-secrets.py \
+          --scan-commit-messages \
+          --since ${{ github.event.before }}
+
+    - name: Commit-message secret scan — PR events (blocking)
+      if: github.event_name == 'pull_request'
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        python3 scripts/check-public-repo-secrets.py \
+          --scan-commit-messages \
+          --since ${{ github.event.pull_request.base.sha }}
