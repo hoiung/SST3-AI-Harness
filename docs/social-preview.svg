@@ -79,5 +79,5 @@
   <text x="960" y="465" font-family="Arial, sans-serif" font-size="15" fill="#ffffffcc" text-anchor="middle">CI/CD &amp; Governance</text>
 
   <!-- Bottom right URL -->
-  <text x="1250" y="620" font-family="Arial, sans-serif" font-size="13" fill="#484f58" text-anchor="end">github.com/hoiung/SST3-AI-Harness</text>
+  <text x="1250" y="620" font-family="Arial, sans-serif" font-size="13" fill="#484f58" text-anchor="end">github.com/hoiung/sst3-ai-harness</text>
 </svg>
