@@ -79,11 +79,11 @@ Fast, cheap surface validation. Catches 60% of issues.
 
 **Documentation-only PR exemption** (run FIRST — short-circuits the rest of this section): if the PR diff touches ONLY documentation / non-code files (Markdown, YAML, JSON, TOML, shell scripts, other unsupported languages per STANDARDS.md "Structural Code Queries"), skip this entire section. Document the skip reason in RESULT: `[GRAPH: skipped — doc-only PR]`. Proceed to standard Haiku surface checks. This is a PASS path, not a fallback.
 
-Preconditions (code-touching PRs, run once per review): `config status` returns `total_nodes > 0` and `last_updated` within 24 h. If either fails, skip to the fallback clause below.
+Preconditions (code-touching PRs, run once per review): `bash dotfiles/scripts/sst3-graph-status.sh` returns `total_nodes > 0` and `last_updated` within 24 h. If either fails, skip to the fallback clause below.
 
-- [ ] `graph query large_functions(min_lines=100)` — any new/modified function approaching 200 lines?
-- [ ] `graph query impact(changed_files)` — any unexpected downstream impacts in callers?
-- [ ] Orphaned-function scan: for each modified function, `graph query callers_of(<name>)` — zero callers in the same module = orphan candidate (subagent confirms intent).
+- [ ] `bash dotfiles/scripts/sst3-graph-large.sh 100 <lang>` — any new/modified function approaching 200 lines?
+- [ ] `bash dotfiles/scripts/sst3-graph-impact.sh <base-branch>` — any unexpected downstream impacts in callers?
+- [ ] Orphaned-function scan: for each modified function, `bash dotfiles/scripts/sst3-graph-callers.sh <name> <lang>` — zero callers in the same module = orphan candidate (subagent confirms intent).
 
 **Fallback clause (retry-aware, evidence-required)**: if first graph call fails, retry once. If second fails, or graph is stale / unsupported-language, the RESULT block MUST include ONE of:
 - (A) Graph evidence: `last_updated`, number of results per query, spot-check source file:line; OR
