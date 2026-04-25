@@ -375,7 +375,7 @@ gh api repos/hoiung/dotfiles/issues/365/dependencies/blocked_by \
 
 For structural code questions (callers, callees, imports, inheritance, blast radius, dead code, large functions, test coverage) the SST3 workflow provides **three layered tools**:
 
-1. **code-review-graph MCP** — 5 tools (`graph`, `query`, `review`, `config`, `help`) over a local SQLite + Tree-sitter AST graph. Sub-second answers for 14 source languages. Graph stored in `<repo>/.code-review-graph/` (gitignored, regenerable). Embeddings optional (~570 MB ONNX per repo).
+1. **code-review-graph bash wrappers** — 8 wrapper scripts (`sst3-graph-status.sh`, `sst3-graph-update.sh`, `sst3-graph-search.sh`, `sst3-graph-callers.sh`, `sst3-graph-impact.sh`, `sst3-graph-large.sh`, `sst3-graph-review.sh`, `sst3-graph-untested-py.sh`) wrapping the underlying local SQLite + Tree-sitter AST graph. Sub-second answers for 14 source languages. Graph stored in `<repo>/.code-review-graph/` (gitignored, regenerable). Embeddings optional (~570 MB ONNX per repo). See Issue #445 (Phase A wrapper-lane migration).
 2. **Subagent exploration** — `Agent(Explore)` for semantic / cross-document / intent / voice / non-code / ambiguous questions. Subagents are NEVER replaced by graph; graph feeds them.
 3. **Bash tools** (Grep/Glob/Read) — unsupported-language fallback, direct file reads, text searches.
 
@@ -392,7 +392,7 @@ For structural code questions (callers, callees, imports, inheritance, blast rad
 
 Run BEFORE any graph call:
 
-1. Graph exists: `config status` returns non-null `graph_path` and `total_nodes > 0`. If not → `graph build`.
+1. Graph exists: `bash dotfiles/SST3/scripts/sst3-graph-status.sh` returns non-null `graph_path` and `total_nodes > 0`. If not, build the graph (offline process per wrapper documentation).
 2. Graph is fresh: `last_updated` within 24 h or since last `git fetch`. If not → `graph update`.
 3. Target language is supported: Python, TypeScript, TSX, JavaScript, Go, Rust, Java, C#, Ruby, C/C++, Kotlin, Swift, PHP, Solidity. If not (Markdown, YAML, JSON, SQL, TOML, shell, HTML, Jinja, Dockerfile) → skip graph, use subagents.
 4. Embeddings status: if using `search`, check `embeddings_count`. If 0 → treat results as keyword substring, NOT semantic similarity.
@@ -421,15 +421,15 @@ For any of the above → subagents remain the primary tool (see the 12 subagent-
 
 ### Invocation Quick Reference
 
-| Question | Graph call |
+| Question | Wrapper call |
 |---|---|
-| Who calls `foo`? | `mcp__code-review-graph__query action=callers_of function=foo` |
-| What does `foo` call? | `mcp__code-review-graph__query action=callees_of function=foo` |
-| Blast radius of editing `file.py`? | `mcp__code-review-graph__query action=impact files=["file.py"]` |
-| Any function over 200 lines? | `mcp__code-review-graph__query action=large_functions min_lines=200` |
-| Find tests covering `foo`? | `mcp__code-review-graph__query action=tests_for function=foo` |
-| Review for diff vs default branch? | `mcp__code-review-graph__review base=<default-branch>` (use `main` or `master` per repo) |
-| Graph status? | `mcp__code-review-graph__config action=status` |
+| Who calls `foo`? | `bash dotfiles/SST3/scripts/sst3-graph-callers.sh foo <lang>` |
+| What does `foo` call? | ⊘ Deferred to semantic-subagent fallback — Phase A wrappers cover callers only (Issue #445) |
+| Blast radius of editing `file.py`? | `bash dotfiles/SST3/scripts/sst3-graph-impact.sh <base-branch>` |
+| Any function over 200 lines? | `bash dotfiles/SST3/scripts/sst3-graph-large.sh 200 <lang>` |
+| Find tests covering `foo`? | ⊘ Deferred to semantic-subagent fallback — Phase A wrappers do not expose `tests_for` (Issue #445; no canonical call sites) |
+| Review for diff vs default branch? | `bash dotfiles/SST3/scripts/sst3-graph-review.sh <base-branch>` (use `main` or `master` per repo) |
+| Graph status? | `bash dotfiles/SST3/scripts/sst3-graph-status.sh` |
 
 See `../../docs/guides/code-review-graph-playbook.md` for full operational playbook (freshness recipe, fallback rules, embeddings policy, cadence governance).
 
