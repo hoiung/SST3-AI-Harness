@@ -93,7 +93,7 @@ Thorough architectural review. Catches 10% of issues missed by Haiku+Sonnet.
 - [ ] For each: does a verifiable source exist (benchmark, prior issue, measured observation, command output)?
 - [ ] If no source: flag as unverified claim — must be sourced or removed before OPUS_PASS
 
-### Required when graph available: Code Graph Checks (Architectural Depth)
+### Required when wrapper-lane available: Wrapper-Lane Checks (Architectural Depth)
 
 **Rollout note**: this check became required with Issue #419. Reviews in-flight at Issue #419 merge-time are grandfathered UNTIL the branch's next push; any review dispatched after that push follows the full "Required when available" rule.
 

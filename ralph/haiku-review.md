@@ -73,7 +73,7 @@ Fast, cheap surface validation. Catches 60% of issues.
 ### Bash Output Discipline (#406 F4.9)
 - [ ] If you ran any bash command producing > 200 lines (pytest, git diff, log tail, etc.), you wrapped it with `../scripts/tee-run.sh <label> -- <cmd>`. Return only the tee path + verdict in your RESULT block; do NOT paste the full output back to the main agent.
 
-### Preferred: Code Graph Checks (run when graph available and fresh)
+### Preferred: Wrapper-Lane Checks (run when wrapper-lane invocable)
 
 **Rollout note**: "Preferred" became the wording with Issue #419. Reviews in-flight at Issue #419 merge-time are grandfathered UNTIL the branch's next push; any review dispatched after that push follows the full wording below.
 
