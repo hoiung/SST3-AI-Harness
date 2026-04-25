@@ -376,7 +376,7 @@ gh api repos/hoiung/dotfiles/issues/365/dependencies/blocked_by \
 For structural code questions (callers, callees, imports, inheritance, blast radius, dead code, large functions, test coverage) the SST3 workflow provides **three layered tools**:
 
 1. **Wrapper-lane bash scripts** (Issue #445) — 9 stateless request-scoped wrappers (`sst3-code-status.sh`, `sst3-code-update.sh`, `sst3-code-search.sh`, `sst3-code-callers.sh`, `sst3-code-callees.sh`, `sst3-code-impact.sh`, `sst3-code-large.sh`, `sst3-code-review.sh`, `sst3-code-untested-py.sh`). No daemon, no SQLite, no persistent graph, no embeddings. Inner engines: `ast-grep` (structural patterns) + `ripgrep` (literal search) + `git diff` + `coverage.py` + `jq`. Every call re-parses on disk. Supported languages (the five ast-grep is wired for in the wrappers): Python, TypeScript, TSX, JavaScript, Rust. Other languages → subagent fallback.
-2. **Subagent exploration** — `Agent(Explore)` for semantic / cross-document / intent / voice / non-code / ambiguous questions. Subagents are NEVER replaced by graph; graph feeds them.
+2. **Subagent exploration** — `Agent(Explore)` for semantic / cross-document / intent / voice / non-code / ambiguous questions. Subagents are NEVER replaced by the wrapper-lane; the wrapper-lane narrows scope for them.
 3. **Bash tools** (Grep/Glob/Read) — unsupported-language fallback, direct file reads, text searches.
 
 ### 4-Quadrant Boundary Matrix
@@ -400,18 +400,17 @@ Run BEFORE any wrapper-lane call:
 
 | Situation | Resolution |
 |---|---|
-| Change edits `config.yaml`; a value reads from Python | YAML is unsupported → use Grep + subagent for the config-key-read contract. Do NOT expect graph to catch the link. |
-| SQL column rename | SQL is unsupported → grep for column name + subagent. Graph won't help. |
-| Markdown doc cross-references | Subagent + grep. Graph cannot read Markdown. |
-| Py ↔ Rust parallel adapters | Separate language graphs cannot be joined. Use subagent to verify parity between the two. Graph can show each side independently. |
+| Change edits `config.yaml`; a value reads from Python | YAML is unsupported by the wrapper-lane → use Grep + subagent for the config-key-read contract. The wrapper-lane will not catch the link. |
+| SQL column rename | SQL is unsupported → grep for column name + subagent. Wrapper-lane won't help. |
+| Markdown doc cross-references | Subagent + grep. The wrapper-lane does not parse Markdown. |
+| Py ↔ Rust parallel adapters | Wrapper-lane runs per-language per-call; cross-language joins must be done by subagent. Run wrappers on each side separately, then subagent verifies parity. |
 | Jinja template → rendered-variable contract | Jinja is unsupported → subagent reads both ends. |
-| "No dead functions found" from `large_functions` / `impact` | Spot-check by reading one result. If zero results AND diff includes unsupported-language files, broaden to subagent. |
-| `tests_for(<function>)` returns empty | Unit tests may live in a separate language (e.g. Python impl, JS E2E). Broaden to Grep for test files. |
-| Fresh clone (graph empty) | `graph build` runs once (one-off cost). Downstream sessions skip via pre-query gate. |
+| "No dead functions found" from `bash sst3-code-large.sh` / `bash sst3-code-impact.sh` | Spot-check by reading one result. If zero results AND diff includes unsupported-language files, broaden to subagent. |
+| Fresh clone — wrapper-lane install | Run install steps from `docs/guides/code-query-playbook.md` "Wrapper-Script Lane > Install" section (ast-grep via cargo or npm; ripgrep via apt; coverage.py via pipx). Wrapper-lane is stateless — there is no graph to build. |
 
-### Graph Limitations (when NOT to reach for graph)
+### Wrapper-Lane Limitations (when NOT to reach for the wrapper-lane)
 
-**Does NOT parse**: Markdown, YAML, JSON, SQL, TOML, shell, HTML, Jinja, Dockerfile, CSS, plain text docs.
+**Does NOT parse**: Markdown, YAML, JSON, SQL, TOML, shell, HTML, Jinja, Dockerfile, CSS, plain text docs, Go, Java, C#, Ruby, C/C++, Kotlin, Swift, PHP, Solidity (the wrapper-lane covers the 5 languages ast-grep is wired for in the wrappers: Python, TypeScript, TSX, JavaScript, Rust).
 
 **Does NOT answer**: docstring / comment content searches, voice / style / tone analysis, scope-vs-audit alignment, chat-history / opposite-scoping checks, intent / motivation / design-rationale questions, cross-language boundary contracts, cross-document reference integrity, false-positive sweep for confirmed violations, acceptance-criteria prose → code evidence mapping, factual-claims provenance validation.
 
