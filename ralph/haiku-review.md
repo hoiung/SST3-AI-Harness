@@ -90,10 +90,10 @@ Preconditions (code-touching PRs, run once per review): `config status` returns 
 - (B) Subagent-fallback evidence: an Explore subagent's RESULT block showing the manual call-graph / orphan audit was actually performed, referenced in main RESULT as `[subagent fallback: Explore / <subagent-id>]` with concrete findings (e.g. "checked 5 call sites, all compatible").
 Documenting "[graph unavailable]" without EITHER (A) or (B) is a silent skip = FAIL. A documented fallback WITH subagent evidence = PASS.
 
-### MCP access discrimination (AP #19 L435)
+### MCP access discrimination (AP #19 "Subagent MCP access" bullet)
 
-For every subagent RESULT block that discusses graph queries: check the FIRST line is `mcp_graph_available: yes|no`. Missing = FAIL. Use the field to discriminate:
-- `mcp_graph_available: no` + grep fallback evidence = PASS (acceptable — subagent had no MCP access).
+For every subagent RESULT block that discusses graph queries: check the FIRST line is `mcp_graph_available: yes|no`. Missing = FAIL. **Semantics (#444)**: this field is the LAST graph call's outcome, NOT the start-of-subagent probe. A subagent that probed `yes` then hit a mid-stream `MCP error -32000: Connection closed` MUST flip to `no` and provide grep fallback for the rest of its work. Use the field to discriminate:
+- `mcp_graph_available: no` + grep fallback evidence = PASS (acceptable — subagent had no MCP access OR transport disconnected mid-stream; either way fallback evidence is the requirement).
 - `mcp_graph_available: yes` + no graph-query evidence line = FAIL (lazy fallback — subagent had access but defaulted to grep).
 
 ## Pass Criteria
