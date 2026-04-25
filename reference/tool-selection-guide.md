@@ -375,7 +375,7 @@ gh api repos/hoiung/dotfiles/issues/365/dependencies/blocked_by \
 
 For structural code questions (callers, callees, imports, inheritance, blast radius, dead code, large functions, test coverage) the SST3 workflow provides **three layered tools**:
 
-1. **code-review-graph bash wrappers** — 8 wrapper scripts (`sst3-graph-status.sh`, `sst3-graph-update.sh`, `sst3-graph-search.sh`, `sst3-graph-callers.sh`, `sst3-graph-impact.sh`, `sst3-graph-large.sh`, `sst3-graph-review.sh`, `sst3-graph-untested-py.sh`) wrapping the underlying local SQLite + Tree-sitter AST graph. Sub-second answers for 14 source languages. Graph stored in `<repo>/.code-review-graph/` (gitignored, regenerable). Embeddings optional (~570 MB ONNX per repo). See Issue #445 (Phase A wrapper-lane migration).
+1. **code-review-graph bash wrappers** — 8 wrapper scripts (`sst3-code-status.sh`, `sst3-code-update.sh`, `sst3-code-search.sh`, `sst3-code-callers.sh`, `sst3-code-impact.sh`, `sst3-code-large.sh`, `sst3-code-review.sh`, `sst3-code-untested-py.sh`) wrapping the underlying local SQLite + Tree-sitter AST graph. Sub-second answers for 14 source languages. Graph stored in `<repo>/.code-review-graph/` (gitignored, regenerable). Embeddings optional (~570 MB ONNX per repo). See Issue #445 (Phase A wrapper-lane migration).
 2. **Subagent exploration** — `Agent(Explore)` for semantic / cross-document / intent / voice / non-code / ambiguous questions. Subagents are NEVER replaced by graph; graph feeds them.
 3. **Bash tools** (Grep/Glob/Read) — unsupported-language fallback, direct file reads, text searches.
 
@@ -388,15 +388,13 @@ For structural code questions (callers, callees, imports, inheritance, blast rad
 | Q3 Subagent-only | Voice-prose / intent / chat-history / scope-vs-audit / cross-document / non-code file content audits | None — subagent is the primary tool | Sole owner (12 documented moments) |
 | Q4 Direct-tool | Exact-file-path lookup / specific function read / single-grep for a known string | Read / Grep / Glob | Skip both — tool is fastest |
 
-### Pre-Query Safety Gate (5 items)
+### Pre-Query Safety Gate (3 items)
 
-Run BEFORE any graph call:
+Run BEFORE any wrapper-lane call:
 
-1. Graph exists: `bash dotfiles/SST3/scripts/sst3-graph-status.sh` returns non-null `graph_path` and `total_nodes > 0`. If not, build the graph (offline process per wrapper documentation).
-2. Graph is fresh: `last_updated` within 24 h or since last `git fetch`. If not → `graph update`.
-3. Target language is supported: Python, TypeScript, TSX, JavaScript, Go, Rust, Java, C#, Ruby, C/C++, Kotlin, Swift, PHP, Solidity. If not (Markdown, YAML, JSON, SQL, TOML, shell, HTML, Jinja, Dockerfile) → skip graph, use subagents.
-4. Embeddings status: if using `search`, check `embeddings_count`. If 0 → treat results as keyword substring, NOT semantic similarity.
-5. Spot-check discipline: read one graph result from source before drawing conclusions. "Never Assume — Always Check" applies.
+1. Wrapper invocable: `bash dotfiles/SST3/scripts/sst3-code-status.sh` exits 0 and emits valid JSON `{last_updated, file_count, source_languages}`. If exit non-zero (typically exit 127 = inner engine missing), see playbook Install section. The wrapper-lane is stateless — no graph to build, no freshness window.
+2. Target language is supported by the wrapper-lane: Python, TypeScript, TSX, JavaScript, Rust (the five ast-grep is wired for in the wrappers). If not (Markdown, YAML, JSON, SQL, TOML, shell, HTML, Jinja, Dockerfile, Go, Java, etc.) → skip wrapper-lane, use subagents.
+3. Spot-check discipline: read one wrapper result from source before drawing conclusions. "Never Assume — Always Check" applies. `search` is keyword-only — verify with synonym sweep before any "no match" conclusion.
 
 ### Edge-Case Resolutions
 
@@ -423,15 +421,15 @@ For any of the above → subagents remain the primary tool (see the 12 subagent-
 
 | Question | Wrapper call |
 |---|---|
-| Who calls `foo`? | `bash dotfiles/SST3/scripts/sst3-graph-callers.sh foo <lang>` |
-| What does `foo` call? | ⊘ Deferred to semantic-subagent fallback — Phase A wrappers cover callers only (Issue #445) |
-| Blast radius of editing `file.py`? | `bash dotfiles/SST3/scripts/sst3-graph-impact.sh <base-branch>` |
-| Any function over 200 lines? | `bash dotfiles/SST3/scripts/sst3-graph-large.sh 200 <lang>` |
+| Who calls `foo`? | `bash dotfiles/SST3/scripts/sst3-code-callers.sh foo <lang>` |
+| What does `foo` call? | `bash dotfiles/SST3/scripts/sst3-code-callees.sh foo <lang>` |
+| Blast radius of editing `file.py`? | `bash dotfiles/SST3/scripts/sst3-code-impact.sh <base-branch>` |
+| Any function over 200 lines? | `bash dotfiles/SST3/scripts/sst3-code-large.sh 200 <lang>` |
 | Find tests covering `foo`? | ⊘ Deferred to semantic-subagent fallback — Phase A wrappers do not expose `tests_for` (Issue #445; no canonical call sites) |
-| Review for diff vs default branch? | `bash dotfiles/SST3/scripts/sst3-graph-review.sh <base-branch>` (use `main` or `master` per repo) |
-| Graph status? | `bash dotfiles/SST3/scripts/sst3-graph-status.sh` |
+| Review for diff vs default branch? | `bash dotfiles/SST3/scripts/sst3-code-review.sh <base-branch>` (use `main` or `master` per repo) |
+| Wrapper-lane status? | `bash dotfiles/SST3/scripts/sst3-code-status.sh` |
 
-See `../../docs/guides/code-review-graph-playbook.md` for full operational playbook (freshness recipe, fallback rules, embeddings policy, cadence governance).
+See `../../docs/guides/code-query-playbook.md` for full operational playbook (freshness recipe, fallback rules, embeddings policy, cadence governance).
 
 ---
 
@@ -444,4 +442,4 @@ See `../../docs/guides/code-review-graph-playbook.md` for full operational playb
 - [WORKFLOW.md Stage 4](../workflow/WORKFLOW.md) (Implementation)
 - [STANDARDS.md "Structural Code Queries"](../standards/STANDARDS.md)
 - [ANTI-PATTERNS.md AP #19](../standards/ANTI-PATTERNS.md)
-- [code-review-graph Playbook](../../docs/guides/code-review-graph-playbook.md)
+- [code-review-graph Playbook](../../docs/guides/code-query-playbook.md)

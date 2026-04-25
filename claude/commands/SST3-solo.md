@@ -20,10 +20,10 @@ Registration detection (explicit, not try/except): run
 
 Graph check (registered case):
 1. Run `mcp__code-review-graph__config action=status`. If the call errors, log `[GRAPH] config status failed: <error>; retrying once.` and retry once. If second attempt fails, log `[GRAPH unavailable: MCP call failed after retry]` and continue — downstream will fall back to subagent with documented evidence.
-2. If `total_nodes == 0`, run `graph build` (one-off; subsequent sessions skip the build).
+2. If `file_count == 0`, run `graph build` (one-off; subsequent sessions skip the build).
 3. If `last_updated > 24h`, run `graph update`.
 
-Cadence: this check runs ONCE per SST3-solo invocation, not per subagent dispatch. Between sessions, a `git fetch` that lands new commits should trigger `graph update` as part of the next session's check. See `../../docs/guides/code-review-graph-playbook.md` for the 24h rationale and per-repo freshness-tuning note.
+Cadence: this check runs ONCE per SST3-solo invocation, not per subagent dispatch. Between sessions, a `git fetch` that lands new commits should trigger `graph update` as part of the next session's check. See `../../docs/guides/code-query-playbook.md` for the 24h rationale and per-repo freshness-tuning note.
 
 This is the structural-query layer; the subagent swarm remains your semantic layer. Rule detail lives in STANDARDS.md "Structural Code Queries".
 

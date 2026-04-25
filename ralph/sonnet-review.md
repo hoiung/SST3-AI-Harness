@@ -129,7 +129,7 @@ Medium-depth validation. Catches 30% of issues missed by Haiku.
 
 **Documentation-only PR exemption**: if the PR diff touches ONLY Markdown / YAML / JSON / TOML / shell (unsupported languages per STANDARDS.md "Structural Code Queries"), skip this section entirely. Document `[GRAPH: skipped — doc-only PR]` in RESULT and return PASS on graph checks. Proceed to standard Sonnet logic checks on the doc content.
 
-Preconditions (code-touching PRs, run once): `config status` returns `total_nodes > 0` AND `last_updated < 24h`. If either fails, skip to fallback clause below.
+Preconditions (code-touching PRs, run once): `config status` returns `file_count > 0` AND `last_updated < 24h`. If either fails, skip to fallback clause below.
 
 - [ ] For each modified function: `graph query callers_of(<function_name>)` → list all call sites; verify each handles the changed signature / behaviour (subagent reads each caller to verify intent — graph narrows, subagent confirms).
 - [ ] For each modified function: `graph query callees_of(<function_name>)` → confirm no newly-called functions have incompatible contracts (null-safety, config access).

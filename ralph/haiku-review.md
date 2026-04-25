@@ -79,11 +79,11 @@ Fast, cheap surface validation. Catches 60% of issues.
 
 **Documentation-only PR exemption** (run FIRST — short-circuits the rest of this section): if the PR diff touches ONLY documentation / non-code files (Markdown, YAML, JSON, TOML, shell scripts, other unsupported languages per STANDARDS.md "Structural Code Queries"), skip this entire section. Document the skip reason in RESULT: `[GRAPH: skipped — doc-only PR]`. Proceed to standard Haiku surface checks. This is a PASS path, not a fallback.
 
-Preconditions (code-touching PRs, run once per review): `bash dotfiles/scripts/sst3-graph-status.sh` returns `total_nodes > 0` and `last_updated` within 24 h. If either fails, skip to the fallback clause below.
+Preconditions (code-touching PRs, run once per review): `bash dotfiles/scripts/sst3-code-status.sh` exits 0 and emits valid JSON `{last_updated, file_count, source_languages}`. The wrapper-lane is stateless — there is no staleness check; every query re-parses on disk. If the wrapper exits non-zero (missing inner engine), skip to the fallback clause below.
 
-- [ ] `bash dotfiles/scripts/sst3-graph-large.sh 100 <lang>` — any new/modified function approaching 200 lines?
-- [ ] `bash dotfiles/scripts/sst3-graph-impact.sh <base-branch>` — any unexpected downstream impacts in callers?
-- [ ] Orphaned-function scan: for each modified function, `bash dotfiles/scripts/sst3-graph-callers.sh <name> <lang>` — zero callers in the same module = orphan candidate (subagent confirms intent).
+- [ ] `bash dotfiles/scripts/sst3-code-large.sh 100 <lang>` — any new/modified function approaching 200 lines?
+- [ ] `bash dotfiles/scripts/sst3-code-impact.sh <base-branch>` — any unexpected downstream impacts in callers?
+- [ ] Orphaned-function scan: for each modified function, `bash dotfiles/scripts/sst3-code-callers.sh <name> <lang>` — zero callers in the same module = orphan candidate (subagent confirms intent).
 
 **Fallback clause (retry-aware, evidence-required)**: if first graph call fails, retry once. If second fails, or graph is stale / unsupported-language, the RESULT block MUST include ONE of:
 - (A) Graph evidence: `last_updated`, number of results per query, spot-check source file:line; OR
