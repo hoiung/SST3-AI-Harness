@@ -3,21 +3,21 @@
 ---
 domain: tool_selection
 type: guide
-topics: [mcp-tools, github-mcp, checkbox-mcp, gh-cli, code-review-graph, tool-selection]
+topics: [mcp-tools, github-mcp, checkbox-mcp, gh-cli, wrapper-lane, tool-selection]
 use_when: "Choosing between MCP tools, subagents, and CLI tools for GitHub operations OR code-understanding queries"
-last_updated: 2026-04-21
+last_updated: 2026-04-25
 sources:
   - Internal SST3 workflow patterns
   - GitHub MCP server documentation
   - Checkbox MCP server implementation
-  - code-review-graph MCP (better-code-review-graph v3.10.0)
+  - SST3 wrapper-lane (Issue #445 — request-scoped bash wrappers, ast-grep + ripgrep + git)
 coverage: comprehensive
 ---
 
 This guide provides decision trees for selecting the correct tool across two domains:
 
 1. **GitHub Operations** (Checkbox MCP / GitHub MCP / `gh` CLI) — edit issues, update checkboxes, query repos.
-2. **Code-Understanding Queries** (code-review-graph MCP / subagent exploration / Bash) — callers/callees, blast radius, dead-code, impact.
+2. **Code-Understanding Queries** (wrapper-lane bash scripts / subagent exploration / Bash) — callers/callees, blast radius, dead-code, impact.
 
 ## Overview
 
@@ -375,7 +375,7 @@ gh api repos/hoiung/dotfiles/issues/365/dependencies/blocked_by \
 
 For structural code questions (callers, callees, imports, inheritance, blast radius, dead code, large functions, test coverage) the SST3 workflow provides **three layered tools**:
 
-1. **code-review-graph bash wrappers** — 8 wrapper scripts (`sst3-code-status.sh`, `sst3-code-update.sh`, `sst3-code-search.sh`, `sst3-code-callers.sh`, `sst3-code-impact.sh`, `sst3-code-large.sh`, `sst3-code-review.sh`, `sst3-code-untested-py.sh`) wrapping the underlying local SQLite + Tree-sitter AST graph. Sub-second answers for 14 source languages. Graph stored in `<repo>/.code-review-graph/` (gitignored, regenerable). Embeddings optional (~570 MB ONNX per repo). See Issue #445 (Phase A wrapper-lane migration).
+1. **Wrapper-lane bash scripts** (Issue #445) — 9 stateless request-scoped wrappers (`sst3-code-status.sh`, `sst3-code-update.sh`, `sst3-code-search.sh`, `sst3-code-callers.sh`, `sst3-code-callees.sh`, `sst3-code-impact.sh`, `sst3-code-large.sh`, `sst3-code-review.sh`, `sst3-code-untested-py.sh`). No daemon, no SQLite, no persistent graph, no embeddings. Inner engines: `ast-grep` (structural patterns) + `ripgrep` (literal search) + `git diff` + `coverage.py` + `jq`. Every call re-parses on disk. Supported languages (the five ast-grep is wired for in the wrappers): Python, TypeScript, TSX, JavaScript, Rust. Other languages → subagent fallback.
 2. **Subagent exploration** — `Agent(Explore)` for semantic / cross-document / intent / voice / non-code / ambiguous questions. Subagents are NEVER replaced by graph; graph feeds them.
 3. **Bash tools** (Grep/Glob/Read) — unsupported-language fallback, direct file reads, text searches.
 
@@ -383,8 +383,8 @@ For structural code questions (callers, callees, imports, inheritance, blast rad
 
 | Quadrant | Topic | Primary tool | Subagent role |
 |---|---|---|---|
-| Q1 Graph-first | Who calls X? / blast radius of Y / dead functions in Z / tests for W (all in supported languages) | `query callers_of` / `query impact` / `query large_functions` / `query tests_for` | Spot-check one result; NOT primary |
-| Q2 Graph + Subagent | Change spans multiple concerns (structure + intent / structure + cross-language) | Graph narrows + subagent verifies semantics | Layered — graph seeds, subagent validates |
+| Q1 Wrapper-first | Who calls X? / what does X call? / blast radius of Y / dead functions in Z (all in supported languages) | `bash sst3-code-callers.sh` / `bash sst3-code-callees.sh` / `bash sst3-code-impact.sh` / `bash sst3-code-large.sh` | Spot-check one result; NOT primary |
+| Q2 Wrapper + Subagent | Change spans multiple concerns (structure + intent / structure + cross-language) | Wrapper narrows + subagent verifies semantics | Layered — wrapper seeds, subagent validates |
 | Q3 Subagent-only | Voice-prose / intent / chat-history / scope-vs-audit / cross-document / non-code file content audits | None — subagent is the primary tool | Sole owner (12 documented moments) |
 | Q4 Direct-tool | Exact-file-path lookup / specific function read / single-grep for a known string | Read / Grep / Glob | Skip both — tool is fastest |
 
@@ -442,4 +442,4 @@ See `../../docs/guides/code-query-playbook.md` for full operational playbook (fr
 - [WORKFLOW.md Stage 4](../workflow/WORKFLOW.md) (Implementation)
 - [STANDARDS.md "Structural Code Queries"](../standards/STANDARDS.md)
 - [ANTI-PATTERNS.md AP #19](../standards/ANTI-PATTERNS.md)
-- [code-review-graph Playbook](../../docs/guides/code-query-playbook.md)
+- [Code-query Playbook (wrapper-lane)](../../docs/guides/code-query-playbook.md)
