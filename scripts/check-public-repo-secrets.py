@@ -634,6 +634,18 @@ def main() -> int:
         "--since",
         help="Starting commit SHA for --scan-commit-messages mode (exclusive).",
     )
+    parser.add_argument(
+        "--enforce-on-private",
+        action="store_true",
+        help=(
+            "Enforce blocklist scanning even on private repos (no .public-repo marker). "
+            "Default behaviour: exit 0 on private repos (no-op). Used by private-repo "
+            "pre-commit hooks that want defence-in-depth blocklist enforcement so "
+            "literals do not accumulate locally before an accidental public mirror or "
+            "fork. Does NOT enable --scan-commit-messages or --scan-issue-body "
+            "amplification protections (those remain public-repo-only by design)."
+        ),
+    )
 
     args = parser.parse_args()
     start_time = time.monotonic()
@@ -652,9 +664,16 @@ def main() -> int:
             return 1
         repo_root = scan_path.resolve()
 
-    # Public repo check — exit 0 if not public (no-op by design)
+    # Public repo check — exit 0 if not public (no-op by design), unless
+    # --enforce-on-private is set for private-repo blocklist defence-in-depth.
+    # Note: --scan-commit-messages and --scan-issue-body remain public-only
+    # because their threat model (GitHub Actions log amplification) does not
+    # apply on private repos.
     if not is_public_repo(repo_root):
-        return 0
+        if args.enforce_on_private and not (args.scan_commit_messages or args.scan_issue_body):
+            pass  # fall through to blocklist scan
+        else:
+            return 0
 
     # Load blocklist and allowlist
     blocklist = load_file_set(repo_root / ".secret-blocklist")
