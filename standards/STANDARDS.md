@@ -577,6 +577,50 @@ Document tool choices in CLAUDE.md.
 
 See: `../workflow/WORKFLOW.md` (Stage 1 — Research) for library research process.
 
+## Per-Stage Feedback Capture (Canonical)
+
+Canonical telemetry mechanism for the SST3 5-stage `/Leader` workflow. Each `/Leader` stage close writes a 10-field feedback record so observed patterns accumulate across runs (which stage routinely catches what bug class, which subagent angles are wasted, which corrections came from the user vs the agent self-caught).
+
+**Storage convention**: per-issue file under the project's runtime telemetry directory (`SST3-metrics/leader-feedback/feedback-<issue>.md`). All 5 stages append `## Stage <N>` blocks to the same file. Index NDJSON co-located.
+
+**Stage discovery**: parser reads `### Stage <N> — <name>` headings from `../workflow/WORKFLOW.md` at runtime. NEVER hardcode the stage list.
+
+**Frontmatter schema (8 fields)**: `issue / repo / created / last_updated / stages_logged / verdict_summary / topic_keywords / reconstructed_stages`.
+
+**Per-stage body schema (10 fields, hard-cap)**: `model / worked / didnt / why / improvement / improvement_status / evidence / friction / rule_self_caught / rule_user_caught`.
+
+**`caught_by:` enum** (sub-attribute on findings): `wrapper / raw / haiku / sonnet / opus / user / agent-self`. Aggregator queries like "how often did raw-only Layer 2 catch what wrapper missed".
+
+**`improvement_status` enum**: `pending / applied / superseded / rejected` + optional `applied_in: <issue#>`. Closure loop: future Stage 1 Step 0 picks up `pending` improvements and marks them `applied` when the next run satisfies them.
+
+**Soft-cap**: tiny issues 10-20 lines / medium 30-60 / large 60-120 / >150 revisit. Hard cap on field count (10). Parser stderr WARN at >80 lines (advisory).
+
+**FP-handling rule**: a false positive correctly identified counts as `worked`, NOT `didnt`. Filter the FP, document why, that's a successful audit.
+
+**Channel-separation rule**: feedback files MUST NOT contain forward-looking memory-channel signals (`prefers / always / from now on / default ON / going forward`). Attribution wording (`<user> flagged`, `user pointed out`) is FINE — natural vocabulary of `rule_user_caught`. Pre-commit hook enforces.
+
+**DRIFT ALERT spec**: count-based on `(stage, verdict=didnt) >= threshold`. Default threshold 5. Configurable via env var `SST3_FEEDBACK_DRIFT_THRESHOLD`. Advisory signal; never autonomous Issue creation.
+
+**Single-CONCURRENT-session-per-issue rule**: parallel `/Leader` runs from different chat sessions = OUT OF SCOPE. Sequential sessions (compact + resume) FINE — sentinel auto-releases after 24h staleness.
+
+**Cross-repo scope-lock**: this canonical applies only to the primary repo until cross-repo aggregation is added in a follow-up.
+
+**Post-compact reconstruction protocol**: literal `[reconstructed-post-compact: <evidence-source>]` markers in fields; frontmatter `reconstructed_stages: [N]` flag; aggregator weights these lower in DRIFT ALERT counts.
+
+**Stage 4 sub-structure**: Stage 4 `worked` / `didnt` MAY contain per-Ralph-tier sub-bullets (Tier 1 Haiku / Tier 2 Sonnet / Tier 3 Opus). The `friction` field captures `ralph_restarts: <N>` + per-tier outcomes.
+
+**Activation-sha gate**: `.activation-sha` holds the canonical merge SHA. Pre-commit hook fires only on solo branches descended from it; pre-existing branches grandfathered.
+
+**Stage detection**: pre-commit hook detects which stage a commit belongs to via `Phase: N` git-trailer in the commit message OR explicit `--stage N` CLI flag. NO fragile heuristic. Fail loud if a solo-branch commit has neither.
+
+**Auto-archive**: 90 days → `_archive/` subfolder.
+
+**Enforcement (3 layers)**: Layer A — pre-commit hook (compact-resilient). Layer B — persistent sentinel files (catch stages that don't commit). Layer C — skill-body sign-off line in workflow files (redundant-by-design third layer).
+
+**Hook-failure protocol**: parser exits 1 with single-line stderr `feedback_parser: <error> at <file>:<line>`. NEVER raises stack trace.
+
+**No retrofill**: pre-existing closed issues are NOT seeded with fabricated feedback records.
+
 ## Path Portability
 
 **Environment Variables**:
@@ -665,11 +709,7 @@ C:/temp/                  ← Shared temp folder (outside UserHome, avoids sync 
 
 **Enforcement**: Pre-commit hook rejects README.md files > 80 lines
 
-**Retrospective Lifecycle**:
-- **Location**: `SST3-metrics/retrospectives/` (outside SST3 token budget)
-- **Retention**: Keep until learnings actioned (30-90 days)
-- **Quarterly Review**: 3+ occurrences = create consolidated GitHub issue
-- **Archive When**: GitHub Issue closed AND "Ready to Archive: Yes"
+**Per-Stage Feedback / Telemetry**: see canonical section "Per-Stage Feedback Capture (Canonical)" earlier in this file. The previous `SST3-metrics/retrospectives/` lifecycle was superseded by the per-stage capture mechanism (3-layer enforcement, dynamic stage discovery, closure-loop on improvements).
 
 ### File Housekeeping
 

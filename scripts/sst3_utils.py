@@ -1,4 +1,9 @@
-"""SST3 shared utilities. Extracted from duplicate implementations across scripts (#399, #405)."""
+"""SST3 shared utilities. Extracted from duplicate implementations across scripts (#399, #405).
+
+Bash sister-helper: dotfiles/SST3/scripts/sst3-bash-utils.sh (Issue #447 Phase 1).
+The dash-vs-underscore distinction is intentional — `sst3-bash-utils.sh` cannot be
+imported as a Python module (`from sst3_utils import ...` resolves only to this file).
+"""
 import io
 import json
 import os
@@ -59,6 +64,9 @@ KNOWN_REPOS: List[str] = [
     'tradebook_GAS',
     'hoiboy-uk',
     'ebay-seller-tool',
+    'consumer-private-A',
+    'voice-doc-repo',
+    'idea-repo',
 ]
 
 
