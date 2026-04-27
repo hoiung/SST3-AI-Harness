@@ -1,0 +1,65 @@
+name: Commit message secret scan
+
+# Closes the 2026-04-27 governance gap (Issue hoiung/dotfiles#449 Stage 5
+# Layer 2 finding: blocklist literals in commit messages were unenforced).
+# Scans every push for .secret-blocklist matches in the new commit messages
+# (range: ${{ github.event.before }}..${{ github.event.after }}).
+#
+# Alert-mechanism design rule (mirrors issue-body-scan.yml):
+#   - The script suppresses matched content from stdout; only line numbers +
+#     categories printed to the Actions log.
+#   - On match: workflow fails loudly (red X). Push has already landed by the
+#     time CI fires, so the response loop is "fix forward" — either rewrite
+#     the offending commit (when feasible: branch is fresh + no downstream
+#     consumers) or accept the leak per `internal-leak-log` private-
+#     channel pattern.
+#
+# Canonical template: dotfiles/github/workflows/commit-message-scan.yml.
+# Propagated to each public mirror's .github/workflows/commit-message-scan.yml
+# via drift-manifest.json vendored_files entry. DO NOT hand-edit mirror copies.
+
+on:
+  push:
+    branches:
+      - "**"
+
+concurrency:
+  # Per-branch queue: every branch gets its own scan slot.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    name: Scan commit messages for secrets
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          # Need history to compare before..after; fetch enough depth.
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Scan new commit messages
+        run: |
+          # github.event.before is the SHA before the push; .after is the new tip.
+          # On a brand-new branch push, before is all-zeros — skip cleanly (no
+          # baseline to compare against; first push of a branch is by definition
+          # all-new, the issue-body scan will catch any bodies separately).
+          BEFORE="${{ github.event.before }}"
+          AFTER="${{ github.event.after }}"
+          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            echo "First push of branch — no baseline; skipping commit-message scan."
+            exit 0
+          fi
+          # Pass --enforce-on-private so the scan runs even on private repos
+          # (the canonical script defaults to no-op on private; commit-message
+          # scanning is a defence-in-depth use case worth running everywhere).
+          python3 scripts/check-public-repo-secrets.py \
+            --scan-commit-messages \
+            --since "$BEFORE" \
+            --enforce-on-private
