@@ -56,6 +56,18 @@ jobs:
             echo "First push of branch — no baseline; skipping commit-message scan."
             exit 0
           fi
+          # Force-push / rebase robustness: when a branch is force-pushed (e.g.
+          # Dependabot rebasing a PR via @dependabot rebase), github.event.before
+          # is the OLD pre-rebase tip whose commit-graph was rewritten and may
+          # not be reachable from the new tip. `git log BEFORE..HEAD` then exits
+          # 128 (object not found). Detect + skip cleanly — the rebased commits
+          # are by-construction the same content as before, so a fresh scan from
+          # all-zeros isn't necessary; if anything was scannable in the original
+          # push it was already scanned before the rebase.
+          if ! git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+            echo "BEFORE SHA $BEFORE not reachable in fetched history (likely force-push or rebase) — skipping commit-message scan."
+            exit 0
+          fi
           # Pass --enforce-on-private so the scan runs even on private repos
           # (the canonical script defaults to no-op on private; commit-message
           # scanning is a defence-in-depth use case worth running everywhere).
