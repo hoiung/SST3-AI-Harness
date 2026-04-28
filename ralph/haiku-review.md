@@ -79,7 +79,7 @@ Fast, cheap surface validation. Catches 60% of issues.
 
 **Documentation-only PR exemption** (run FIRST — short-circuits the rest of this section): if the PR diff touches ONLY documentation / non-code files (Markdown, YAML, JSON, TOML, shell scripts, other unsupported languages per STANDARDS.md "Structural Code Queries"), skip this entire section. Document the skip reason in RESULT: `[GRAPH: skipped — doc-only PR]`. Proceed to standard Haiku surface checks. This is a PASS path, not a fallback.
 
-Preconditions (code-touching PRs, run once per review): `bash dotfiles/scripts/sst3-code-status.sh` exits 0 and emits valid JSON `{last_updated, file_count, source_languages}`. The wrapper-lane is stateless — there is no staleness check; every query re-parses on disk. If the wrapper exits non-zero (missing inner engine), skip to the fallback clause below.
+Preconditions (code-touching PRs, run once per review): `bash dotfiles/scripts/sst3-code-status.sh` exits 0 and emits valid JSON `{last_updated, file_count, source_languages}`. The wrapper-lane is stateless — there is no staleness check; every query re-parses on disk. If the wrapper exits non-zero (missing inner engine), skip to the fallback clause below. **Post Issue #456**: exit 127 means the engine is genuinely missing on disk (not "on disk but PATH-not-propagated", which is now closed by `sst3-bash-utils.sh` self-bootstrap). Run `scripts/install.sh` if encountered.
 
 - [ ] `bash dotfiles/scripts/sst3-code-large.sh 100 <lang>` — any new/modified function approaching 200 lines?
 - [ ] `bash dotfiles/scripts/sst3-code-impact.sh <base-branch>` — any unexpected downstream impacts in callers?
