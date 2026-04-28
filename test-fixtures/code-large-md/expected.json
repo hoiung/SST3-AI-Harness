@@ -1,0 +1,15 @@
+{
+  "fixture": "code-large-md",
+  "issue": 447,
+  "phase": 4,
+  "scope": "Markdown heading-block heuristic on cv-linkedin/hoiboy-uk-shaped prose hotspots. Uses awk + printf only — NO engine deps (ast-grep / jq not invoked on the md path).",
+  "wrapper": "sst3-code-large.sh",
+  "args": [20, "md"],
+  "cwd": "input",
+  "expect": {
+    "exit_code": 0,
+    "stdout_min_records": 2,
+    "stdout_kind_records": [],
+    "stdout_must_contain_files": ["big.md"]
+  }
+}

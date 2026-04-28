@@ -1,0 +1,13 @@
+{
+  "fixture": "code-recent-changes-window",
+  "issue": 447,
+  "phase": 6,
+  "scope": "Time-window file-change query via git log --since. Fixture stands up an isolated tmp git repo with one old commit (15 days ago, outside window) and one recent commit (1 day ago, inside window). Asserts only the recent file appears in --since '7 days ago' output. Imperative driver because dotfiles' own git history is non-deterministic.",
+  "driver": "run.sh",
+  "exit_code": 0,
+  "stdout_must_contain": [
+    "PASS: emitted",
+    "PASS: recent_file.txt referenced",
+    "PASS: old_file.txt correctly excluded by --since window"
+  ]
+}

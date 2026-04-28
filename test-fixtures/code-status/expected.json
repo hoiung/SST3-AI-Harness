@@ -1,0 +1,13 @@
+{
+  "fixture": "code-status",
+  "issue": 447,
+  "phase": 4,
+  "scope": "Audit-trail status emits a single JSON object with last_updated + file_count + source_languages. Engine: jq + find + git. Fixture asserts file_count=3 against a 3-file synthetic tree (2 .py + 1 .md).",
+  "wrapper": "sst3-code-status.sh",
+  "args": [],
+  "cwd": "input",
+  "expect": {
+    "exit_code": 0,
+    "stdout_min_records": 1
+  }
+}

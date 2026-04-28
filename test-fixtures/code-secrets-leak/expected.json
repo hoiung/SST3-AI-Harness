@@ -1,0 +1,14 @@
+{
+  "fixture": "code-secrets-leak",
+  "issue": 447,
+  "phase": 6,
+  "scope": "Public-repo secret-scan via blocklist literal grep. leaky.txt contains 2 occurrences of SST3-FIXTURE-LEAK-TOKEN-DO-NOT-COMMIT (a synthetic token added to a synthetic blocklist via --blocklist override). Asserts >=2 records and that leaky.txt is referenced. The synthetic --blocklist isolates the fixture from the real .secret-blocklist-canonical.",
+  "wrapper": "sst3-code-secrets.sh",
+  "args": ["--file", "leaky.txt", "--blocklist", "blocklist.txt"],
+  "cwd": "input",
+  "expect": {
+    "exit_code": 0,
+    "stdout_min_records": 2,
+    "stdout_must_contain_files": ["leaky.txt"]
+  }
+}

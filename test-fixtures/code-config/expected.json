@@ -1,0 +1,13 @@
+{
+  "fixture": "code-config",
+  "issue": 447,
+  "phase": 8,
+  "scope": "Code-to-config tracing. consumer.py reads KNOWN_KEY (defined in values.env), UNDEF_KEY (undef_read), ANOTHER_KNOWN_KEY (defined). values.env defines UNUSED_DEFINED_KEY (unused_def). Asserts >=4 records aggregating per key.",
+  "wrapper": "sst3-code-config.sh",
+  "args": [],
+  "cwd": "input",
+  "expect": {
+    "exit_code": 0,
+    "stdout_min_records": 4
+  }
+}

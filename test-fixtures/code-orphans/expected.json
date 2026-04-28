@@ -1,0 +1,14 @@
+{
+  "fixture": "code-orphans",
+  "issue": 447,
+  "phase": 8,
+  "scope": "Dead-code detection. orphans.py: public_used (callers=1, in __all__, NOT orphan), public_orphan (0 callers, NOT in __all__, ORPHAN), used_internally (0 callers, dunder/test skip rules — actually none of those, ORPHAN). __all__ = [public_used] allowlists public_used. Asserts >=1 record (public_orphan is the canonical orphan; used_internally also passes through the heuristic).",
+  "wrapper": "sst3-code-orphans.sh",
+  "args": ["python"],
+  "cwd": "input",
+  "expect": {
+    "exit_code": 0,
+    "stdout_min_records": 1,
+    "stdout_must_contain_files": ["orphans.py"]
+  }
+}

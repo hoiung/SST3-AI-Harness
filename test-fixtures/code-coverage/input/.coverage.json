@@ -1,0 +1,14 @@
+{
+  "files": {
+    "src/foo.py": {
+      "executed_lines": [1, 2, 3, 5, 6],
+      "missing_lines": [4, 7, 8, 9],
+      "summary": {"covered_lines": 5, "num_statements": 9, "percent_covered": 55.56}
+    },
+    "src/bar.py": {
+      "executed_lines": [1, 2, 3, 4, 5],
+      "missing_lines": [],
+      "summary": {"covered_lines": 5, "num_statements": 5, "percent_covered": 100.0}
+    }
+  }
+}

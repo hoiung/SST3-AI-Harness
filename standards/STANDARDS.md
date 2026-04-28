@@ -43,8 +43,8 @@
 **JBGE** (Just Barely Good Enough): Document only what prevents problems.
 
 **Discoverability Requirement** (Issue #119): All SST3 files MUST be discoverable from CLAUDE.md in EVERY repo.
-- **Chain**: CLAUDE.md → SST3/workflow/WORKFLOW.md → stage-X → feature (<=4 steps)
-- **Validation**: `python SST3/scripts/check-discoverability.py` during Verification Loop
+- **Chain**: CLAUDE.md → workflow/WORKFLOW.md → stage-X → feature (<=4 steps)
+- **Validation**: `python scripts/check-discoverability.py` during Verification Loop
 - **Exception**: CLAUDE_TEMPLATE.md (template), .sst3-local/ (project-specific)
 - **Enforcement**: Verification Loop BLOCKS merge if any repo fails discoverability check
 
@@ -182,7 +182,7 @@ See: ../workflow/WORKFLOW.md (Stage 1 — Research) for research-specific critic
 5. **Factually provable AND documented**: every claim/figure/decision must be provable AND the proof method (file:line, command, query, source-doc reference) must be documented inline so future audits can re-verify it without re-deriving from scratch.
 6. **Prevent false-positive flagging by design**: when a section is intentional architectural design (defence-in-depth, intentional duplication, specialised verbosity), document it inline so future audits skip it.
 7. **No stingy exceptions**: "to save time" / "to save tokens" / "the task is small" are NOT valid reasons to dispatch fewer subagents. Cost is not a constraint; quality is.
-8. **Orchestrator MUST embed graph-tool caveats in subagent prompts, not just in the RESULT schema**. When dispatching a subagent that may invoke graph queries, the orchestrator's prompt MUST explicitly name the known caveats: (a) `mcp_graph_available: yes|no` as first RESULT line (AP #19 L435); (b) `keyword_fallback: true` when `embeddings_count=0`; (c) current `last_updated` timestamp; (d) freshness status vs HEAD. The RESULT schema is a receipt check — the prompt-embedded reminders are the primary trigger. Author-time drift (orchestrator writes the rule but forgets to embed it in dispatched prompts) is the documented failure mode (field evidence: 2x corroboration). Consumer-time compliance is validated when orchestrator DOES embed.
+8. **Orchestrator MUST embed wrapper-lane caveats in subagent prompts, not just in the RESULT schema**. When dispatching a subagent that may invoke wrapper-lane queries, the orchestrator's prompt MUST explicitly name the known caveats: (a) `mcp_graph_available: yes|no` as first RESULT line (AP #19; under wrapper-lane this is always `no` per Issue #445); (b) `search` is keyword-only — there are no embeddings; verify with synonym sweep before any "no match" conclusion; (c) current `last_updated` (repo HEAD time, not query freshness — wrapper-lane is stateless); (d) inner-engine availability (exit 127 = ast-grep / ripgrep / jq missing). The RESULT schema is a receipt check — the prompt-embedded reminders are the primary trigger. Author-time drift (orchestrator writes the rule but forgets to embed it in dispatched prompts) is the documented failure mode (round-5 S1 + N45 — 2× corroboration).
 
 **Procedural minimum** for any audit-driven change to a multi-source artefact:
 1. Layer 1 swarm (sized to cover every angle of the audit): identify violations
@@ -210,7 +210,7 @@ Every swarm subagent ends its return with a fenced block:
 - scope_gaps: [...]
 ```
 
-Main agent parses the RESULT block; subagent prose body is informational. Reduces typical 4-8K-token return per subagent to ~500 tokens with zero signal loss because every claim already has provenance per Rule 5 above. **When a subagent discusses graph queries, prepend `mcp_graph_available: yes|no` as the FIRST line** — AP #19 L435 (Ralph Tier 1 uses this to discriminate "no MCP access" from "lazy fallback").
+Main agent parses the RESULT block; subagent prose body is informational. Reduces typical 4-8K-token return per subagent to ~500 tokens with zero signal loss because every claim already has provenance per Rule 5 above. **When a subagent discusses graph queries, prepend `mcp_graph_available: yes|no` as the FIRST line** — AP #19 L443 (Ralph Tier 1 uses this to discriminate "no access" from "lazy fallback"). **Wrapper-lane disposition (Issue #445)**: under the wrapper-lane, this field is always `no` — wrappers are bash-tool calls, not MCP-protocol calls, and subagents do not inherit the bash-tool set from the main agent in the same way. Documented fallback (grep + manual file reads) is the expected path under wrapper-lane, not a degradation. **Historical semantics (G-3 fix, #444; retained for reference)**: in the MCP-native phase the field reflected the LAST graph call's result. A subagent that probed `yes` then hit a mid-stream stdio EOF / 401 / `MCP error -32000: Connection closed` MUST set this to `no` so Ralph Tier 1 reads grep-fallback evidence as DOCUMENTED fallback, not "lazy". Ralph Tier 1 sees `no` + valid fallback evidence → PASS, not FAIL.
 
 ### Bash Output Budgets (#406 F4.7)
 
@@ -231,22 +231,32 @@ Default flags for the 10 commands SST3 runs hot. Provenance: each row backed by 
 
 Rule of thumb: any single Bash invocation that produces > 200 lines should be wrapped with `../scripts/tee-run.sh <label> -- <cmd>` so the agent gets the tail and the full log is recoverable.
 
-### Structural Code Queries — Prefer Graph, Never Alone
+### Structural Code Queries — Wrapper-Lane First, Subagent Fallback
 
-For structural code questions (callers, callees, imports, inheritance, blast radius, dead code, large functions, test coverage) in a language the graph supports (Python, TypeScript, TSX, JavaScript, Go, Rust, Java, C#, Ruby, C/C++, Kotlin, Swift, PHP, Solidity), prefer **code-review-graph** MCP queries over subagent exploration — when the pre-query safety gate passes:
+For structural code questions (callers, callees, imports, inheritance, blast radius, dead code, large functions, test coverage) in a language the wrapper-lane parses (Python, TypeScript, TSX, JavaScript, Rust — the five languages ast-grep is wired for in the wrappers), prefer **wrapper-lane** bash queries (`bash dotfiles/scripts/sst3-code-*.sh`) over subagent exploration — when the pre-query gate passes:
 
-1. Graph exists for the target repo (`config status` returns non-null `graph_path` and `file_count >= 0`). If not, `graph build`.
-2. Graph is fresh (`last_updated` within 24 h or since last `git fetch`). If stale, `graph update`.
-3. Target file / project language is in the supported list above. If not (Markdown, YAML, JSON, SQL, TOML, shell, HTML, Jinja, Dockerfile, etc.), skip graph; use subagent exploration.
-4. If using `search`, check `embeddings_count`. If 0, treat results as keyword substring — NOT semantic similarity.
-5. Spot-check one graph result by reading source before drawing conclusions. "Never Assume — Always Check" applies to graph output the same as to memory or subagent summaries.
-6. **Data-layer boundary**: if the structural question spans a data-layer boundary (ORM ↔ SQL, HTTP ↔ service, JSONB ↔ Python type, serialisation round-trip, enum ↔ DB literal), graph alone is INSUFFICIENT — graph parses AST, not DB state / schema drift / runtime types. Verify per STANDARDS.md "Contract Verification" + AP #18 real-DB sample invocation. Field evidence: persistent-state write hot-fix (JSONB schema drift between planned-state and realized-state tables) caught only by real-DB invocation.
+1. **Wrapper invocable**: `bash dotfiles/scripts/sst3-code-status.sh` exits 0 and emits valid JSON `{last_updated, file_count, source_languages}`. The lane is stateless — there is no graph to build. `file_count` reports the count of supported source files in the target repo (audit-trail aid, not a precondition).
+2. **No staleness — every call re-parses from disk**. The wrapper-lane has no persistent cache; `sst3-code-update.sh` is a no-op contract-preservation shim. `last_updated` reflects the repo HEAD commit time, not query freshness.
+3. **Target file / project language is in the supported list**. If not (Markdown, YAML, JSON, SQL, TOML, shell, HTML, Jinja, Dockerfile, etc.), skip the wrapper-lane; use subagent exploration.
+4. **`search` is keyword-only**. The wrapper invokes ripgrep (`--literal` mode) or ast-grep structural patterns — there are no embeddings, no semantic similarity. Any "no match" must be cross-checked with a synonym sweep before drawing a negative conclusion.
+5. **Spot-check one result** by reading source before drawing conclusions. "Never Assume — Always Check" applies to wrapper output the same as to memory or subagent summaries.
+6. **Data-layer boundary** (round-5 N54): if the structural question spans a data-layer boundary (ORM ↔ SQL, HTTP ↔ service, JSONB ↔ Python type, serialisation round-trip, enum ↔ DB literal), wrapper-lane alone is INSUFFICIENT — it is AST-only; does NOT verify DB column existence, SQL literal values, JSONB schema, or runtime types. Verify per STANDARDS.md "Contract Verification" + AP #18 real-DB sample invocation. Field evidence: JSONB schema mismatch between planned-state and realized-state tables caught only by real-DB invocation (round-5).
 
-Graph is **NOT a replacement** for subagents. The following workflow moments remain subagent-only: voice content protection and AI-tell detection; intentional-vs-accidental architecture distinction; Research-Applied-Collectively cross-lens checks; chat-history scope-drift / opposite-scoping checks; false-positive sweep for confirmed violations; scope-vs-audit 100 % alignment; overengineering / out-of-scope detection; design rationale explanation; factual-claims provenance validation; YAML/JSON/SQL/shell/TOML semantic content audits; Markdown voice-prose AI-tells; acceptance-criteria prose → code file:line evidence mapping. See ANTI-PATTERNS.md AP #19.
+The wrapper-lane is **NOT a replacement** for subagents. See ANTI-PATTERNS.md AP #19 for the full list of 12 subagent-only moments (voice, intent, cross-document, non-code audits, etc.) that MUST NOT be demoted by a "wrapper-first" rule.
 
-See also `../reference/tool-selection-guide.md` "Decision Tree: Code-Understanding Queries" and `../docs/guides/code-query-playbook.md`.
+**Naming-honesty note (Issue #445 Stage 5)**: the lane is called "wrapper-lane", not "graph". There is no graph database, no SQLite, no Tree-sitter store, no embeddings. Every query re-parses on disk via ast-grep + ripgrep + git. Field names in the wrapper JSON output reflect what is actually computed (`file_count`, not `total_nodes`); historical names from the displaced upstream MCP appear only inside HISTORICAL-MCP-REFERENCES blocks.
 
-### Double-Guardrail Principle
+**Non-interactive shell PATH bootstrap (Issue #456)**: wrappers self-augment PATH via `../scripts/sst3-bash-utils.sh` (sourced by 31 of 38 end-user wrappers) so engines under `~/.cargo/bin`, `~/.local/bin`, `~/.npm-global/bin` resolve from `bash --noprofile --norc -c '...'` (the shape Claude Code's Bash tool spawns). Without this bootstrap, `.bashrc` early-returns on non-interactive shells and engines on disk are invisible. The 8 exempt wrappers (system-PATH-only + the meta-validator that self-bootstraps inline) are listed in `../scripts/.bash-utils-exempt-list`; the `check-wrapper-bash-utils-source` pre-commit hook (declared BEFORE `sst3-self-test`) catches future drift at commit time.
+
+See also `../reference/tool-selection-guide.md` "Decision Tree: Code-Understanding Queries" and `../dotfiles/docs/guides/code-query-playbook.md`.
+
+**Three-signal contract policy (#447 Phase 5)**: every wrapper emits a quorum of (exit code, stdout NDJSON, stderr sentinel) — consumers MUST check ≥2 of 3 to declare clean. Single-signal trust is a known wrapper failure mode (silent-zero, silent-clean, sentinel-missing classes). The full 33-shape failure-mode taxonomy lives in `../dotfiles/docs/research/wrapper-lane-vs-raw/03_comparison.md` — out-of-line to keep this section actionable.
+
+**Raw-tool cross-validation REQUIRED moments (#447 Phase 5)**: dispatch a raw-only subagent counter-query in these 4 cases — (a) any change to wrapper-lane scripts (`../scripts/sst3-*.sh`); (b) any structural query producing zero results (silent-zero is the failure mode this catches); (c) any post-implementation review of changes >100 LOC; (d) any time a subagent's RESULT block contains `wrapper_invokable: yes` AND `wrapper_invoked: no` without documented reason. The raw-only counter-query is the audit-time failsafe for wrapper recall drift; without it, wrapper bugs cascade through Stage 4 + Stage 5 invisibly.
+
+**AI-agent fallback heuristic (#447 Phase 5; semantics clarified by Issue #456)**: when a wrapper exits 127 / 1 / 2, the agent MUST — (1) look up the failed query type in `../dotfiles/docs/guides/code-query-playbook.md` "Raw Fallback Recipes" table, run the listed raw command, and record the substitution + raw command + result count in the RESULT block; (2) if no table row matches the query, escape to subagent-only mode per AP #19 12-moments carve-out, citing "no fallback recipe" as the escape reason; (3) NEVER silently substitute raw output for wrapper output without recording the substitution — silent fallback hides recall delta which is the exact signal Phase 5 cross-validation depends on. **Exit 127 semantics post-#456**: means the engine is genuinely missing on disk (npm/cargo/pipx install never ran). Pre-#456 the same code ALSO fired when the engine was on disk but PATH was not propagated to non-interactive shells; that case is now closed by `sst3-bash-utils.sh` self-bootstrap. Run `scripts/install.sh` to install missing engines — do NOT add custom PATH workarounds in the calling agent.
+
+### Double-Guardrail Principle (N32 — user-authoritative)
 
 **Principle**: every `/Leader` invocation verifies work against BOTH guardrails — the cross-cutting SST3 canonical (STANDARDS.md + ANTI-PATTERNS.md + WORKFLOW.md + project CLAUDE.md) AND the invoked-skill's domain canonical. Skill-specific rules are NOT suggestions; they are load-bearing canonical, equal in authority to SST3 standards within the skill's domain. Single-guardrail `/Leader` runs on non-SST3-infrastructure work operate with half their guardrails missing.
 
@@ -256,23 +266,23 @@ See also `../reference/tool-selection-guide.md` "Decision Tree: Code-Understandi
 
 | Skill | Canonical rules |
 |---|---|
-| `blog` / `job-hunter` / CV / LinkedIn | `voice_rules.py` banned words + KEEP_LIST; `iamhoi` / `iamhoi-skipend` marker wrapping; `check-ai-writing-tells.py` exit 0 |
+| `blog` / `job-hunter` / CV / LinkedIn | `voice_rules.py` banned words + KEEP_LIST; `iamhoi` / `iamhoiend` marker wrapping (carve-outs: `iamhoi-skip` / `iamhoi-skipend`); `check-ai-writing-tells.py` exit 0 |
 | `ebay-seller-tool` | Seagate series HARD CONTRACT; 21-field listing contract; SMART gate; dual-path BOTH directions; never-dispute-customer |
 | `claude-api` | Prompt caching wired on every cacheable prompt; model IDs current (no retired models); SDK idioms |
 | `SST3-solo` / `Leader` | Cross-cutting SST3 canonical + AP #19 12-moments carve-out + stage-order discipline |
-| Project-specific | Paper/live parity; never-touch-production-positions; RTH-only E2E; per-project CLAUDE.md rules |
+| Project-specific (`auto_pb`, `tradebook_GAS`, etc.) | Paper/live parity; never-touch-production-positions; RTH-only E2E; per-project CLAUDE.md rules |
 
 **Stage-by-stage integration**:
 
-- **Stage 1**: step 0a — identify invoked skill + record `invoked_skill` + `skill_canonical_files` in the research file (alongside graph freshness / CHECK metadata). This is the FIRST LINK of the chain; every downstream stage reads from this.
-- **Stage 2**: draft-write time — the issue draft itself MUST NOT violate skill canonical (no voice-banned words in an acceptance criterion for a blog task; no Seagate series mislabel in eBay scope; no retired model IDs in a claude-api task). Main agent is responsible at Stage 2; Stage 3 then verifies via subagent.
-- **Stage 3**: one subagent angle verifies the issue draft against invoked-skill canonical (layer 1 scope-compliance; main agent verifies against source).
-- **Stage 4**: implementation-write time — every edit must be skill-canonical compliant AT the edit + Ralph Tier 2/3 verify + Gate 1 Verification Loop runs the skill's own verification hooks (voice guard, eBay 21-field grep + SMART test, prompt-caching verify, project pre-commit hooks) with evidence in issue comment.
-- **Stage 5**: Post-Implementation Review subagent angle audits skill-canonical compliance in the delivered work, reading `invoked_skill` + `skill_canonical_files` from Stage 1 research file; same verify-against-source discipline as graph-backed audit.
+- **Stage 1 step 0a**: identify invoked skill + record `invoked_skill` + `skill_canonical_files` in the research file. First link of the chain; downstream stages read from this.
+- **Stage 2**: main-agent author-time compliance — draft MUST NOT violate skill canonical.
+- **Stage 3**: subagent angle verifies draft against skill canonical (main agent verifies against source).
+- **Stage 4**: main-agent implementation-time compliance at every edit + Ralph Tier 2/3 verify + Gate 1 Verification Loop runs the skill's own verification hooks (e.g. `check-ai-writing-tells.py`, pre-commit hooks) with evidence in issue comment.
+- **Stage 5**: Post-Implementation Review subagent angle audits delivered work against skill canonical; same verify-against-source discipline as the graph-backed audit.
 
 **Enforcement**: Leader.md Guardrails block (all stages) + Stage 3 subagent angle list + Stage 4 Gate 1 checkbox + Stage 5 Post-Implementation Review appendix. Absence of skill-canonical checking on a non-SST3-infrastructure task = violation.
 
-**Evidence**: field-tested observation (latest round absorption issue) — "Leader 1-6 should incorporate checking against the workflow of the skills that been invoked too, otherwise it just checks SST3 workflow and standard and anti-patterns ... The SST3 should also have this integrated, so it's like a double guardrail." Pre-existing research: `docs/research/LEADER_SKILL_ENGINEERING.md` (AI-to-AI prompt engineering + Stage-4 conflation fix + Ralph tier design).
+**Evidence**: round-5 user observation N32 (2026-04-20) — "Leader 1-6 should incorporate checking against the workflow of the skills that been invoked too, otherwise it just checks SST3 workflow and standard and anti-patterns ... The SST3 should also have this integrated, so it's like a double guardrail." Pre-existing research: `docs/research/LEADER_SKILL_ENGINEERING_2026_04_12.md` (AI-to-AI prompt engineering + Stage-4 conflation fix + Ralph tier design).
 
 ### Contract Verification — Three Contracts (Issue #1407 post-mortem)
 
@@ -388,7 +398,7 @@ AP #12 builds the observability surfaces; AP #16 enforces reading them.
 
 **Principle**: Any prose written in Hoi's voice in any repo (CV, LinkedIn, cover letters, blog posts, profile docs) MUST be wrapped in `<!-- iamhoi -->` ... `<!-- iamhoiend -->` markers so the marker-driven voice guard can scan it. Default = SKIP. Untagged prose is silently unprotected.
 
-**Canonical source of truth**: `../scripts/voice_rules.py` (~80 banned words, banned phrases, KEEP_LIST, cutoff date 2026-04-07). Human companion: `cv-linkedin/VOICE_PROFILE.md` Sections 8 + 19. NEVER duplicate the rules — both `check-ai-writing-tells.py` (canonical) and any vendored copy (e.g. `hoiboy-uk/scripts/check-ai-writing-tells.py`) import from `voice_rules.py` only.
+**Canonical source of truth**: `../scripts/voice_rules.py` (~80 banned words, banned phrases, KEEP_LIST, cutoff date 2026-04-07). Human companion: `~/DevProjects/job-hunter/cv-linkedin/VOICE_PROFILE.md` Sections 8 + 19. NEVER duplicate the rules — both `check-ai-writing-tells.py` (canonical) and any vendored copy (e.g. `hoiboy-uk/scripts/check-ai-writing-tells.py`) import from `voice_rules.py` only.
 
 **MUST**:
 - Wrap every new voice-prose paragraph in `<!-- iamhoi --> ... <!-- iamhoiend -->` before commit.
@@ -408,11 +418,9 @@ AP #12 builds the observability surfaces; AP #16 enforces reading them.
 
 ---
 
-### Public Harness Vendoring Rules
+### Public Repo Secret Detection
 
 **Principle**: Public repos (`ebay-seller-tool`, `SST3-AI-Harness`, `hoiboy-uk`) must never contain secrets, business identifiers, or private filesystem paths. Repos opt in via `.public-repo` marker file at root.
-
-#### Secret Detection
 
 **What is blocked**: Platform tokens (GitHub PATs, AWS keys, GCP, Stripe, JWT), private key headers (PEM, PGP), generic secret assignments (password/token/credential with non-placeholder values), private paths (`/mnt/c/Users/`, `My Drive/`, `Google Drive/`, `OneDrive/`), per-repo business terms (from `.secret-blocklist`).
 
@@ -420,22 +428,7 @@ AP #12 builds the observability surfaces; AP #16 enforces reading them.
 
 **Enforcement**: Pre-commit hook `check-public-repo-secrets.py` (BLOCKING, `--staged-only` mode) + CI step (full repo scan, no `continue-on-error`). Vendored to consumer repos with drift-check hooks.
 
-**Evidence**: eBay store username, Google Drive paths, and business strategies leaked in ebay-seller-tool (2026-04-11), required manual scrub + force-push.
-
-#### Command File Path Rewrites (Vendored from private `dotfiles/.claude/commands/`)
-
-Canonical command files live in the private `dotfiles` repo at `.claude/commands/<name>.md` and reference private-SST3 paths (`../dotfiles/SST3/<subdir>/`). When vendored to `SST3-AI-Harness/claude/commands/<name>.md`, rewrite to in-repo paths:
-
-- `../dotfiles/SST3/standards/` → `standards/`
-- `../dotfiles/SST3/workflow/` → `workflow/`
-- `../dotfiles/SST3/templates/` → `templates/`
-- `../dotfiles/SST3/ralph/` → `ralph/`
-- `../dotfiles/SST3/scripts/` → `scripts/`
-- `../dotfiles/SST3/reference/` → `reference/`
-
-**Verify after each scrub**: grep the vendored file for `../dotfiles/` — must return zero matches. Grep for `hoiung`, `hoi_u`, `auto_pb_swing_trader`, `tradebook_GAS`, `hoiboy`, `ebay-seller` — must return zero matches.
-
-**Drift enforcement** (`cmp -s` with transform applied): deferred until 3+ vendored command files exist. Track as follow-up issue when threshold is crossed.
+**Evidence**: Issue #410. eBay store username, Google Drive paths, and business strategies leaked in ebay-seller-tool (2026-04-11), required manual scrub + force-push.
 
 ---
 
@@ -577,49 +570,135 @@ Document tool choices in CLAUDE.md.
 
 See: `../workflow/WORKFLOW.md` (Stage 1 — Research) for library research process.
 
+## MCP Tool Schema Loading (Deferred Tools + ToolSearch)
+
+**What it is**: The Claude Code harness may defer MCP tool schemas — tools appear as NAMES ONLY in the agent's active tools (no parameter schema). Calling a deferred tool directly returns `InputValidationError`. Detection: the `ToolSearch` tool is listed in the agent's available tools, and MCP tool names appear in a `<system-reminder>` block labelled "deferred tools".
+
+**Rule (generic — applies to ANY deferred MCP tool, not just github-checkbox)**: Before invoking any MCP tool whose schema is not present in the session-start tool list, call `ToolSearch` with `select:<tool_name>[,<tool_name>...]` to load the schema. Only after the schema is loaded may the tool be invoked. This applies to `mcp__github-checkbox__*`, project-local MCPs registered in `.sst3-local/.claude.json`, and any future MCP servers added to `~/.claude.json`.
+
+**Pattern — github-checkbox** (canonical six-tool load):
+
+```
+ToolSearch(query="select:mcp__github-checkbox__update_issue_checkbox,mcp__github-checkbox__get_issue_checkboxes,mcp__github-checkbox__health_check,mcp__github-checkbox__get_issue_events,mcp__github-checkbox__list_issue_comments,mcp__github-checkbox__update_issue_comment")
+
+# then:
+mcp__github-checkbox__update_issue_checkbox(
+    issue_number=N,
+    checkbox_text="...",
+    evidence="..."
+)
+```
+
+**Pattern — generic** (any deferred MCP tool):
+
+```
+ToolSearch(query="select:mcp__<server>__<tool>")
+# then call the tool as documented by the MCP server
+```
+
+**Fail modes**:
+- **InputValidationError on direct call** (schema not loaded) → invoke `ToolSearch` first, then retry the call. This is the canonical path; not a failure, just an unloaded schema.
+- **ToolSearch returns no match** → retry ONCE with short backoff (transient harness issue). On second no-match, STOP and surface the error. Do NOT fall back to comment-only progress — that is AP #20.
+- **ToolSearch succeeds but tool still errors** → normal tool-error handling; fix the call, do not silently skip.
+
+**Canonical scope boundary**: this section is THE canonical source for the ToolSearch / deferred-tool rule. `../reference/tool-selection-guide.md` "Example 2: Stage 4 Checkbox Update" is THE canonical source for per-deliverable evidence-quality patterns. The two are separate concerns — do not duplicate content between them; cross-link by section header only.
+
+**Canonical invocation points**: `../dotfiles/.claude/commands/Leader.md` Guardrails block + `../dotfiles/.claude/commands/SST3-solo.md` Governance Enforcement section reference this rule. `../ralph/{haiku,sonnet,opus}-review.md` enforce it at review time.
+
+## Governance Evidence Signal (Canonical)
+
+Canonical audit signal for verifying that `mcp__github-checkbox__update_issue_checkbox` was actually invoked (AP #20 compliance) is the **`## Proof of Work` section in the issue body** — NOT the GitHub timeline `edited` event log.
+
+**Why the body section, not the timeline**: GitHub's timeline API (`mcp__github-checkbox__get_issue_events`) does not emit `edited` events for an issue author's own body edits on their own issue — a documented API behavior. Since solo-workflow agents ARE the issue author in ~99% of cases, PATCH-event-based audit false-negatives every honored invocation. The body content itself, however, is always externally readable via `mcp__github__get_issue` or `mcp__github-checkbox__get_issue_checkboxes`, regardless of who authored the edit.
+
+**Structure of the signal**: `../dotfiles/mcp-servers/github-checkbox/server.py` function `append_to_proof_of_work` (lines 214-261, invoked at :322) appends a structured entry per invocation to the body's `## Proof of Work` section. Each entry contains the checkbox text + evidence string supplied at call time. The body PATCH that toggles `[ ]` → `[x]` is the SAME PATCH that appends the entry, so presence in Proof of Work strictly implies the tool was called.
+
+**Verification procedure** (for Ralph tiers and any external auditor):
+1. Fetch issue body via `mcp__github__get_issue` (or `mcp__github-checkbox__get_issue_checkboxes` for live-state cross-check).
+2. Parse the `## Proof of Work` section. Each entry starts with `- **<checkbox text>**: <evidence>`.
+3. For every `[x]` box in the body, there MUST be a matching entry in Proof of Work. Missing entry = AP #20 violation (comment-only / narrative-only progress).
+4. For each entry, verify the cited evidence:
+   - `file:line` claims → `mcp__github__get_file_contents` or local Read on the solo branch
+   - commit hashes → `mcp__github__list_commits` / `git show <hash>` / GitHub `/commits/<sha>` endpoint
+   - subagent RESULT blocks → comment-id referenced in entry, fetched via `list_issue_comments`
+   - command output → reproducible via the same command, or cited via tee log path
+
+**Tier-A cadence verification (opus-review.md Governance Drift Audit)**: ordering of Proof of Work entries is authoritative — the section appends in invocation order. Cross-reference the entry order against the branch's `git log --oneline` to confirm Tier A items closed within the same phase's commit window. Do NOT use `get_issue_events` timestamps for this — self-edit suppression breaks it.
+
+**What this signal does NOT provide**:
+- Authenticity of evidence text (a dishonest agent could write false file:line claims). Secondary verification via `get_file_contents` / `list_commits` is required for that — see verification procedure step 4.
+- Tamper-detection (issue authors can edit the body to remove Proof of Work entries — use `git log` commit trail as immutable secondary audit).
+
+**Canonical scope boundary**: this section is THE canonical source for which signal Ralph / external audits use. `../ralph/{haiku,sonnet,opus}-review.md` reference this section and do NOT duplicate the procedure. `../reference/tool-selection-guide.md` Example 2 remains canonical for per-deliverable evidence-quality patterns (what to write INTO the Proof of Work entry). This section is canonical for what to DO WITH Proof of Work entries at audit time.
+
 ## Per-Stage Feedback Capture (Canonical)
 
-Canonical telemetry mechanism for the SST3 5-stage `/Leader` workflow. Each `/Leader` stage close writes a 10-field feedback record so observed patterns accumulate across runs (which stage routinely catches what bug class, which subagent angles are wasted, which corrections came from the user vs the agent self-caught).
+Canonical telemetry mechanism for the SST3 5-stage `/Leader` workflow. Each `/Leader` stage close writes a 10-field feedback record so we accumulate observed patterns across runs (which stage routinely catches what bug class, which subagent angles are wasted, which corrections came from the user vs the agent self-caught).
 
-**Storage convention**: per-issue file under the project's runtime telemetry directory (`SST3-metrics/leader-feedback/feedback-<issue>.md`). All 5 stages append `## Stage <N>` blocks to the same file. Index NDJSON co-located.
+**Storage convention** (literal path lives in unmirrored CLAUDE.md only): one `feedback-<repo>-<issue>.md` per issue under the `SST3-metrics/leader-feedback/` runtime telemetry directory. Filename encodes repo to prevent cross-repo collision (e.g. `dotfiles#449` vs `auto_pb_swing_trader#449`). Pre-commit hook `sst3-metrics-feedback-present` validates filename regex `^feedback-([a-z][a-z0-9_]*(?:-[a-z0-9_]+)*)-([1-9]\d*)\.md$` AND filename↔frontmatter parity. The repo-segment grammar disallows trailing hyphens, double hyphens, and digit-prefix names; the issue segment is a positive int with no leading zeros (rejects `0`, `007`, `00` collisions). All 5 stages append `## Stage <N>` blocks to the same file. Index NDJSON co-located in the same directory.
 
-**Stage discovery**: parser reads `### Stage <N> — <name>` headings from `../workflow/WORKFLOW.md` at runtime. NEVER hardcode the stage list.
+**Stage discovery**: parser reads `### Stage <N> — <name>` headings from `../workflow/WORKFLOW.md` at runtime. NEVER hardcode the stage list. This is the lesson from the archived `archive/retrospective-template.md` (coupled to a stage that got deleted in #428 and silently broke).
 
-**Frontmatter schema (8 fields)**: `issue / repo / created / last_updated / stages_logged / verdict_summary / topic_keywords / reconstructed_stages`.
+**Frontmatter schema** (8 fields):
+- `issue` — GitHub issue number (integer)
+- `repo` — repository name (encoded in filename via `feedback-<repo>-<issue>.md`; parity-validated against frontmatter at commit time)
+- `created` — ISO date of first stage close
+- `last_updated` — ISO date of most recent stage close
+- `stages_logged` — list of stage numbers logged (e.g. `[1, 2, 3, 4, 5]`)
+- `verdict_summary` — one-paragraph headline observation across all logged stages
+- `topic_keywords` — list of normalized keywords for `--shape-match` lookup (e.g. `[feedback, telemetry, sst3-metrics]`)
+- `reconstructed_stages` — list of stage numbers whose body fields were filled with `[reconstructed-post-compact: ...]` markers (lower-weighted in DRIFT ALERT counts)
 
-**Per-stage body schema (10 fields, hard-cap)**: `model / worked / didnt / why / improvement / improvement_status / evidence / friction / rule_self_caught / rule_user_caught`.
+**Per-stage body schema (10 fields, hard-cap)**:
+- `model` — agent model id used for the stage (e.g. `opus-4-7-1m`)
+- `worked` — observations of what the workflow caught / surfaced correctly
+- `didnt` — observations of what the workflow missed (FP correctly identified does NOT belong here — see FP-handling rule below)
+- `why` — root-cause analysis of the `didnt` items
+- `improvement` — concrete next-run change suggestion
+- `improvement_status` — enum (see below)
+- `evidence` — file:line / commit hash / command output / subagent RESULT comment-id
+- `friction` — token cost, wall-clock, restart count, per-Ralph-tier outcomes (Stage 4 sub-structure)
+- `rule_self_caught` — agent-self-caught violations of an existing canonical rule
+- `rule_user_caught` — user-caught corrections (attribution wording is FINE — see channel-separation rule)
 
-**`caught_by:` enum** (sub-attribute on findings): `wrapper / raw / haiku / sonnet / opus / user / agent-self`. Aggregator queries like "how often did raw-only Layer 2 catch what wrapper missed".
+**`caught_by:` enum** (sub-attribute on findings inside `worked` / `didnt`): `wrapper / raw / haiku / sonnet / opus / user / agent-self`. Lets the aggregator answer queries like "how often did raw-only Layer 2 catch what wrapper missed".
 
-**`improvement_status` enum**: `pending / applied / superseded / rejected` + optional `applied_in: <issue#>`. Closure loop: future Stage 1 Step 0 picks up `pending` improvements and marks them `applied` when the next run satisfies them.
+**`improvement_status` enum**: `pending / applied / superseded / rejected`. Optional `applied_in: <issue#>` when status moves to `applied`. Closure loop: future Stage 1 Step 0 picks up `pending` improvements from prior issues + marks them `applied` when the next run satisfies them.
 
-**Soft-cap**: tiny issues 10-20 lines / medium 30-60 / large 60-120 / >150 revisit. Hard cap on field count (10). Parser stderr WARN at >80 lines (advisory).
+**Soft-cap guidance**: tiny issues 10-20 lines per stage block / medium 30-60 / large 60-120 / >150 revisit. **Hard cap**: 10 fields exactly. Parser emits stderr WARNING (advisory, exit 0) if a per-stage block exceeds 80 lines. Tiny-issue terminal one-liners permitted (`rule_user_caught: none` / `friction: trivial`).
 
-**FP-handling rule**: a false positive correctly identified counts as `worked`, NOT `didnt`. Filter the FP, document why, that's a successful audit.
+**FP-handling rule**: a false positive correctly identified counts as `worked`, NOT `didnt`. Filter the FP, document why, that's a successful audit. (Avoids inflating DRIFT ALERT counts with the audit's own correctly-rejected hypotheses.)
 
-**Channel-separation rule**: feedback files MUST NOT contain forward-looking memory-channel signals (`prefers / always / from now on / default ON / going forward`). Attribution wording (`<user> flagged`, `user pointed out`) is FINE — natural vocabulary of `rule_user_caught`. Pre-commit hook enforces.
+**Channel-separation rule** (forward-preference-blocklist, NOT attribution-blocklist): feedback files MUST NOT contain forward-looking memory-channel signals: `prefers / always / from now on / default ON / going forward`. Those phrases belong to auto-memory (the user-voice channel). Attribution words that describe what happened in this run (`Hoi flagged`, `user pointed out`, `Hoi caught`) are FINE — they're the natural vocabulary of `rule_user_caught`. Pre-commit hook enforces.
 
-**DRIFT ALERT spec**: count-based on `(stage, verdict=didnt) >= threshold`. Default threshold 5. Configurable via env var `SST3_FEEDBACK_DRIFT_THRESHOLD`. Advisory signal; never autonomous Issue creation.
+**DRIFT ALERT spec**: count-based on `(stage, verdict=didnt) >= threshold`. Default threshold 5 (placeholder; calibrate after 10 issues). Configurable via env var `SST3_FEEDBACK_DRIFT_THRESHOLD`. Fires from `leader-feedback-aggregate.sh --summarize` to stderr; AP #21 forbids autonomous Issue creation, so DRIFT ALERTs are advisory signals not actions.
 
-**Single-CONCURRENT-session-per-issue rule**: parallel `/Leader` runs from different chat sessions = OUT OF SCOPE. Sequential sessions (compact + resume) FINE — sentinel auto-releases after 24h staleness.
+**Single-CONCURRENT-session-per-issue rule** (NOT "single-session"): two parallel `/Leader` runs on the same issue from different chat sessions is OUT OF SCOPE. Sequential sessions (compact + resume) FINE — sentinel auto-releases after 24h staleness so a resumed session can re-acquire.
 
-**Cross-repo scope-lock**: this canonical applies only to the primary repo until cross-repo aggregation is added in a follow-up.
+**Cross-repo support**: every repo's `/Leader` runs write to `dotfiles/SST3-metrics/leader-feedback/`. Repo is encoded in both the filename (`feedback-<repo>-<issue>.md`) and the frontmatter `repo:` field; the filename↔frontmatter parity check enforces consistency. Repo source for new files: `/Leader` workflow fills frontmatter `repo:` at file-creation time (per existing manual-fill convention). The dotfiles pre-commit hook validates parity; it does NOT auto-detect repo because it always runs in dotfiles context regardless of which sister repo's `/Leader` triggered the work.
 
-**Post-compact reconstruction protocol**: literal `[reconstructed-post-compact: <evidence-source>]` markers in fields; frontmatter `reconstructed_stages: [N]` flag; aggregator weights these lower in DRIFT ALERT counts.
+**Post-compact reconstruction protocol**: if an agent compacted mid-stage and cannot recover original observations, fields use the literal marker `[reconstructed-post-compact: <evidence-source>]` (e.g. `[reconstructed-post-compact: chat-handover.md]`, `[reconstructed-post-compact: phase-3-checkpoint-comment]`). Frontmatter `reconstructed_stages: [N]` flag set. Aggregator weights these lower in DRIFT ALERT counts so reconstructed observations don't dominate signal.
 
-**Stage 4 sub-structure**: Stage 4 `worked` / `didnt` MAY contain per-Ralph-tier sub-bullets (Tier 1 Haiku / Tier 2 Sonnet / Tier 3 Opus). The `friction` field captures `ralph_restarts: <N>` + per-tier outcomes.
+**Stage 4 sub-structure**: Stage 4 `worked` / `didnt` MAY contain per-Ralph-tier sub-bullets (Tier 1 Haiku / Tier 2 Sonnet / Tier 3 Opus). The `friction` field captures `ralph_restarts: <N>` + per-tier outcomes (PASS / FAIL → restart → PASS).
 
-**Activation-sha gate**: `.activation-sha` holds the canonical merge SHA. Pre-commit hook fires only on solo branches descended from it; pre-existing branches grandfathered.
+**Activation-sha gate**: `SST3-metrics/leader-feedback/.activation-sha` holds the canonical merge SHA when this mechanism lands on master. The `sst3-metrics-feedback-present` pre-commit hook fires only on solo branches whose first commit descends from `.activation-sha`. Pre-existing branches grandfathered (hook exits 0 with stderr note `pre-activation branch: hook skipped, hand-write feedback retroactively if desired`).
 
-**Stage detection**: pre-commit hook detects which stage a commit belongs to via `Phase: N` git-trailer in the commit message OR explicit `--stage N` CLI flag. NO fragile heuristic. Fail loud if a solo-branch commit has neither.
+**Stage detection**: pre-commit hook detects which stage a commit belongs to via the `Phase: N` git-trailer in the commit message OR an explicit `--stage N` CLI flag. NO fragile heuristic. NO silent skip. Fail loud if a solo-branch commit on an activated branch has neither.
 
-**Auto-archive**: 90 days → `_archive/` subfolder.
+**Auto-archive**: after 90 days of inactivity, records auto-archive to a `_archive/` subfolder.
 
-**Enforcement (3 layers)**: Layer A — pre-commit hook (compact-resilient). Layer B — persistent sentinel files (catch stages that don't commit). Layer C — skill-body sign-off line in workflow files (redundant-by-design third layer).
+**Index**: `feedback-index.ndjson` regenerated post-commit (incremental — mtime-vs-files check; full rebuild via `--rebuild`). Queryable via `../scripts/leader-feedback-aggregate.sh --summarize | --report | --shape-match | --staleness`.
 
-**Hook-failure protocol**: parser exits 1 with single-line stderr `feedback_parser: <error> at <file>:<line>`. NEVER raises stack trace.
+**Enforcement (3 layers)**:
+- **Layer A**: pre-commit hook `sst3-metrics-feedback-present` (compact-resilient — survives context loss). Bypass for genuine emergencies: `SKIP=sst3-metrics-feedback-present git commit ...`.
+- **Layer B**: persistent sentinel files in the gitignored `.sentinels/` subfolder catch Stages 1+2 (which don't produce commits). Auto-release after 24h staleness so compact-resume cycles can re-acquire.
+- **Layer C**: skill-body sign-off line in `../dotfiles/.claude/commands/Leader.md` for each of the 5 stages — the redundant-by-design third layer (AP #20 case proved skill-body alone leaks).
 
-**No retrofill**: pre-existing closed issues are NOT seeded with fabricated feedback records.
+**Hook-failure protocol**: `feedback_parser.py` exits 1 with single-line stderr `feedback_parser: <human-readable error> at <file>:<line>`. NEVER raises stack trace. NEVER prints debug noise. The error must be diagnosable from the single line.
+
+**No retrofill**: pre-existing closed issues are NOT seeded with fabricated feedback records. The first live record under this canonical IS the implementation Issue's own dogfood (#448). Avoids the fabrication-vs-criterion contradiction that killed the original retrofill scope.
+
+**Canonical scope boundary**: this section is THE canonical source for what / how / why feedback records exist. `../dotfiles/.claude/commands/Leader.md` SIGN-OFF lines reference this section for the per-stage write step. `../dotfiles/.claude/commands/SST3-solo.md` references this section at Per-Session Initialization and Verification Loop. `../workflow/WORKFLOW.md` references this section in each stage trailer. `../dotfiles/CLAUDE.md` is the single place where the literal `SST3-metrics/leader-feedback/...` storage path lives — the workflow files are mirrored to public repos and use this section reference only.
 
 ## Path Portability
 
@@ -638,7 +717,7 @@ cd ../dotfiles  # from DevProjects/[repo]
 
 **Usage in documentation**:
 - Use `$DOTFILES_ROOT` in examples requiring absolute paths
-- Use relative paths (e.g., `../...`) for cross-repo references
+- Use relative paths (e.g., `../dotfiles/SST3/...`) for cross-repo references
 - Never hardcode `C:\Users\username` in documentation
 
 ## DevProjects Directory Structure
@@ -648,15 +727,15 @@ DevProjects/              ← Local parent (not a git repo, not on GitHub)
 ├── dotfiles/             ← SST3 source of truth (git repo)
 │   ├── SST3/            ← Workflow documentation
 │   └── CLAUDE.md        ← Entry point
-├── project-a/              ← Git repo (uses SST3)
-│   └── CLAUDE.md        → ../...
-├── project-b/              ← Git repo (uses SST3)
-│   └── CLAUDE.md        → ../...
+├── auto_pb_swing_trader/ ← Git repo (uses SST3)
+│   └── CLAUDE.md        → ../dotfiles/SST3/...
+├── tradebook_GAS/        ← Git repo (uses SST3)
+│   └── CLAUDE.md        → ../dotfiles/SST3/...
 
 C:/temp/                  ← Shared temp folder (outside Google Drive, avoids sync conflicts)
 ```
 
-**Key Implications**: DevProjects/ is local only. Each repo is independent. SST3 lives in dotfiles/, referenced via `../`. Temp: `C:/temp/{repo}-{issue}-{description}.ext`.
+**Key Implications**: DevProjects/ is local only. Each repo is independent. SST3 lives in dotfiles/, referenced via `../dotfiles/SST3/`. Temp: `C:/temp/{repo}-{issue}-{description}.ext`.
 
 ### Architecture Validation
 
@@ -671,7 +750,7 @@ C:/temp/                  ← Shared temp folder (outside Google Drive, avoids s
 **Pre-commit hook** `check-devprojects-clean` validates DevProjects/ before every commit:
 
 **Allowed:**
-- Known repos: `dotfiles/`, `<your-project-a>/`, `<your-project-b>/`
+- Known repos: `dotfiles/`, `auto_pb_swing_trader/`, `tradebook_GAS/`
 - Shared temp: `temp/`
 - New git repos: Any directory containing `.git/`
 - Disabled git: `.git.DISABLED.*` pattern
@@ -709,7 +788,7 @@ C:/temp/                  ← Shared temp folder (outside Google Drive, avoids s
 
 **Enforcement**: Pre-commit hook rejects README.md files > 80 lines
 
-**Per-Stage Feedback / Telemetry**: see canonical section "Per-Stage Feedback Capture (Canonical)" earlier in this file. The previous `SST3-metrics/retrospectives/` lifecycle was superseded by the per-stage capture mechanism (3-layer enforcement, dynamic stage discovery, closure-loop on improvements).
+**Per-Stage Feedback / Telemetry**: see canonical section "Per-Stage Feedback Capture (Canonical)" earlier in this file. The previous `SST3-metrics/retrospectives/` lifecycle (per-Issue retrospective files, quarterly review trigger) was superseded in #448 — `archive/retrospective-template.md` produced zero retrospectives across its lifetime; the new per-stage capture mechanism replaces it with 3-layer enforcement, dynamic stage discovery, and a closure-loop on improvements.
 
 ### File Housekeeping
 
@@ -723,7 +802,7 @@ C:/temp/                  ← Shared temp folder (outside Google Drive, avoids s
 - **Naming**: `{repo}-{issue#}-{description}.{ext}` (e.g., `dotfiles-121-api-design.md`)
 - **NOT for**: Handovers (use GitHub Issue comments)
 - **Cleanup**: Script-based deletion when issue closed OR file age >30 days
-- **Script**: `python scripts/cleanup-temp.py` (dry-run by default)
+- **Script**: `python ../scripts/cleanup-temp.py` (dry-run by default)
 - **Script Documentation**: See [scripts/README.md](../scripts/README.md)
 - **Enforcement**: Pre-commit hook `no-temp-folder` blocks commits with temp/ paths (see Issue #241)
 
@@ -760,7 +839,7 @@ Housekeeping in 3 places (during work, after merge, STANDARDS.md) is intentional
 ## Code Quality
 
 ### DO
-- [ ] Set up pre-commit hooks (SST3/scripts/check-propagation.py, SST3/scripts/auto-stage-tracked-folders.py)
+- [ ] Set up pre-commit hooks (scripts/check-propagation.py, scripts/auto-stage-tracked-folders.py)
 - [ ] Write tests for critical paths (85% bug catch rate at Verification Loop)
 - [ ] Isolate components with clear interfaces
 - [ ] Require PR review before merging
@@ -768,7 +847,7 @@ Housekeeping in 3 places (during work, after merge, STANDARDS.md) is intentional
 
 ### DON'T
 - [ ] Skip tests for "simple" changes
-- [ ] Bypass pre-commit hooks (SST3/scripts/check-propagation.py, SST3/scripts/auto-stage-tracked-folders.py)
+- [ ] Bypass pre-commit hooks (scripts/check-propagation.py, scripts/auto-stage-tracked-folders.py)
 - [ ] Mix concerns in single modules
 - [ ] Merge without passing tests
 - [ ] Ignore linter warnings
@@ -799,18 +878,22 @@ Test in this order:
 
 ### Workflow Validation Gate (AP #18 — MANDATORY)
 
-Unit + smoke tests are necessary but NOT sufficient for pipeline / data-processing / CLI-wiring / cross-module propagation changes. Every such change MUST pass a **real-CLI sample invocation** against real DB before the issue closes.
+Unit + smoke tests are necessary but NOT sufficient for pipeline / backtest / CLI-wiring / cross-module propagation changes. Every such change MUST pass a **real-CLI sample invocation** against real DB before the issue closes.
+
+**Per-shape recipes**: see ANTI-PATTERNS.md AP #18 per-shape sample-invocation table (#447 Phase 7) for the 6 repo shapes (Service, Docs-only, Static-blog, Config-heavy, Infra-as-code, GAS) and their respective sample-invocation patterns. The wrapper-script trigger (#447 Phase 5) is also enumerated there. For non-auto_pb repos, use the per-shape recipe in AP #18 rather than the auto_pb-shaped 8-item-liquid-basket pattern.
+
+Cross-link: the **three-signal contract policy** + **Raw-tool cross-validation REQUIRED moments** + **AI-agent fallback heuristic** above ("Structural Code Queries" section L249+) bound when raw-tool counter-queries become MANDATORY at the wrapper-lane boundary. AP #18 sample invocation and raw-tool cross-validation are complementary gates: AP #18 covers downstream-consumer verification, the raw-tool counter-query covers recall verification. Both fire on wrapper-script changes per Phase 5.
 
 **Applies to (ANY match → gate active):**
 - New/modified CLI flags threaded into downstream function signatures
-- Pipeline / orchestration wiring changes
-- Coverage pre-flights, auto-bootstrap paths, window-scoped / experiment-path logic
+- SL1 / SL2 / backtest / queue-orchestrator / pipeline wiring
+- Coverage pre-flights, auto-bootstrap paths, snapshot-suffix / experiment-path logic
 - Multi-module function-arg propagation chains (>1 hop from CLI to DB write)
 - Any change where a `**kwargs`-accepting mock could silently hide the regression
 
 **Gate (verification loop item — NOT optional)**:
-1. Small liquid basket (8 items typical), real CLI, real DB.
-2. Verify rows land; downstream consumers (audit queries, consumers of the output) succeed.
+1. Small liquid basket (8 tickers typical), real CLI, real DB.
+2. Verify rows land; downstream consumers (contamination audit, snapshot copy, dashboard display) succeed.
 3. Mocks MUST assert explicit kwargs (`call_args.kwargs["window_start"] == expected`). No `**kwargs`-swallowing proof.
 4. Stage 5 integration test added for every new cross-module signature or CLI flag.
 
@@ -951,7 +1034,7 @@ Phase checkpoints post a comment to the Issue. They do NOT pause work. Post the 
 
 The 200K-era pattern of "stop at phase boundary to compact" no longer applies. The 1M window exists to be used. Stopping at 50%, 70%, or 80% REMAINING (i.e. only 20-50% used) is premature stopping — see ANTI-PATTERNS.md AP #17.
 
-**Threshold update (2026-04-15):** previously "80% warn / 90% stop" from the 200K era. Now **70% warn / 80% stop**. 80%+ of 1M (>800K) is where degradation becomes severe; the 10-point earlier warning gives enough runway to wrap up cleanly.
+**Threshold update (2026-04-15):** previously "80% warn / 90% stop" from the 200K era. Now **70% warn / 80% stop**. 80%+ of 1M (>800K) is where degradation becomes severe; the 10-point earlier warning gives enough runway to wrap up cleanly. User rationale: *"shit gets bad after that, it should warn at 70%"*.
 
 ## Related Documentation
 
@@ -962,5 +1045,7 @@ The 200K-era pattern of "stop at phase boundary to compact" no longer applies. T
 ## External Research References
 
 Capture quality research once in `docs/research/` (project root, NOT SST3/). Create when 3+ external resources found.
+
+**Anti-regression clarifier (added 2026-04-24 after drift detected):** research docs — public or private — go in `docs/research/<topic>/` with topic sub-folders. They do NOT go in domain-adjacent paths like `business/<domain>/research/`, `src/<module>/docs/`, or any other out-of-tree location. If a domain has ≥3 research docs, create `docs/research/<domain>/`; if <3, keep at `docs/research/` root with the date-prefix filename. Single source of truth per project, scannable by `ls docs/research/`. Prior 14-doc accumulation in dotfiles was consolidated to a `docs/research/ebay/` topic folder on 2026-04-24, then migrated out of dotfiles entirely into a private sibling repo on 2026-04-27 (dotfiles#449) — eBay business operations no longer share the SST3 harness repo.
 
 See: `../reference/research-reference-guide.md` for complete guide, file structure, naming conventions, and template.

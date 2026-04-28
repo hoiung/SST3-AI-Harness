@@ -1,0 +1,14 @@
+{
+  "fixture": "dep-list",
+  "issue": 447,
+  "phase": 8,
+  "scope": "Cross-ecosystem dependency enumeration. Synthetic manifests: pyproject.toml (5 deps: requests, pyyaml, click + dev pytest, ruff), Cargo.toml (2 deps: serde, tokio), package.json (2 deps: lodash, jest). Asserts >=8 records spanning python+rust+javascript ecosystems.",
+  "wrapper": "sst3-dep-list.sh",
+  "args": [],
+  "cwd": "input",
+  "expect": {
+    "exit_code": 0,
+    "stdout_min_records": 8,
+    "stdout_must_contain_files": ["pyproject.toml", "Cargo.toml", "package.json"]
+  }
+}

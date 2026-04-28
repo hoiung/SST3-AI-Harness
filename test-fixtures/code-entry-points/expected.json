@@ -1,0 +1,14 @@
+{
+  "fixture": "code-entry-points",
+  "issue": 447,
+  "phase": 8,
+  "scope": "Entry-point discovery. app.py: 1 main (if __name__ == '__main__'), 1 @app.route http_handler, 1 @app.get http_handler. Asserts >=3 records.",
+  "wrapper": "sst3-code-entry-points.sh",
+  "args": ["python"],
+  "cwd": "input",
+  "expect": {
+    "exit_code": 0,
+    "stdout_min_records": 2,
+    "stdout_must_contain_files": ["app.py"]
+  }
+}

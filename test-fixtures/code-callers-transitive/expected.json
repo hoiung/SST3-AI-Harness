@@ -1,0 +1,14 @@
+{
+  "fixture": "code-callers-transitive",
+  "issue": 447,
+  "phase": 8,
+  "scope": "BFS reverse-call lookup with depth=3 over chain.py: leaf <- mid <- top <- caller_of_top. Asserts >=2 records (depth-1 mid + depth-2 top OR depth-3 caller_of_top reachable from leaf). chain.py referenced.",
+  "wrapper": "sst3-code-callers-transitive.sh",
+  "args": ["leaf", "python", "--depth=3"],
+  "cwd": "input",
+  "expect": {
+    "exit_code": 0,
+    "stdout_min_records": 2,
+    "stdout_must_contain_files": ["chain.py"]
+  }
+}

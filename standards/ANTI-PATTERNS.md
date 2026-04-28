@@ -5,18 +5,18 @@
 ## Anti-Pattern #1: Propagation Failures
 
 **Problem**: Changes in one repo don't reach others, causing inconsistency
-**Evidence**: Issue #79, Issue #417 (Ralph file drift to public harness mirror, caught only by post-closure sanity check)
-**Root Cause**: Canonical-side edits without propagation — no hook previously fired when canonical files changed
+**Evidence**: Issue #79, Issue #417 (Ralph file drift to SST3-AI-Harness mirror, caught only by post-closure sanity check)
+**Root Cause**: Canonical-side edits without propagation — no hook previously fired in dotfiles when SST3 files changed
 
 **Prevention (automated — Issue #418)**:
-- `drift-manifest.json` lists every vendored file with required transforms (or `divergent + mirror_sha256` for hand-authored structural rewrites)
-- `scripts/propagate-mirrors.py --validate` runs in canonical pre-commit — for `transforms` mode files, fails when canonical edit is staged without the mirror synced. **Caveat**: `divergent` mode compares mirror sha256 against the manifest-recorded hash only; canonical content never enters the comparison. Hand-edit divergent mirrors in the same commit and run `--apply` to refresh the hash.
-- `scripts/check-mirror-drift.py` runs in each mirror pre-commit — fails when mirror drifted from canonical after expected transforms, OR (divergent mode) when mirror sha256 no longer matches the recorded hash
-- `scripts/propagate-mirrors.py --apply` syncs transform-mode mirrors AND refreshes divergent-mode hashes; error messages from both hooks include the exact invocation
+- `../dotfiles/SST3/drift-manifest.json` lists every vendored file with required transforms (or `divergent + mirror_sha256` for hand-authored structural rewrites)
+- `../scripts/propagate-mirrors.py --validate` runs in dotfiles pre-commit — for `transforms` mode files, fails when canonical edit is staged without the mirror synced. **Caveat**: `divergent` mode compares mirror sha256 against the manifest-recorded hash only — canonical content never enters the comparison. Hand-edit divergent mirror copies in the same commit and run `--apply` to refresh the hash.
+- `../scripts/check-mirror-drift.py` runs in each mirror pre-commit — fails when mirror drifted from canonical after expected transforms, OR (divergent mode) when mirror sha256 no longer matches the recorded hash
+- `../scripts/propagate-mirrors.py --apply` syncs transform-mode mirrors AND refreshes divergent-mode hashes; error messages from both hooks include the exact invocation
 - New canonical files: validator warns unless the file is in `unmirrored_canonical_files` allow-list or has a mirror entry
 
 **Prevention (behavioural — still apply alongside automation)**:
-- ✓ DO: Edit canonical, propagate via script, never hand-edit mirrors
+- ✓ DO: Edit canonical in dotfiles/SST3/, propagate via script, never hand-edit mirrors
 - ✓ DO: Verify per-phase Ralph Review catches any silent bypass
 - ✗ DON'T: Make direct mirror edits without updating canonical
 - ✗ DON'T: Use `SKIP=<hook-id> git commit` without filing an issue for the underlying false positive
@@ -129,7 +129,7 @@ if not config_file:
 **Automated Enforcement**:
 ```bash
 # Run during Stage 4 verification
-python SST3/scripts/check-fallbacks.py --severity warning .
+python scripts/check-fallbacks.py --severity warning .
 
 # Exit 0 = clean, Exit 1 = violations found
 # Use --exclude-dir tests to skip test files
@@ -144,7 +144,7 @@ python SST3/scripts/check-fallbacks.py --severity warning .
 **Evidence**: Unverified agent count propagated across docs as rhetorical framing. Financial figure misquoted as "average" when source said "up to". Both passed review.
 **Root Cause**: "Never Assume — Always Check" enforced for code but not documentation metrics.
 
-**Prevention**: Back every number with a reproducible source (command, query, line ref). Label estimates. Re-verify copied numbers. Maintain provenance (`cv-linkedin/METRIC_PROVENANCE.md`).
+**Prevention**: Back every number with a reproducible source (command, query, line ref). Label estimates. Re-verify copied numbers. Maintain provenance (`~/DevProjects/job-hunter/cv-linkedin/METRIC_PROVENANCE.md`).
 
 **Self-Healing**: `git blame` origin → verify or remove → update provenance. See STANDARDS.md "Factual Claims Must Have Provenance" + "User Assertion = Immediate Source Verification".
 
@@ -187,7 +187,7 @@ python SST3/scripts/check-fallbacks.py --severity warning .
 
 **Enforcement**: STANDARDS.md "Use Existing Before Building" + "Research Must Be Applied Collectively". Ralph Tier 2 duplicate-rule check.
 
-**Documented Exception**: The `dotfiles/SST3/` → `SST3-AI-Harness/` parallel mirror is INTENTIONAL architectural design (scrubbed public mirror, see `memory/project_sst3_dotfiles_vs_harness.md`). Edit BOTH on every SST3 file change. Drift between them is sanitisation, not duplication. Do NOT flag this pair as an AP #10 violation.
+**Documented Exception**: The `../dotfiles/SST3/` → `SST3-AI-Harness/` parallel mirror is INTENTIONAL architectural design (scrubbed public mirror, see `memory/project_sst3_dotfiles_vs_harness.md`). Edit BOTH on every SST3 file change. Drift between them is sanitisation, not duplication. Do NOT flag this pair as an AP #10 violation.
 
 ---
 
@@ -276,12 +276,12 @@ python SST3/scripts/check-fallbacks.py --severity warning .
 **Evidence**: 2026-04-07 voice rework destroyed factual accuracy because the sequential voice-then-fact pattern bypassed both the marker convention and the dual-lens rule (AP #9). 2026-04-08 fact rework drifted the voice for the same reason. The marker design was introduced in dotfiles#404 / hoiboy-uk#3 as the load-bearing mechanism that lets voice + hirer + fact lenses all run in the same pass.
 
 **Prevention**:
-- ✓ DO: Wrap prose in `<!-- iamhoi --> ... <!-- iamhoiend -->`. Use `<!-- iamhoi-skip --> ... <!-- iamhoi-skipend -->` for quoted JD content / proper-noun usage. Edit `voice_rules.py` AND `cv-linkedin/VOICE_PROFILE.md` Section 8 in the SAME pass when adding a banned word. Re-vendor + drift-cmp when changing canonical.
+- ✓ DO: Wrap prose in `<!-- iamhoi --> ... <!-- iamhoiend -->`. Use `<!-- iamhoi-skip --> ... <!-- iamhoi-skipend -->` for quoted JD content / proper-noun usage. Edit `voice_rules.py` AND `~/DevProjects/job-hunter/cv-linkedin/VOICE_PROFILE.md` Section 8 in the SAME pass when adding a banned word. Re-vendor + drift-cmp when changing canonical.
 - ✗ DON'T: Write voice prose untagged. Duplicate banned-word lists. Add KEEP_LIST words to BANNED_WORDS. Bypass the hook with `--no-verify`. Apply voice fixes in isolation from hirer/fact lenses (AP #9 sequential lens failure).
 
 **Self-Healing**: Pre-commit + CI catch unprotected violations only inside marker regions. Untagged regressions surface at user review. When that happens: wrap the offending paragraph in markers, fix the violation inside, re-run hook, document why the section was previously untagged.
 
-**Enforcement**: `check-ai-writing-tells.py` + `check-ai-writing-tells.py` (hoiboy-uk vendored), `validate.yml` voice-tells job (dotfiles), `ci.yml` voice-tells step (hoiboy-uk), `voice-rules-drift` cmp hook (hoiboy-uk pre-commit). STANDARDS.md "Voice Content Protection (Marker-Driven)" section.
+**Enforcement**: `scripts/check-ai-writing-tells.py` (canonical) + `scripts/check-ai-writing-tells.py` (hoiboy-uk divergent mirror with `--check-only-new` CLI), `validate.yml` voice-tells job (dotfiles), `ci.yml` voice-tells step (hoiboy-uk), `voice-rules-drift` cmp hook (hoiboy-uk pre-commit). STANDARDS.md "Voice Content Protection (Marker-Driven)" section.
 
 ---
 
@@ -315,7 +315,7 @@ python SST3/scripts/check-fallbacks.py --severity warning .
 
 **Problem**: Agent stops mid-phase to ask permission, wait for user confirmation, or "check in" when there's no blocker and context is nowhere near the stop threshold. Caused by 200K-era habits ("stop at phase boundary to compact") bleeding into 1M-context sessions, plus over-application of the Claude Code baseline safety prompt ("transparently communicate the action and ask for confirmation before proceeding") to routine work.
 
-**Evidence**: 2026-04-15 — subagents stopped at 50%, 70%, 80% context REMAINING (far below the actual stop threshold) with self-commentary like *"old habit from earlier sessions, user-rule caution that doesn't apply here. Executing — no more stops until 80% context or done."* The agent catches itself, but only after wasting user time.
+**Evidence**: 2026-04-15 — subagents were stopping at 50%, 70%, 80% context REMAINING (far below the actual stop threshold) with self-commentary like *"old habit from earlier sessions, user-rule caution that doesn't apply here. Executing — no more stops until 80% context or done."* The agent catches itself, but only after wasting user time. User quote: *"they are stopping randomly for no reason... it's like 80%, 70%, 50% remaining, yet they keep stupidly stopping"*.
 
 **Rule — Keep Going Until Done:**
 Do not stop mid-phase for permission, confirmation, or a "check in". Stop only for:
@@ -326,7 +326,7 @@ Do not stop mid-phase for permission, confirmation, or a "check in". Stop only f
 
 Phase checkpoints post a comment to the Issue — they DO NOT pause work. Post the comment and continue. Warnings at 70% context are informational, not stop signals.
 
-**Threshold update (2026-04-15):** previously documented as "80% warn / 90% stop" from the 200K era. Now 70% warn / 80% stop.
+**Threshold update (2026-04-15):** previously documented as "80% warn / 90% stop" from the 200K era. Now 70% warn / 80% stop. Reason: 80%+ of 1M (>800K) is where degradation becomes severe; the 10-point earlier warning gives enough runway to wrap up cleanly.
 
 **Do / Don't:**
 - ✓ DO: post phase checkpoint to Issue, immediately start next phase
@@ -344,33 +344,47 @@ Phase checkpoints post a comment to the Issue — they DO NOT pause work. Post t
 
 ## Anti-Pattern #18: Smoke-Tested Pipeline Shipped Without End-to-End Sample Run
 
-**Problem**: Closing a pipeline / backtest / data-processing / orchestration / CLI-wiring issue on the strength of unit tests + smoke tests + synthetic fixtures alone. Smoke validates local code paths; it does NOT validate multi-module workflow wiring across CLI flags → function signatures → DB writes → downstream consumers.
+**Problem**: Closing a pipeline / backtest / SL1 / SL2 / orchestration / CLI-wiring issue on the strength of unit tests + smoke tests + synthetic fixtures alone. Smoke validates local code paths; it does NOT validate multi-module workflow wiring across CLI flags → function signatures → DB writes → downstream consumers.
 
-**Evidence (pattern, scrubbed)**: A CLI-threading change added window-aware filtering at one layer of a pipeline but left the pre-flight coverage check at an earlier layer window-agnostic. Unit tests passed (mocks accepted `**kwargs` and silently discarded window args). Synthetic smoke passed (did not exercise the real CLI against real DB). Regression caught operationally by the next phase's first real invocation, NOT by the test suite. Sample invocation on a small liquid basket would have surfaced it before merge.
+**Evidence**: 2026-04-15 — Issue #1424 merged after green unit tests and synthetic smoke. Shipped a workflow regression: `check_sl1_coverage` remained window-agnostic (production-path `is_production=TRUE` join) while the downstream `_fetch_sl1_optimal_mvwaps_batch` became window-aware (exact-match `window_start`/`window_end`). Pre-flight incorrectly reported coverage, auto-SL1 skipped, downstream fetch rejected the mismatched rows with `SL1WindowMismatchError`. Caught operationally by Issue #1426 Phase 1 Step 0 (pipeline_operations op_id=2501 aborted: "SL1 promoted 0 winners for 8 tickers"), NOT by the test suite. Unit tests mocked `**kwargs` and never asserted window propagation. User quote: *"I need you to run samples of backtests to ensure whatever you build fucking works. Smoke tests ok for small logics, but it doesn't test workflow logics."*
 
 **Rule — Sample Invocation Validates Workflow Logic**:
-For any change that touches pipeline / data-processing / orchestration / CLI-wiring / cross-module function-arg propagation, run an actual end-to-end sample invocation matching the intended user workflow BEFORE closing the issue. Real DB. Real CLI. Real downstream consumers. Unit + smoke tests are necessary but NOT sufficient.
+For any change that touches pipeline / backtest / SL1 / SL2 / orchestration / CLI-wiring / cross-module function-arg propagation, run an actual end-to-end sample invocation matching the intended user workflow BEFORE closing the issue. Real DB. Real CLI. Real downstream consumers. Unit + smoke tests are necessary but NOT sufficient.
 
-**Scope triggers** (ANY of these → sample invocation mandatory):
+**Service/backend scope triggers** (ANY of these → sample invocation mandatory; auto_pb-shape canonical):
 - New or modified CLI flags and their threading into downstream function signatures
-- Pipeline coverage pre-flights, auto-bootstrap paths, experiment-path logic
-- Snapshot / window-scoped / period-scoped code paths
+- SL1 / SL2 / backtest / queue-orchestrator wiring changes
+- Pipeline operations tracker, coverage pre-flights, auto-bootstrap paths
+- Snapshot-suffix / window-scoped / experiment-path logic
 - Multi-module function-arg propagation chains (>1 hop from CLI to DB write)
 - Any change where a `**kwargs`-accepting mock could silently hide the regression
+- Any change to `../scripts/sst3-*.sh` (#447 Phase 5+6 wrapper-script trigger)
+
+**Per-shape recipe table** (#447 Phase 7 — codifies what already works across the 6 repo shapes; auto_pb is shape "Service" canonical above):
+
+| Shape | Sample artefact | Real-downstream | "8-ticker basket" analogue | Scope triggers | Safety constraints |
+|---|---|---|---|---|---|
+| **Service** (auto_pb-shape: backend pipeline + DB + queue) | `auto_pb_swing_trader/scripts/sample_invocation_issue<N>.py` (real CLI, real DB, real queue) | Postgres rows present, contamination audit passes, downstream consumer (SL1 fetch / queue tail) succeeds | 8-ticker liquid basket | CLI flag / SL1 / SL2 / queue-orchestrator / pipeline-tracker / cross-module arg propagation | Never touch production positions from E2E tests; RTH-only for IBKR-mediated tests; chunked not monolithic backtests |
+| **Docs-only** (research notes / runbooks / handover memory) | `/tmp/sample_<topic>_<date>.md` showing 1 representative path traversed end-to-end (frontmatter validated, related_code paths resolve, every claim has a file:line provenance) | `bash dotfiles/scripts/sst3-doc-frontmatter.sh --strict` exits 0 + `sst3-doc-links.sh` exits 0 + `sst3-sync-related-code.sh` exits 0 on every changed `.md` | n/a — read every file the change touches end-to-end, not a sample basket | Frontmatter add/change, related_code link change, runbook step add/change | No fabricated numbers/dates; every claim backed by file:line / commit / URL |
+| **Static-blog** (hoiboy-uk Hugo content) | `hoiboy-uk/scripts/pre-publish.sh` output (Hugo build + lychee on rendered HTML — NOT raw markdown) | `public/posts/<slug>/index.html` renders with no broken links, voice-guard passes (`check-ai-writing-tells.py` exit 0), banned-words clean (`voice_rules.py` exit 0) | Build ALL drafts (`hugo --buildDrafts`) before publish so cross-links resolve | New post, voice-affecting edit, image-asset add (Drive subfolder hero), cross-link to other post | Publish requires EXPLICIT user approval ("publish it" / "let's go live"); never auto-push to main of hoiboy-uk; Drive case-insensitive collision check (NTFS via WSL); no em dashes |
+| **Config-heavy** (dotfiles, package.json + .github/scripts setups) | Pre-commit dry-run `/tmp/precommit_sample_<date>.txt` showing every modified hook fires + statusline syntax-check + propagate-template.py runs clean across all consumer repos | All consumer repos pass `check-claude-template-propagation`; `propagate-template.py` exits 0 with `5/7 repositories updated successfully`; statusline `node -c` clean | Run pre-commit against the changed file glob + 1 file from each consumer repo | New pre-commit hook, statusline edit, settings.json change, propagate-template / propagate-mirrors edit | Never commit secrets to public repo; secret-scan before issue body posts; mirror-drift hazard documented when canonical changes |
+| **Infra-as-code** (.github/workflows, install.ps1, runbooks) | One workflow run on a non-default branch with `act` (local) OR PR-trigger run captured to `/tmp/ci_run_<workflow>_<date>.log` showing every step exits 0 | CI badge green on solo branch; `act -l` lists the new workflow; install.ps1 dry-run on a clean Windows VM (or PowerShell `-WhatIf`) | n/a — exercise every code path the workflow added (matrix, conditional, secret-using job) | New workflow, new install step, new conditional gate, new secret consumer | Never modify CI/CD pipelines without dry-run; treat workflow YAML as production code |
+| **GAS** (Google Apps Script — tradebook_GAS, future projects) | `tradebook_GAS/scripts/sample_test.gs` runs against the test project URL; outputs identical to live project URL when the same input is fed | Test project sheet shows expected rows; live project URL invocation against a sandbox sheet matches | n/a — exercise the test/live project pair with one real input row before merging | Trigger change, sheet schema change, deployed-as-add-on edit | Test project for rehearsal, live project for production; never edit live project directly; GAS deploys are atomic + irreversible |
+| **Homelab-bootstrap** (single-node NUC provisioning, operator-initiated from master) | TBD pending Phase 9 verification — see [dotfiles#455](Issue #455) | TBD | TBD | `bootstrap-nuc.ps1` / `provision.sh` / `secrets-pull.sh` / `verify-node.sh` / `setup-wsl-service.ps1` / `setup-portproxy.ps1` / wsl/packages.txt / homelab runbooks | TBD |
 
 **How to apply (MANDATORY in Stage 4 Verification Loop)**:
-1. Run real-CLI sample invocation on a small liquid basket (8 items typical) exercising the full pipeline end-to-end.
-2. Verify row counts land in DB, downstream consumers succeed, audit queries return OK.
+1. Run real-CLI sample invocation on a small liquid basket (8 tickers typical) exercising the full pipeline end-to-end.
+2. Verify row counts land in DB, contamination audit passes, downstream consumers succeed.
 3. Smoke first (cheap, fast). If smoke passes → STILL run the sample. Exit gate = sample succeeds.
 4. Assertions MUST verify arg propagation explicitly (`mock.call_args.kwargs["window_start"] == expected`), NOT rely on `**kwargs` swallowing.
 5. Add a Stage 5 integration test covering the sample path when the change introduces cross-module signatures or CLI flags.
 
 **Do / Don't**:
-- ✓ DO: run small-basket real-CLI sample on every pipeline-touching issue before close
+- ✓ DO: run 8-ticker real-CLI sample on every pipeline-touching issue before close
 - ✓ DO: assert function-arg propagation with explicit `call_args` checks
 - ✓ DO: write a regression integration test when adding/changing cross-module function signatures
 - ✗ DON'T: close on unit + smoke alone for pipeline / wiring / CLI changes
-- ✗ DON'T: defer the sample run to "the next issue's smoke" — shipped regressions originate there
+- ✗ DON'T: defer the sample run to "the next issue's smoke" — that is how #1424 shipped broken
 - ✗ DON'T: rely on mocks that discard kwargs to prove propagation
 
 **Self-Healing**: If you catch yourself about to close a pipeline/wiring issue without running a real sample → run the sample first. If you already closed one → reopen, run the sample, and add the missing regression test in the same fix.
@@ -379,7 +393,9 @@ For any change that touches pipeline / data-processing / orchestration / CLI-wir
 
 ---
 
-## Anti-Pattern #19: Structural Question Answered By Grep, Or Graph Result Trusted Without Source Check
+## Anti-Pattern #19: Structural Question Answered By Grep Alone, Or Wrapper-Lane Result Trusted Without Source Check
+
+**Wrapper-lane epoch preamble (Issue #445 Stage 5 — naming-honesty audit)**: this AP was written for the daemon-MCP epoch. Under the wrapper-lane, several semantics shift but the disciplines stay the same: (1) there is no graph database, no SQLite, no embeddings — every `search` is keyword-only by design (treat `embeddings_count=0` references throughout this AP as "always-true under wrapper-lane"); (2) there is no staleness — every wrapper call re-parses on disk (treat "fresh / stale" references as "the wrapper-lane returns repo-HEAD-time results per call, no cache invalidation needed"); (3) wrapper output uses `file_count`, not `total_nodes` — the field-rename happened in Issue #445 Stage 5. Disciplines that REMAIN mandatory: synonym sweep before any "no match" conclusion, mechanical per-query spot-check by reading source, subagent fallback for unsupported-language regions (Markdown, YAML, JSON, SQL, TOML, shell, HTML, Jinja, Dockerfile, Go, Java, etc.), and the 12 subagent-only moments listed in STANDARDS.md "Structural Code Queries". Where the prose below references "graph" / "freshness" / "embeddings", read it as wrapper-lane / per-call repo-state / "always keyword".
 
 **Pattern (two sides of one coin)**:
 - (a) **Under-use**: dispatching an Explore subagent or running a multi-pass grep to answer a purely structural question (who calls X? callers/callees? blast radius of editing Y? dead functions? tests for Z?) in a language the graph supports, when a single `query` call would answer it authoritatively in sub-second time. This is the graph-specific instance of AP #10 ("Failure to Search Before Adding" / grep-before-writing) — AP #10 covers grep for existing files/rules, AP #19 extends the same discipline to graph queries.
@@ -406,7 +422,7 @@ For any change that touches pipeline / data-processing / orchestration / CLI-wir
 **How to apply**:
 - Before answering a structural question: run the STANDARDS.md "Structural Code Queries" pre-query safety gate. If it passes, use the graph. If it fails on freshness, `graph update`. If it fails on language, use subagents.
 - **Mechanical per-query spot-check (not judgment)**: after EVERY `callers_of` / `callees_of` / `impact` / `inheritors_of` call, Read one result's source line and record `spot-check: <file:line>` in the RESULT block. After every `search` call with `embeddings_count=0`, Read TWO results (keyword-fallback false-positive risk is higher). "I'll spot-check the important ones" is not compliance — every query gets a check.
-- **At parallel-subagent scale (≥5 concurrent subagents)**: subagents STILL embed per-query spot-checks in their RESULT blocks (Rule unchanged). But the main agent verifies ONE spot-check per SUBAGENT on receipt (not one per query). Only findings that DRIVE A SCOPE CHANGE require main-agent per-query verification before acting. This reduces main-agent verification load from O(N_subagents × N_queries) to O(N_subagents) + O(scope-changing-findings). Preserves rigour where it matters; removes ritual where it does not. Field evidence: per-query main-agent verification breaks at 9 concurrent subagents.
+- **At parallel-subagent scale (≥5 concurrent subagents — round-5 TB-8 N48)**: subagents STILL embed per-query spot-checks in their RESULT blocks (Rule unchanged). But the main agent verifies ONE spot-check per SUBAGENT on receipt (not one per query). Only findings that DRIVE A SCOPE CHANGE require main-agent per-query verification before acting. This reduces main-agent verification load from O(N_subagents × N_queries) to O(N_subagents) + O(scope-changing-findings). Preserves rigour where it matters; removes ritual where it does not. Field evidence: agent5 found per-query main-agent verification breaks at 9 concurrent subagents (2026-04-20).
 - "No matches" in an area that includes unsupported-language files (YAML/SQL/shell/TOML/Dockerfile/Jinja/HTML/CSS) → explicitly broaden to subagent exploration before drawing a negative conclusion. Graph is blind to non-code.
 - RESULT block discipline (per STANDARDS.md Subagent Orchestration): when a graph query was used, the RESULT block **MUST** record the query type + target, `last_updated`, `embeddings_count`, spot-check source file:line, and result count. When graph was unavailable or unsupported, the RESULT block MUST record WHY it was skipped. If `embeddings_count=0` AND the query was `search`, the RESULT block MUST ALSO include `keyword_fallback: true` so reviewers don't misread keyword matches as semantic similarity.
 
@@ -418,19 +434,19 @@ For any change that touches pipeline / data-processing / orchestration / CLI-wir
 - ✓ DO: explicitly broaden to subagent when "no results" lands in an area with unsupported-language files
 - ✓ DO: cap `impact max_depth=1` by default (depth-2 fans out to 1000+ nodes on shared hooks/utils; wrap in subagent with summarisation)
 - ✓ DO: check `embeddings_count` BEFORE using `search` on non-literal-identifier queries — keyword-fallback is silent
-- ✓ DO: after `callers_of` / `callees_of` returns `not_found`, run `search <symbol>` FIRST to check whether the symbol exists as any node type. If `search` returns 0 too → grep. NEVER treat `not_found` as authoritative "no callers" — it conflates "symbol not indexed" with "zero callers". Specific non-indexed classes observed in field testing: instance methods (use fully-qualified `file.py::Class.method` form, not `file.py::method`), Pydantic validators, framework-decorator-registered routes (`@router.get/post`, `@app.get`, `@celery.task`). Upstream disambiguation tracked at the `not_found` response-shape issue.
+- ✓ DO: after `callers_of` / `callees_of` returns `not_found`, run `search <symbol>` FIRST to check whether the symbol exists as any node type. If `search` returns 0 too → grep. NEVER treat `not_found` as authoritative "no callers" — it conflates "symbol not indexed" with "zero callers". Specific non-indexed classes observed in round-5: instance methods (use fully-qualified `file.py::Class.method` form, not `file.py::method`), Pydantic validators, framework-decorator-registered routes (`@router.get/post`, `@app.get`, `@celery.task`). Upstream disambiguation tracked at the `not_found` response-shape issue filed by #427 Phase 2.
 - ✗ DON'T: dispatch Explore subagents for who-calls / blast-radius questions in supported languages when the graph is fresh
 - ✗ DON'T: trust `status: ok` JSON as authoritative without a source spot-check
 - ✗ DON'T: silently skip graph checks when available — document the skip reason
 - ✗ DON'T: apply a "graph-first" rule to any of the 12 subagent-only moments above
 - ✗ DON'T: invoke `large_functions` during Sanity Check on unchanged-function-size diffs (lint noise)
-- ✗ DON'T: trust `callers_of` / `callees_of` result when the target file contains dynamic dispatch. Five known subtypes (field evidence: 5x corroboration across rounds):
+- ✗ DON'T: trust `callers_of` / `callees_of` result when the target file contains dynamic dispatch. Five known subtypes (round-5 5× corroboration: N2+N16 to_thread / N24 f-string / N41 framework decorators):
   1. **async indirection**: `asyncio.to_thread(func, ...)`, `asyncio.ensure_future(func, ...)`, `map(func, ...)`, `functools.partial(func, ...)`
   2. **dict-of-Callable registries** and `getattr(obj, name)()` lookups
   3. **f-string-constructed identifiers** + `getattr`: e.g. `handler = getattr(self, f"handle_{event_type}")` — grep the prefix (`handle_`) not the full name
   4. **decorator-based routing**: FastAPI `@router.get/post/put/delete/patch`, Flask `@app.get/post/route`, Celery `@celery.task` / `@task`, Django `@path` registrations, pytest `@pytest.fixture`/`@pytest.mark.parametrize`
   5. **class-based dispatch**: generic `__call__`, `__getitem__` indirection, metaclass-registered handlers
-  Grep the target file for these patterns as a belt-and-braces (Python, e.g. `grep -E "asyncio.to_thread|asyncio.ensure_future|functools.partial|@router|@app\.|@celery|getattr"`). Field-tested: 2 independent agents hit silent-miss on `to_thread` — graph returned 1 caller, reality was 3. Subsequent rounds add f-string + FastAPI `@router` as distinct subtypes.
+  Grep the target file for these patterns as a belt-and-braces (Python, e.g. `grep -E "asyncio.to_thread|asyncio.ensure_future|functools.partial|@router|@app\.|@celery|getattr"`). Field-tested: 2 independent round-4 agents hit silent-miss on `to_thread` — graph returned 1 caller, reality was 3. Round-5 adds f-string + FastAPI `@router` as distinct subtypes. Upstream extension tracked at `n24q02m/better-code-review-graph#331`.
 - ✗ DON'T: use `search` on verb-phrases / multi-word queries when `embeddings_count=0` (keyword fallback returns garbage)
 
 **Enforcement — split by tier** (Haiku is surface-check speed, Sonnet+Opus do deep reasoning):
@@ -438,14 +454,66 @@ For any change that touches pipeline / data-processing / orchestration / CLI-wir
 - **Ralph Tier 2 (Sonnet) — under-use + over-trust logic check**: if graph was used, was at least one result spot-checked by reading source (evidence: file:line in the RESULT block)? If graph was available but not used for a structural question, FAIL.
 - **Ralph Tier 3 (Opus) — full AP #19 compliance**: includes Sonnet checks plus: no false-negative from "no results" in areas with unsupported-language files; no false confidence from structured JSON; graph freshness documented.
 - Subagent-only moments listed in STANDARDS.md "Structural Code Queries" section are explicitly out of AP #19 scope — they are correctly solved by subagents.
-- **"Graph available" is defined precisely**: `config status` returns `file_count >= 0` AND `last_updated` within 24 h. Empty or stale graphs count as "unavailable" for Ralph FAIL purposes — document the reason in RESULT and proceed with subagent fallback.
-- **Subagent MCP access is NOT canonically documented — MUST be recorded per-session**: MCP tools registered in `~/.claude.json` are attached to the main agent's tool-use loop. Whether subagents dispatched from the main agent inherit the same MCP registration is an Anthropic/Claude-Code contract that SST3 does not currently control or document — treat it as unknown-per-session until empirically verified. **Every subagent RESULT block that discusses graph queries MUST include `mcp_graph_available: yes|no` as the first line** (verified by subagent attempting a no-op `mcp__code-review-graph__config action=status` call; `yes` if it returns, `no` if it's missing from the tool set). Ralph Tier 1 uses this field to distinguish "no access" (acceptable grep fallback) from "lazy fallback" (FAIL). Follow-up research candidate: verify the Anthropic contract in a future round and update this note with the canonical answer.
+- **"Wrapper-lane available" is defined precisely**: `bash dotfiles/scripts/sst3-code-status.sh` exits 0 and emits valid JSON `{last_updated, file_count, source_languages}`. Wrapper-lane is stateless — every call re-parses on disk; there is no staleness check, no `total_nodes`, no `embeddings_count`. A wrapper that exits non-zero (typically exit 127 = inner engine missing per the documented stderr contract) counts as "unavailable" for Ralph FAIL purposes — document the reason in RESULT and proceed with subagent fallback. **Exit 127 semantics (post Issue #456)**: means the engine is **genuinely missing on disk** (npm/cargo/pipx install never ran). Pre-#456 the same code ALSO fired when the engine was on disk but PATH was not propagated to non-interactive shells; that PATH-propagation gap is now closed by `sst3-bash-utils.sh` self-bootstrap (see STANDARDS.md "Structural Code Queries — Non-interactive shell PATH bootstrap"). If exit 127 fires post-fix, run `scripts/install.sh` — do NOT add custom PATH workarounds.
+- **Subagent wrapper-lane access (post Issue #445)**: under the wrapper-lane, graph queries are bash-tool calls (no MCP server). Whether subagents inherit the main agent's bash-tool set is harness-dependent — treat as unknown-per-session until empirically verified per dispatch. **Every subagent RESULT block that discusses graph queries MUST include `mcp_graph_available: yes|no` as the first line** (field name retained for cross-tier compatibility; under wrapper-lane this is effectively `wrapper_invokable: yes|no`). **Wrapper-lane semantics (Issue #445)**: under the wrapper-lane this field is **always `no`** — wrappers are bash-tool calls, not MCP-protocol calls; subagents do not inherit the bash-tool set in the same way. Documented fallback (grep + manual file reads) is the EXPECTED path, not a degradation. The historical-MCP semantics below describe the legacy daemon-MCP behaviour and apply only if MCP transport is ever re-enabled. **Historical MCP-era semantics (G-3 fix, #444; retained for reference)**: in the MCP-native phase the field reflected the LAST graph call's outcome. Verify via no-op `bash dotfiles/scripts/sst3-code-status.sh`; record `yes` if that and every subsequent wrapper call returned exit 0; record `no` if any wrapper exited non-zero (e.g. exit 127 stderr-contract on missing engine). Ralph Tier 1 uses this field to distinguish "no access" (acceptable grep fallback, PASS) from "lazy fallback" (had access but skipped, FAIL).
 
 **Self-Healing**: If you catch yourself reaching for `Agent(Explore)` on a who-calls question in a supported language with a fresh graph → stop, run the graph query first, narrow the subagent prompt with the graph result. If you catch yourself trusting a "no results" without spot-checking → read one matching file from the area and confirm, then proceed.
 
 **Cross-reference**: AP #10 (grep-before-writing), AP #11b (false-positive sweep), AP #14c (main agent verifies swarm output against source). AP #19 extends those disciplines to graph tool output.
 
-**See also**: `STANDARDS.md` "Structural Code Queries" (canonical rule + 5-item pre-query gate), `../reference/tool-selection-guide.md` "Decision Tree: Code-Understanding Queries" (4-quadrant matrix + edge cases + invocation reference), `../docs/guides/code-query-playbook.md` (operational recipe: freshness, fallback, embeddings, cadence).
+**See also**: `STANDARDS.md` "Structural Code Queries" (canonical rule + 5-item pre-query gate), `../reference/tool-selection-guide.md` "Decision Tree: Code-Understanding Queries" (4-quadrant matrix + edge cases + invocation reference), `../dotfiles/docs/guides/code-query-playbook.md` (operational recipe: freshness, fallback, embeddings, cadence).
+
+---
+
+## Anti-Pattern #20: Comment-Only Progress Tracking Without Checkbox+Evidence
+
+**Pattern**: Reporting Acceptance Criteria completion via narrative comment ("Phase 2 done, all tests pass") instead of invoking `mcp__github-checkbox__update_issue_checkbox(issue_number, checkbox_text, evidence)` per checkbox. The Issue body — the permanent scope contract — remains a sea of `[ ]` while completion lives only in comment history, which is easy to re-read out of order, hard to audit, and impossible to reconcile against original scope without manual cross-referencing.
+
+**Why it happens**:
+- The MCP tool schema is **deferred** by the Claude Code harness and the agent sees only the tool name — calling it directly errors out with `InputValidationError`, so the agent falls back to comments without ever loading the schema via `ToolSearch`. (Canonical fix: STANDARDS.md "MCP Tool Schema Loading".)
+- Active workflow prompts (Leader.md, SST3-solo.md) historically lacked a strong "MUST invoke" directive; strong wording lived only in `../archive/ORCHESTRATOR.md:738-763` (archived historical source; canonical post-#429 location is `../reference/tool-selection-guide.md` Example 2).
+- Model regressions — commit `b9cf036` (2026-04-08, Opus 4.6) cut the canonical `Example 1` + `Example 2` blocks from `../reference/tool-selection-guide.md`, removing the copy-paste template agents relied on. Restored in #429.
+- 1M-context "Keep Going Until Done" (AP #17) paradigm encouraged batched narrative over per-deliverable governance updates — the failure mode this AP documents explicitly.
+
+**Evidence (measurable governance drift — 2026-04-21 audit)**:
+- `hoiung/auto_pb_swing_trader#1346` (closed): 209 checkboxes, 0 checked, no body-PATCH events
+- `hoiung/auto_pb_swing_trader#1353` (closed): 100 checkboxes, 0 checked, 6 comment checkpoints only
+- `hoiung/auto_pb_swing_trader#1359` (closed): 137 checkboxes, 0 checked
+- `hoiung/auto_pb_swing_trader#1364` (closed): 143 checkboxes, 0 checked
+- **589 unchecked acceptance criteria across completed work** — no per-checkbox evidence trail.
+
+**Relationship to AP #17 (Keep Going Until Done)**:
+
+AP #17 and AP #20 are **complementary, not contradictory**. AP #17 means: do not stop to ask permission between phases — keep working until done or a real blocker. AP #20 means: as each Acceptance Criterion completes, update the checkbox with evidence via MCP. Combined: **keep going AND update-as-you-go — never batch-report at phase end via narrative comment**. An agent that stops mid-work to batch checkbox updates is violating AP #17; an agent that keeps going but reports only in comments is violating AP #20. Both must hold at once.
+
+**How to apply**:
+- At every Acceptance Criteria completion → invoke `mcp__github-checkbox__update_issue_checkbox(issue_number, checkbox_text, evidence)` with evidence matching the canonical patterns in `../reference/tool-selection-guide.md` "Example 2: Stage 4 Checkbox Update".
+- If the tool returns `InputValidationError` (deferred schema), load via `ToolSearch(select:mcp__github-checkbox__update_issue_checkbox,...)` per STANDARDS.md "MCP Tool Schema Loading" — never silent-fallback to comments.
+- Comment checkpoints SUPPLEMENT checkbox updates (narrative context, blockers, next steps) — they do NOT REPLACE them.
+- Stage 4 Verification Loop "Checkbox-MCP coverage gate" fails if the mismatch is detected — retroactively close boxes with evidence before merge.
+- Ralph Review tiers (haiku / sonnet / opus) independently verify MCP-sourced evidence at review time — external defence-in-depth on top of agent self-enforcement.
+
+**Canonical invocation points**: `../dotfiles/.claude/commands/Leader.md` Guardrails block + `../dotfiles/.claude/commands/SST3-solo.md` "Governance Enforcement" section. Rule lives there; this AP documents the failure mode.
+
+**Cadence — two-tier rule (#429 Phase 9 refinement)**:
+- **Tier A — Phase-deliverable checkboxes** (concrete file edit / commit / function / section / example named in Acceptance Criteria Phase 1..N): **STRICT interleaving required**. Close each with `update_issue_checkbox` + evidence within the same phase's commit window. Cluster-at-end violates AP #20.
+- **Tier B — Cross-cutting meta-checkboxes** (Triple-Check Gate items, Engineering Requirements meta-items, Cleanup Requirements, Verification Loop self-gates, PREREQUISITE CHECKPOINT, Expected Behavior post-conditions): **batched-at-end acceptable**. These describe conditions observable only post-all-phases — closing them mid-phase would be dishonest. Ralph Opus (Tier 3) audits this distinction via `../ralph/opus-review.md` "Governance Drift Audit" classification heuristic.
+
+**See also**: STANDARDS.md "MCP Tool Schema Loading" (canonical ToolSearch rule), STANDARDS.md "Governance Evidence Signal (Canonical)" (canonical audit signal — Proof of Work body section, added #431 Phase 1), `../reference/tool-selection-guide.md` Example 2 (canonical evidence-requirements table), AP #17 (Keep Going Until Done — complementary discipline), `../ralph/opus-review.md` Governance Drift Audit (codependent — do not edit in isolation, see #429 Phase 9 + #431 Phase 2a).
+
+---
+
+## Anti-Pattern #21: Autonomous Follow-up Issue Creation
+
+**Pattern**: during Stage 5 adversarial audit (or any Layer-2 subagent review), the swarm identifies speculative future-failure-modes and autonomously creates a follow-up GitHub issue bundling them as "medium/low severity follow-ups" without explicit user direction.
+
+**Why it fails**: user authorization is binary (proceed / do not proceed). Bundling speculative findings into a new issue presumes authorization the user never gave, converts research-phase output into contract-phase scope, and forces the user to retroactively accept scope the research did not validate against Hoi's binding rules ("no deferrals, no priority levels", "no fabricated numbers").
+
+**Evidence**: dotfiles#430 created 2026-04-21 by Layer-2 subagent during #429 Stage 5; user response: "where did #430 come from?" + required full `/Leader 1→5` cycle retrofit (#431 supersedes #430). The 6 speculative phases in #430 were evaluated by proper Stage 1 research and 4 of 6 were discarded entirely (observability metric, rule versioning, token budget, pre-commit hook); the 2 kept phases (bootstrap-paradox doc, harness smoke test) simplified to 2-line edits + ~12-line block respectively.
+
+**How to apply**: Layer-2 subagents present follow-up findings as a COMMENT on the parent issue's Stage 5 summary, NOT as a new GitHub issue. Creating a new issue requires the main agent to surface the proposed scope to the user in chat and obtain explicit approval BEFORE calling `mcp__github__create_issue`. When in doubt, comment don't create.
+
+**Related**: STANDARDS.md "Subagent Orchestration Discipline" (subagent read-only contract); Leader.md Stage 5 DON'T list (added #431 Phase 2b — "Create new GitHub issues autonomously…"); AP #13 ("Proceed" ≠ "Bypass Process" — user authorisation never bypasses workflow, and the inverse: never presume authorisation for scope not discussed).
 
 ---
 

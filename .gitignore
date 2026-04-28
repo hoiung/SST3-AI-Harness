@@ -9,5 +9,8 @@ Thumbs.db
 *.log
 *.tmp
 
-# Code review graph (local AST index, regenerable)
+# Wrapper-lane is stateless (re-parses on disk every call). No daemon, no SQLite, no persistent
+# graph artefact — nothing here to ignore for the canonical lane. The .code-review-graph/ entry
+# below is preserved while developer machines may still have legacy dirs from the pre-#445
+# MCP-era server (deprecated; safe to delete locally).
 .code-review-graph/

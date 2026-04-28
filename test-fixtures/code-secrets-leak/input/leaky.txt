@@ -1,0 +1,6 @@
+This is a fixture file containing a synthetic blocked token.
+
+Token: SST3-FIXTURE-LEAK-TOKEN-DO-NOT-COMMIT
+
+Plus an unrelated line that does not contain any blocked tokens.
+And a second occurrence of SST3-FIXTURE-LEAK-TOKEN-DO-NOT-COMMIT for line-count assertion.

@@ -1,0 +1,14 @@
+{
+  "fixture": "dep-usage",
+  "issue": 447,
+  "phase": 8,
+  "scope": "Package import + first-use detection. Synthetic uses_requests.py: 4 import lines (import requests, import requests as req, from requests import Session, from requests.auth import HTTPBasicAuth) + 1 call site (requests.get). Asserts >=4 records and uses_requests.py referenced.",
+  "wrapper": "sst3-dep-usage.sh",
+  "args": ["requests", "python"],
+  "cwd": "input",
+  "expect": {
+    "exit_code": 0,
+    "stdout_min_records": 4,
+    "stdout_must_contain_files": ["uses_requests.py"]
+  }
+}

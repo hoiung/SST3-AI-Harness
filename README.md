@@ -235,11 +235,13 @@ A custom Model Context Protocol server (`mcp-servers/github-checkbox/`) built wi
 
 This implements **RAG-based governance**: the server queries live GitHub data before allowing state changes, ensuring audit trail integrity.
 
-### Adopted MCP Server: code-review-graph (code-awareness)
+### Wrapper-Lane: stateless bash code-awareness
 
-SST3 integrates the open-source `better-code-review-graph` MCP server (fork of `tirth8205/code-review-graph`) to give the orchestrator AST-level code-awareness. Uses Tree-sitter parsers and a local SQLite knowledge graph stored in `.code-review-graph/` (gitignored, regenerable). Provides 5 tools: `graph`, `query`, `review`, `config`, `help` (setup is a `config` sub-action), enabling blast-radius analysis, caller/callee resolution, dead-code detection, and large-function audits. Parses 14 source languages (Python, TypeScript, TSX, JavaScript, Go, Rust, Java, C#, Ruby, C/C++, Kotlin, Swift, PHP, Solidity); NOT Markdown/YAML/JSON/SQL/TOML/shell.
+SST3 ships a wrapper-lane of 38+ stateless bash scripts at `scripts/sst3-*.sh` that give the orchestrator AST-level code awareness without a daemon, SQLite graph, or persistent state. Each call re-parses on disk and emits NDJSON. Inner engines: `ast-grep` (Tree-sitter; Python, TypeScript, TSX, JavaScript, Rust), `lychee`, `coverage.py`, `markdownlint-cli2`, `yamllint`, `pip-audit`, `cargo audit`, `shellcheck`, plus `git` / `jq` / `python3`.
 
-Runs in local-only mode (`EMBEDDING_BACKEND=local`, no cloud embeddings) so proprietary code never leaves the machine. Ralph Review tiers include optional graph-backed checks (blast radius on changed files, orphan detection, community-boundary crossing) that are non-blocking when the server is unavailable. Install via `uvx --python 3.13 better-code-review-graph --stdio` in `~/.claude.json` mcpServers config.
+Tools include `sst3-code-callers.sh`, `sst3-code-callees.sh`, `sst3-code-impact.sh` (blast radius), `sst3-code-large.sh` (refactor candidates), `sst3-code-orphans.sh`, `sst3-code-coverage.sh` (untested-py via `coverage.json`), plus doc / sec / dep / sync families. The `sst3-self-test.sh` orchestrator runs 25 frozen-fixture regressions to validate wrapper integrity.
+
+Replaces the upstream `better-code-review-graph` MCP server we previously adopted (deprecation tracked in #445 R4). The custom-built wrappers solve recall and correctness gaps in the upstream graph — `callers_of` returning empty results, `large` functions silently truncated, the daemon post-handshake-disconnect class. PATH bootstrap via `scripts/sst3-bash-utils.sh` makes wrappers reachable from non-interactive shells (the `bash --noprofile --norc -c '...'` shape Claude Code's Bash tool spawns; #456 closed that gap and surfaced this exact public-mirror coverage gap during Stage 5 audit). Install inner engines via `dotfiles/scripts/install.sh` (Linux/WSL) or `install.ps1` (Windows).
 
 ### Claude Code Statusline
 

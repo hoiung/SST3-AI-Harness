@@ -1,0 +1,14 @@
+{
+  "fixture": "dep-blast-radius",
+  "issue": 447,
+  "phase": 8,
+  "scope": "Composes dep-usage + code-callers. Synthetic uses_requests.py: 1 import + 2 call sites. Asserts >=1 record and that uses_requests.py is referenced; callers_count is best-effort (may be 0 in fixture isolation since callers wrapper looks at the symbol globally).",
+  "wrapper": "sst3-dep-blast-radius.sh",
+  "args": ["requests", "python"],
+  "cwd": "input",
+  "expect": {
+    "exit_code": 0,
+    "stdout_min_records": 1,
+    "stdout_must_contain_files": ["uses_requests.py"]
+  }
+}

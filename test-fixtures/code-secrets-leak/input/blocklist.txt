@@ -1,0 +1,6 @@
+# Synthetic blocklist for the code-secrets-leak fixture.
+# One literal token per line; lines starting with `#` and section headers
+# (`[name]`) are stripped by the wrapper before scanning.
+
+[shared]
+SST3-FIXTURE-LEAK-TOKEN-DO-NOT-COMMIT

@@ -1,0 +1,14 @@
+{
+  "fixture": "sec-secret-touchpoints",
+  "issue": 447,
+  "phase": 8,
+  "scope": "Secret/credential touchpoint detection. Synthetic touchpoints.py contains 3 env reads + 1 dotenv load = 4 ast-grep matches; password-literal + AWS-key are fixture-only sentinels (test inputs). Asserts >=4 records and that touchpoints.py is referenced.",
+  "wrapper": "sst3-sec-secret-touchpoints.sh",
+  "args": [],
+  "cwd": "input",
+  "expect": {
+    "exit_code": 0,
+    "stdout_min_records": 4,
+    "stdout_must_contain_files": ["touchpoints.py"]
+  }
+}
