@@ -1,0 +1,22 @@
+{
+  "fixture": "command-injection",
+  "issue": 447,
+  "phase": 1,
+  "scope": "Closes the command-injection class on 4 wrappers (callers, callees, subclasses, impact) by asserting assert_safe_identifier rejects shell metacharacters before any pattern interpolation.",
+  "driver": "run.sh",
+  "exit_code": 0,
+  "must_assert": [
+    "callers/callees/subclasses each exit 64 on shell-metachar payload",
+    "impact validates SYM via the same helper inside its per-iteration loop",
+    "/tmp/sst3_inject_test_<pid> sentinel is never created"
+  ],
+  "stdout_must_contain": [
+    "PASS: callers",
+    "PASS: callees",
+    "PASS: subclasses",
+    "PASS: impact",
+    "PASS: no injection sentinel created"
+  ],
+  "stderr_may_contain": [],
+  "kind_records_required": []
+}

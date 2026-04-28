@@ -1,0 +1,14 @@
+{
+  "fixture": "code-cross-lang-m6",
+  "issue": 447,
+  "phase": 6,
+  "scope": "Cross-language IPC mechanism M6 (SQL tables). 'jobs_queue' appears in query.sql (FROM + UPDATE) and api.py (INSERT INTO + SELECT FROM). Asserts >=4 cross-lang-edge records with mechanism=M6. Phase 6 ships M1/M2/M3/M4/M6; M5/M7-M10 deferred.",
+  "wrapper": "sst3-code-cross-lang.sh",
+  "args": ["jobs_queue", "--mechanism=M6"],
+  "cwd": "input",
+  "expect": {
+    "exit_code": 0,
+    "stdout_min_records": 4,
+    "stdout_must_contain_files": ["query.sql", "api.py"]
+  }
+}

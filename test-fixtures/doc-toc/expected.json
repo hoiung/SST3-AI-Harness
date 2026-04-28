@@ -1,0 +1,14 @@
+{
+  "fixture": "doc-toc",
+  "issue": 447,
+  "phase": 8,
+  "scope": "Heading-anchor link drift. main.md has 4 anchor links: 2 valid (section-a in same file, anchor-a in other.md) + 2 invalid (section-c in same file, missing-anchor in other.md). Asserts >=4 records.",
+  "wrapper": "sst3-doc-toc.sh",
+  "args": [],
+  "cwd": "input",
+  "expect": {
+    "exit_code": 0,
+    "stdout_min_records": 4,
+    "stdout_must_contain_files": ["main.md"]
+  }
+}

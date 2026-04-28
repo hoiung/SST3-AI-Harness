@@ -1,0 +1,12 @@
+# Wrappers that intentionally do NOT source sst3-bash-utils.sh (Issue #456 Phase 2).
+# Audited Phase 3: each entry verified to depend ONLY on system-PATH tools
+# (rg / jq / git / python3 / bash) — no $HOME/.cargo|.local|.npm-global engines.
+# Format: <basename>  # <one-line justification>
+sst3-check.sh             # orchestrator — children inherit augmented PATH via their own source line
+sst3-code-status.sh       # jq + git only — system PATH
+sst3-code-update.sh       # no-op contract-preservation shim — no engine deps
+sst3-sync-doc-to-code.sh  # bash + jq + python3 only — system PATH
+sst3-sync-related-code.sh # bash + jq + git only — system PATH
+sst3-sync-tool-eviction.sh # rg only — /usr/bin/rg, system PATH
+sst3-sync-url-liveness.sh # delegates to sst3-doc-links.sh (which sources bash-utils)
+sst3-self-test.sh         # meta-validator — self-bootstraps PATH inline at L22-37 (intentional duplication; works even if bash-utils is broken)

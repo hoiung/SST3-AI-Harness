@@ -1,0 +1,11 @@
+[project]
+name = "fixture-pkg"
+version = "0.1.0"
+dependencies = [
+    "requests>=2.30",
+    "pyyaml<7",
+    "click",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "ruff"]

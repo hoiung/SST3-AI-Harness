@@ -1,0 +1,15 @@
+{
+  "fixture": "doc-frontmatter-clean",
+  "issue": 447,
+  "phase": 4,
+  "scope": "Frontmatter validator emits NDJSON one record per file. Fixture asserts 2 records (1 valid + 1 invalid) plus the EXIT-trap stderr sentinel from Phase 2.",
+  "wrapper": "sst3-doc-frontmatter.sh",
+  "args": ["input/clean-doc.md", "input/missing-fields.md"],
+  "cwd": ".",
+  "expect": {
+    "exit_code": 0,
+    "stdout_min_records": 2,
+    "stdout_must_contain_files": ["clean-doc.md", "missing-fields.md"],
+    "stderr_must_contain": ["sst3-doc-frontmatter: scanned 2 path(s)"]
+  }
+}

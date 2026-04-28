@@ -1,0 +1,14 @@
+{
+  "fixture": "code-search-keyword",
+  "issue": 447,
+  "phase": 4,
+  "scope": "Literal-mode keyword search via ripgrep. 'my_unique_marker' appears twice (def site + call site) in sample.py. Asserts ≥2 records and that sample.py is referenced.",
+  "wrapper": "sst3-code-search.sh",
+  "args": ["my_unique_marker", "python", "--literal"],
+  "cwd": "input",
+  "expect": {
+    "exit_code": 0,
+    "stdout_min_records": 2,
+    "stdout_must_contain_files": ["sample.py"]
+  }
+}

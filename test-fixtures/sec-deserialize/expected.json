@@ -1,0 +1,14 @@
+{
+  "fixture": "sec-deserialize",
+  "issue": 447,
+  "phase": 8,
+  "scope": "Unsafe-deserialise + dynamic-eval detection. Synthetic sinks.py contains 5 unsafe sinks (pickle.loads, marshal.loads, eval, exec, yaml.load without SafeLoader) plus 1 SAFE site (yaml.load with SafeLoader) which must NOT be flagged. Asserts >=5 records and that sinks.py is referenced.",
+  "wrapper": "sst3-sec-deserialize.sh",
+  "args": [],
+  "cwd": "input",
+  "expect": {
+    "exit_code": 0,
+    "stdout_min_records": 5,
+    "stdout_must_contain_files": ["sinks.py"]
+  }
+}

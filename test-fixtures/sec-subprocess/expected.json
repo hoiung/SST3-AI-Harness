@@ -1,0 +1,14 @@
+{
+  "fixture": "sec-subprocess",
+  "issue": 447,
+  "phase": 8,
+  "scope": "Pre-baked subprocess/shell-out detection across Python (subprocess.run/Popen/call, os.system/popen). Synthetic shellout.py contains 5 distinct shell-out sites; asserts >=5 records and that shellout.py is referenced.",
+  "wrapper": "sst3-sec-subprocess.sh",
+  "args": ["python"],
+  "cwd": "input",
+  "expect": {
+    "exit_code": 0,
+    "stdout_min_records": 5,
+    "stdout_must_contain_files": ["shellout.py"]
+  }
+}

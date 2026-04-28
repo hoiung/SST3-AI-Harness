@@ -1,0 +1,13 @@
+{
+  "fixture": "code-coverage",
+  "issue": 447,
+  "phase": 8,
+  "scope": "Line-level coverage projection from coverage.json. Synthetic .coverage.json has 2 files: src/foo.py (5 covered / 9 total = 55.56%, missing ranges [[4,4],[7,9]]) + src/bar.py (5/5 = 100%). Asserts 2 records.",
+  "wrapper": "sst3-code-coverage.sh",
+  "args": [".coverage.json"],
+  "cwd": "input",
+  "expect": {
+    "exit_code": 0,
+    "stdout_min_records": 2
+  }
+}

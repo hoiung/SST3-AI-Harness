@@ -1,0 +1,15 @@
+{
+  "fixture": "sync-related-code-drift",
+  "issue": 447,
+  "phase": 4,
+  "scope": "Frontmatter related_code drift detector. 3 cited paths: 1 exists (sst3-bash-utils.sh), 2 are fakes. Wrapper emits 3 NDJSON records, the 2 fakes carry exists:false. Asserts the EXIT-trap sentinel from Phase 2 + the drift recall.",
+  "wrapper": "sst3-sync-related-code.sh",
+  "args": ["input/has-drift.md"],
+  "cwd": ".",
+  "expect": {
+    "exit_code": 0,
+    "stdout_min_records": 3,
+    "stdout_must_contain_files": ["this-path-does-not-exist-anywhere.py", "another-fake-path.rs"],
+    "stderr_must_contain": ["sst3-sync-related-code: scanned 1 path(s)"]
+  }
+}

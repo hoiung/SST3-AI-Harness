@@ -1,0 +1,13 @@
+{
+  "fixture": "dep-cve",
+  "issue": 447,
+  "phase": 8,
+  "scope": "CVE wrapper (pip-audit / cargo audit / npm audit). Network-isolated fixture mode: --fixture-stub <path> passes a synthetic NDJSON file through the emitter. 2 canned advisory records. Closes the dogfood gap without requiring CI internet for advisory database fetch.",
+  "wrapper": "sst3-dep-cve.sh",
+  "args": ["--fixture-stub", "stub.ndjson"],
+  "cwd": "input",
+  "expect": {
+    "exit_code": 0,
+    "stdout_min_records": 2
+  }
+}

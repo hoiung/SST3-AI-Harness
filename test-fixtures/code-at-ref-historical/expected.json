@@ -1,0 +1,14 @@
+{
+  "fixture": "code-at-ref-historical",
+  "issue": 447,
+  "phase": 6,
+  "scope": "Meta-wrapper that runs another wrapper against a historical ref. Fixture stands up tmp git repo with HEAD~1 containing only early_func and HEAD adding late_func. Asserts: every output record is tagged ref:HEAD~1; late_func absent (added in HEAD); early_func present. Imperative driver because we need a controlled git history.",
+  "driver": "run.sh",
+  "exit_code": 0,
+  "stdout_must_contain": [
+    "PASS: emitted",
+    "PASS: all records carry ref:HEAD~1",
+    "PASS: late_func correctly absent at HEAD~1",
+    "PASS: early_func present at HEAD~1"
+  ]
+}

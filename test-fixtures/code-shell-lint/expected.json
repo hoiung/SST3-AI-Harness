@@ -1,0 +1,14 @@
+{
+  "fixture": "code-shell-lint",
+  "issue": 447,
+  "phase": 6,
+  "scope": "Shell-script lint via shellcheck JSON output. Sample file contains intentional SC2086 (unquoted $x) + SC2006 (backtick command substitution). Asserts >=2 lint records and that buggy.sh is referenced. Closes the dotfiles dogfood gap — wrapper-lane can finally audit its own bash.",
+  "wrapper": "sst3-code-shell.sh",
+  "args": ["--lint", "buggy.sh"],
+  "cwd": "input",
+  "expect": {
+    "exit_code": 0,
+    "stdout_min_records": 2,
+    "stdout_must_contain_files": ["buggy.sh"]
+  }
+}

@@ -1,0 +1,2 @@
+{"ecosystem":"python","package":"fixture-vuln","version":"1.0.0","cve_id":"CVE-2024-FIXTURE","severity":"high"}
+{"ecosystem":"python","package":"fixture-vuln-low","version":"0.5.0","cve_id":"CVE-2024-FIXTURE-LOW","severity":"low"}

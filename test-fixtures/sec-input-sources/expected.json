@@ -1,0 +1,14 @@
+{
+  "fixture": "sec-input-sources",
+  "issue": 447,
+  "phase": 8,
+  "scope": "Untrusted-input entry-point detection across HTTP/CLI/stdin/file_open. Synthetic inputs.py contains: 3 HTTP touchpoints (request.json/form/args), 1 cli_argv, 1 stdin.read, 1 input(), 1 open() = 7 sources. Asserts >=6 records and that inputs.py is referenced.",
+  "wrapper": "sst3-sec-input-sources.sh",
+  "args": [],
+  "cwd": "input",
+  "expect": {
+    "exit_code": 0,
+    "stdout_min_records": 6,
+    "stdout_must_contain_files": ["inputs.py"]
+  }
+}
