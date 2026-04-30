@@ -311,12 +311,21 @@ Safety features:
 
     print(f"[TEMPLATE] Using: {template}")
 
-    # Auto-discover all sibling repositories under DevProjects/ that contain a CLAUDE.md.
-    # Replaces the hardcoded list so new repos are picked up automatically.
+    # Auto-discover sibling repositories under DevProjects/ that:
+    #   (a) contain a CLAUDE.md, AND
+    #   (b) are listed in sst3_utils.KNOWN_REPOS
+    # The KNOWN_REPOS filter (added #460 Stage 5 — angle K finding) prevents
+    # special-case repos (intentionally minimal, NO boundary marker, harness-
+    # run staging only) from being processed. Without the filter, propagate-
+    # to-repo logs "Boundary marker not found" but main() still exits 0,
+    # masking partial failure.
+    sys.path.insert(0, str(script_dir))
+    from sst3_utils import KNOWN_REPOS  # noqa: E402
+
     devprojects = dotfiles.parent
     discovered = sorted([
         d for d in devprojects.iterdir()
-        if d.is_dir() and (d / "CLAUDE.md").exists()
+        if d.is_dir() and (d / "CLAUDE.md").exists() and d.name in KNOWN_REPOS
     ])
     # Ensure dotfiles is first (it owns the template + tracks its own CLAUDE.md)
     if dotfiles in discovered:
@@ -324,7 +333,7 @@ Safety features:
     all_repos = [dotfiles] + discovered
 
     # Print discovered repos so the user can verify the list before propagation runs
-    print(f"\n[DISCOVERED] {len(all_repos)} repos with CLAUDE.md:")
+    print(f"\n[DISCOVERED] {len(all_repos)} repos (KNOWN_REPOS ∩ CLAUDE.md present):")
     for r in all_repos:
         print(f"  - {r.name}")
 
@@ -338,6 +347,11 @@ Safety features:
         print(f"\n{'='*60}")
         print(f"[SUMMARY] {success_count}/{len(all_repos)} repositories updated successfully")
         print(f"{'='*60}")
+        # Exit non-zero on partial failure so callers (Stage 4 Verification
+        # Loop, pre-commit hooks) catch the gap. Previous default exit-0
+        # silently masked errors (#460 Stage 5 — angle K finding).
+        if success_count != len(all_repos):
+            sys.exit(1)
 
     elif args.repo:
         # Resolve relative path from current working directory
