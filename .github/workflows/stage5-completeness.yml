@@ -1,0 +1,96 @@
+# Stage 5 completeness Layer B failsafe (#460 Phase 7b W4)
+# Server-side replay of the Layer A gate after a Stage 5 sign-off comment is posted.
+# Catches the case where an agent forgets to invoke `leader-stage5-completeness-check.sh`
+# pre-flight: the workflow runs the same gate, posts a PASS/FAIL receipt comment.
+#
+# Trigger: issue_comment.created. Filter by sign-off heading regex in body.
+#
+# Note (cross-repo gap): issue_comment.created fires PER-REPO. This workflow at
+# dotfiles only catches sign-off comments on dotfiles Issues. For consumer-repo
+# Issues, the same YAML is propagated via SST3/drift-manifest.json (#460 AC 7b.5).
+name: Stage 5 completeness (Layer B failsafe)
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  replay-gate:
+    runs-on: ubuntu-latest
+    if: |
+      contains(github.event.comment.body, '## Stage 5 — Post-Implementation Review') ||
+      contains(github.event.comment.body, '### Stage 5 — Post-Implementation Review') ||
+      contains(github.event.comment.body, 'Stage 5 (Post-Implementation Review) complete')
+    steps:
+      - name: Checkout dotfiles canonical (gate script + helpers live here)
+        uses: actions/checkout@v4
+        with:
+          repository: hoiung/dotfiles
+          ref: master
+          path: dotfiles
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install pyyaml (feedback_parser dep)
+        run: pip install --quiet pyyaml
+
+      - name: Compute Issue + repo slug
+        id: meta
+        run: |
+          # owner/repo split (e.g. hoiung/dotfiles -> dotfiles)
+          repo_slug=$(echo "${{ github.repository }}" | cut -d/ -f2)
+          echo "issue=${{ github.event.issue.number }}" >> "$GITHUB_OUTPUT"
+          echo "repo=$repo_slug" >> "$GITHUB_OUTPUT"
+
+      - name: Run Stage 5 completeness gate
+        id: gate
+        continue-on-error: true
+        working-directory: dotfiles
+        run: |
+          set +e
+          OUT=$(bash SST3/scripts/leader-stage5-completeness-check.sh \
+                  "${{ steps.meta.outputs.issue }}" \
+                  --repo "${{ steps.meta.outputs.repo }}" 2>err.log)
+          EX=$?
+          {
+            echo 'json<<EOF'
+            echo "$OUT"
+            echo 'EOF'
+            echo "exit=$EX"
+            echo 'err<<EOF'
+            cat err.log
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Post receipt comment to Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ex = `${{ steps.gate.outputs.exit }}`;
+            const json = `${{ steps.gate.outputs.json }}`;
+            const err = `${{ steps.gate.outputs.err }}`;
+            const verdict = ex === '0' ? 'PASS' : 'FAIL';
+            const body = [
+              `### Stage 5 completeness — Layer B failsafe receipt: ${verdict}`,
+              '',
+              '_Server-side replay of `leader-stage5-completeness-check.sh` after Stage 5 sign-off comment posted._',
+              '',
+              '```json',
+              json.trim() || '(no JSON output)',
+              '```',
+              ex !== '0' ? '\n**Failure detail:**\n```\n' + err.trim() + '\n```' : '',
+              '\n_Issue #460 Phase 7b W4 Layer B — `dotfiles/.github/workflows/stage5-completeness.yml`._',
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.meta.outputs.issue }},
+              body,
+            });

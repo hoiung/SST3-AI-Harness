@@ -1,29 +1,40 @@
 #!/usr/bin/env python3
 """
-Marker-driven voice guard for Hoi-voice content.
+Marker-driven voice guard for Hoi-voice content (CV + blog modes).
 
-Default = SKIP. A file is scanned if:
-  (a) it is in PUBLIC_FACING_GLOBS (whole-file scan; takes precedence over markers)
-  (b) OR it contains <!-- iamhoi --> ... <!-- iamhoiend --> markers (region scan)
+Default = SKIP. A file is scanned only if mode-specific rules match.
 
-Anything else is silently skipped. Whitelisted files are scanned in full
-regardless of iamhoi markers, because 100% of their content is Hoi-voice
-and recruiter-facing.
+Modes (selected via --mode):
+  cv (default): scan WHOLE_FILE_SCAN_GLOBS_CV first (precedence over markers
+      per dotfiles#433 em-dash slip post-mortem 2026-04-24), then iamhoi
+      region scan, otherwise SKIP. No frontmatter date filter.
+  blog: scan iamhoi regions first, then PUBLIC_FACING_GLOBS_BLOG legacy
+      whitelist (currently empty), otherwise SKIP. With --check-only-new
+      (default ON for blog mode) files in content/posts/ dated <
+      HOIBOY_CUTOFF_DATE are skipped (legacy voice-sacred corpus).
 
 Rules: imported from voice_rules.py (single source of truth).
 Human-readable companion: cv-linkedin/VOICE_PROFILE.md Section 8 / 19.
 
-Issue: hoiung/dotfiles#404
+Issue: hoiung/dotfiles#404 (canonical) + hoiung/hoiboy-uk#3 (mirror, since
+       merged via hoiung/dotfiles#460 --mode unification, which also fixes
+       the blog-priv research-file silent-skip bug).
 Exit codes: 0 = clean, 1 = findings (block commit / fail CI)
 """
 
 from __future__ import annotations
 
+import argparse
 import sys
 from datetime import date
 from pathlib import Path
 
-from sst3_utils import fix_windows_console
+try:
+    from sst3_utils import fix_windows_console
+except ImportError:  # consumer mirror without sst3_utils vendored
+    def fix_windows_console() -> None:
+        return None
+
 from voice_rules import (
     BANNED_PHRASES_PATTERN,
     BANNED_WORDS_PATTERN,
@@ -33,6 +44,7 @@ from voice_rules import (
     EM_DASH,
     Finding,
     FRONTMATTER_DATE_PATTERN,
+    HOIBOY_CUTOFF_DATE,
     MARKER_CLOSE_HASH,
     MARKER_CLOSE_HTML,
     MARKER_EXEMPT_HASH,
@@ -50,32 +62,30 @@ from voice_rules import (
 
 fix_windows_console()
 
-# Whole-file scan: files where 100% of content is Hoi-voice, recruiter-
-# facing. Takes precedence over iamhoi region scan. Per dotfiles#433
-# em-dash slip post-mortem (2026-04-24): CV Experience bullets sit
-# outside the Summary iamhoi block, so the original region-only scan
-# let em-dashes through. These files get scanned in full.
-WHOLE_FILE_SCAN_GLOBS: tuple[str, ...] = (
+
+# ---------------------------------------------------------------------------
+# Mode-specific configuration
+# ---------------------------------------------------------------------------
+
+# CV mode: whole-file scan for recruiter-facing CVs (em-dash slip
+# post-mortem #433 — CV Experience bullets sit outside the Summary
+# iamhoi block, so region-only scanning let em-dashes through).
+WHOLE_FILE_SCAN_GLOBS_CV: tuple[str, ...] = (
     "cv-linkedin/CV_AI_TRANSFORMATION.md",
     "cv-linkedin/CV_AI_TRANSFORMATION_FULL.md",
 )
 
-# Mixed content: metadata / instructional scaffolding around voice
-# copy-paste blocks. Rely on iamhoi markers around the actual voice
-# prose (the copy-paste blocks). Listed here for clarity only — the
+# CV mode: mixed-content scaffolding around voice copy-paste blocks;
 # region scan fires automatically when markers exist.
-REGION_SCAN_GLOBS: tuple[str, ...] = (
+REGION_SCAN_GLOBS_CV: tuple[str, ...] = (
     "cv-linkedin/LINKEDIN_UPDATE_GUIDE.md",
     "cv-linkedin/AI_SKILLS_AND_PORTFOLIO.md",
 )
 
-# Internal AI-to-AI docs that should NEVER be scanned.
-# Per dotfiles#405 Phase 7 — MASTER_PROFILE.md is the canonical voice corpus
-# (Hoi's pre-AI writing). Treating it as exempt prevents the iamhoi region-tag
-# whitelist from forcing voice-rule sanitisation across thousands of authentic
-# Hoi vocabulary uses. Single source of truth: voice_rules.py KEEP_LIST +
-# VOICE_PROFILE.md Section 8.
-EXEMPT_PATHS: tuple[str, ...] = (
+# CV mode: paths NEVER scanned (#405 Phase 7 — MASTER_PROFILE.md is
+# the canonical voice corpus; treating it as exempt prevents iamhoi
+# whitelist from sanitising thousands of authentic Hoi vocabulary uses).
+EXEMPT_PATHS_CV: tuple[str, ...] = (
     "SST3/",
     "cv-linkedin/job-research/",
     "cv-linkedin/voice-corpus/",
@@ -89,6 +99,49 @@ EXEMPT_PATHS: tuple[str, ...] = (
     ".claude/",
     "docs/",
 )
+
+# Blog mode: default file selection (run by CI on the whole content/
+# + docs/research/ tree).
+DEFAULT_PATHS_BLOG: tuple[str, ...] = (
+    "content/posts",
+    "content/_index.md",
+    "content/about.md",
+    "docs/research",
+)
+
+# Blog mode: whole-file scan whitelist. Currently empty — all hoiboy-uk
+# content is marker-opt-in or cutoff-filtered.
+PUBLIC_FACING_GLOBS_BLOG: tuple[str, ...] = ()
+
+# Blog mode: paths NEVER scanned regardless of markers. The voice
+# guard plan / profile / AI tells docs quote banned words verbatim
+# in code fences and would trip the state machine.
+EXEMPT_PATHS_BLOG: tuple[str, ...] = (
+    "legacy/",
+    ".github/",
+    "node_modules/",
+    "public/",
+    "docs/research/11_VOICE_PROFILE.md",
+    "docs/research/12_AI_WRITING_TELLS.md",
+    "docs/research/13_VOICE_GUARD_PLAN.md",
+)
+
+
+def detect_repo_root(start: Path) -> Path:
+    """Walk up from `start` looking for the nearest .git directory.
+
+    Mirror-portable: works whether the script lives at SST3/scripts/
+    (dotfiles canonical, parents[2] = repo root) or scripts/ (consumer
+    mirror, parents[1] = repo root).
+    """
+    cur = start.resolve()
+    if cur.is_file():
+        cur = cur.parent
+    while cur != cur.parent:
+        if (cur / ".git").exists():
+            return cur
+        cur = cur.parent
+    raise RuntimeError(f"could not detect repo root from {start}")
 
 
 # ---------------------------------------------------------------------------
@@ -255,8 +308,9 @@ def _check_lines(
 
 
 def _check_bold_bullets(text: str, file: str, is_cv: bool) -> list[Finding]:
-    # Whole-file scan only (legacy whitelist). Marker regions are short prose
-    # and never need this check; skipping them avoids 99% of false positives.
+    # Whole-file scan only. Marker regions are short prose and never need this
+    # check; skipping them avoids 99% of false positives. Threshold imported
+    # from voice_rules.py (single source) — fixes #460 AC 1.4 hardcoded literal.
     threshold = BOLD_BULLET_THRESHOLD_CV if is_cv else BOLD_BULLET_THRESHOLD_DEFAULT
     matches = BOLD_BULLET_PATTERN.findall(text)
     if len(matches) > threshold:
@@ -268,36 +322,46 @@ def _check_bold_bullets(text: str, file: str, is_cv: bool) -> list[Finding]:
 
 
 # ---------------------------------------------------------------------------
-# File scan dispatcher
+# File scan dispatcher (mode-aware)
 # ---------------------------------------------------------------------------
-def is_exempt(file_path: Path, repo_root: Path) -> bool:
+def is_exempt(file_path: Path, repo_root: Path, exempt_paths: tuple[str, ...]) -> bool:
     rel = str(file_path.relative_to(repo_root))
-    return any(rel.startswith(p) for p in EXEMPT_PATHS)
+    return any(rel.startswith(p) for p in exempt_paths)
 
 
-def is_whitelisted(file_path: Path, repo_root: Path) -> bool:
-    """Whole-file scan whitelist — 100% Hoi-voice recruiter-facing files."""
+def is_whitelisted(file_path: Path, repo_root: Path, whitelist: tuple[str, ...]) -> bool:
+    """Whole-file scan whitelist."""
     rel = str(file_path.relative_to(repo_root))
-    return rel in WHOLE_FILE_SCAN_GLOBS
+    return rel in whitelist
 
 
-def scan_file(file_path: Path, repo_root: Path) -> list[Finding]:
+def scan_file(file_path: Path, repo_root: Path, mode: str) -> list[Finding]:
     """
-    Decision matrix (default = SKIP):
+    Mode-aware decision matrix (default = SKIP):
+
+    CV mode (recruiter-facing CVs — whitelist takes precedence over markers
+    so em-dashes in CV Experience bullets outside the Summary iamhoi block
+    are caught — see #433 post-mortem):
       iamhoi-exempt path        -> SKIP
-      whitelisted file          -> scan whole file (markers are doc-only here)
+      whole-file-scan whitelist -> scan whole file
       iamhoi markers present    -> scan tagged regions only
       otherwise                 -> SKIP
 
-    Whitelisted files (PUBLIC_FACING_GLOBS) take precedence over region
-    scanning: the whole file is Hoi-voice content, so the whole file is
-    scanned even if iamhoi markers exist elsewhere in the document.
-    Previously the region branch short-circuited the whole-file scan,
-    which let em-dashes slip through in CV Experience bullets that sit
-    outside the Summary iamhoi block. See dotfiles#433 em-dash slip
-    post-mortem (2026-04-24).
+    Blog mode (Hugo blog content — region-first matches the legacy
+    hoiboy-uk variant's behaviour; whitelist is currently empty):
+      iamhoi-exempt path        -> SKIP
+      iamhoi markers present    -> scan tagged regions only
+      whole-file-scan whitelist -> scan whole file (back-compat, empty for now)
+      otherwise                 -> SKIP
     """
-    if is_exempt(file_path, repo_root):
+    if mode == "cv":
+        exempt = EXEMPT_PATHS_CV
+        whitelist = WHOLE_FILE_SCAN_GLOBS_CV
+    else:
+        exempt = EXEMPT_PATHS_BLOG
+        whitelist = PUBLIC_FACING_GLOBS_BLOG
+
+    if is_exempt(file_path, repo_root, exempt):
         return []
 
     try:
@@ -307,24 +371,36 @@ def scan_file(file_path: Path, repo_root: Path) -> list[Finding]:
     except (OSError, UnicodeDecodeError) as e:
         return [Finding(str(file_path), 0, "READ_ERROR", str(e))]
     text = raw.replace("\r\n", "\n").replace("\r", "\n")
-
     file_str = str(file_path)
 
-    if is_whitelisted(file_path, repo_root):
-        is_cv = file_path.name.startswith("CV_AI_TRANSFORMATION")
-        numbered = list(enumerate(text.split("\n"), 1))
-        findings = _check_lines(numbered, file_str)
-        findings.extend(_check_bold_bullets(text, file_str, is_cv))
-        return findings
+    if mode == "cv":
+        if is_whitelisted(file_path, repo_root, whitelist):
+            is_cv = file_path.name.startswith("CV_AI_TRANSFORMATION")
+            numbered = list(enumerate(text.split("\n"), 1))
+            findings = _check_lines(numbered, file_str)
+            findings.extend(_check_bold_bullets(text, file_str, is_cv))
+            return findings
+        try:
+            regions = extract_voice_regions(text)
+        except ValueError as e:
+            return [Finding(file_str, 0, "MARKER_ERROR", str(e))]
+        if regions:
+            return _check_lines(regions, file_str)
+        return []
 
+    # blog mode: region-first, then legacy whitelist (currently empty).
     try:
         regions = extract_voice_regions(text)
     except ValueError as e:
         return [Finding(file_str, 0, "MARKER_ERROR", str(e))]
-
     if regions:
         return _check_lines(regions, file_str)
-
+    if is_whitelisted(file_path, repo_root, whitelist):
+        is_cv = "CV_AI_TRANSFORMATION" in file_str
+        numbered = list(enumerate(text.split("\n"), 1))
+        findings = _check_lines(numbered, file_str)
+        findings.extend(_check_bold_bullets(text, file_str, is_cv))
+        return findings
     return []
 
 
@@ -373,21 +449,72 @@ def parse_post_date(file_path: Path) -> date | None:
 
 
 def main() -> int:
-    repo_root = Path(__file__).resolve().parents[2]
+    parser = argparse.ArgumentParser(
+        description="Marker-driven voice guard (CV / blog modes).",
+    )
+    parser.add_argument(
+        "--mode", choices=["cv", "blog"], default="cv",
+        help="Scan mode: cv (recruiter-facing CV repos, default) or blog (Hugo blog).",
+    )
+    parser.add_argument(
+        "--check-only-new", dest="check_only_new",
+        action="store_true", default=None,
+        help="(blog mode) Skip posts dated < HOIBOY_CUTOFF_DATE. Default ON in blog mode.",
+    )
+    parser.add_argument(
+        "--no-check-only-new", dest="check_only_new", action="store_false",
+        help="(blog mode) Disable cutoff filter; scan all dated posts (e.g. blog-priv research files).",
+    )
+    parser.add_argument("paths", nargs="*", help="Files / dirs to scan; uses mode defaults if empty.")
+    args = parser.parse_args()
+
+    # Default check_only_new = True in blog mode (back-compat with hoiboy-uk
+    # pre-commit hook); ignored in cv mode.
+    if args.check_only_new is None:
+        args.check_only_new = (args.mode == "blog")
+
+    repo_root = detect_repo_root(Path(__file__).resolve())
     files_to_scan: list[Path] = []
 
-    if len(sys.argv) > 1:
-        for arg in sys.argv[1:]:
+    if args.paths:
+        for arg in args.paths:
             p = Path(arg).resolve()
             if p.is_dir():
                 files_to_scan.extend(sorted(p.rglob("*.md")))
             elif p.exists() and p.suffix == ".md":
                 files_to_scan.append(p)
     else:
-        for glob_pattern in (*WHOLE_FILE_SCAN_GLOBS, *REGION_SCAN_GLOBS):
-            for p in repo_root.glob(glob_pattern):
-                if p.exists():
+        if args.mode == "cv":
+            for glob_pattern in (*WHOLE_FILE_SCAN_GLOBS_CV, *REGION_SCAN_GLOBS_CV):
+                for p in repo_root.glob(glob_pattern):
+                    if p.exists():
+                        files_to_scan.append(p)
+        else:
+            for rel in DEFAULT_PATHS_BLOG:
+                p = repo_root / rel
+                if p.is_dir():
+                    files_to_scan.extend(sorted(p.rglob("*.md")))
+                elif p.exists():
                     files_to_scan.append(p)
+
+    # Cutoff-date filter (blog mode + check_only_new only).
+    if args.mode == "blog" and args.check_only_new:
+        kept: list[Path] = []
+        for f in files_to_scan:
+            try:
+                rel = f.relative_to(repo_root)
+            except ValueError:
+                rel = f
+            if str(rel).startswith("content/posts"):
+                try:
+                    d = parse_post_date(f)
+                except ValueError as e:
+                    print(f"[ERROR] {e}", file=sys.stderr)
+                    return 1
+                if d is not None and d < HOIBOY_CUTOFF_DATE:
+                    continue
+            kept.append(f)
+        files_to_scan = kept
 
     if not files_to_scan:
         print("[OK] No files to scan")
@@ -395,7 +522,7 @@ def main() -> int:
 
     all_findings: list[Finding] = []
     for f in files_to_scan:
-        all_findings.extend(scan_file(f, repo_root))
+        all_findings.extend(scan_file(f, repo_root, args.mode))
 
     if not all_findings:
         print(f"[OK] No voice tells found in {len(files_to_scan)} files")
