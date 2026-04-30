@@ -247,8 +247,10 @@ def main():
         print("\n[CAUSE] Someone modified the SST3-managed section (above the boundary marker)")
         print("        instead of just the project-specific section.")
         print("\n[FIX] Run propagation to sync SST3 sections:")
-        print("      cd dotfiles")
-        print("      python SST3/scripts/propagate-template.py --all")
+        # AP #22: prefer `git -C` / module form over bare cd to avoid CWD leak
+        # (bare `cd dotfiles` was the prior suggestion; replaced #460 Phase 9 AC 9.5).
+        print("      python -m SST3.scripts.propagate-template --all")
+        print("      # or, equivalently: (cd dotfiles && python SST3/scripts/propagate-template.py --all)")
         print("\n      Then review and commit the changes in each repository.")
         print("\n" + "="*60 + "\n")
         sys.exit(1)  # BLOCK commit - this is a critical error

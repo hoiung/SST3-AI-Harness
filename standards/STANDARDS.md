@@ -663,7 +663,26 @@ Canonical telemetry mechanism for the SST3 5-stage `/Leader` workflow. Each `/Le
 
 **`caught_by:` enum** (sub-attribute on findings inside `worked` / `didnt`): `wrapper / raw / haiku / sonnet / opus / user / agent-self`. Lets the aggregator answer queries like "how often did raw-only Layer 2 catch what wrapper missed".
 
-**`improvement_status` enum**: `pending / applied / superseded / rejected`. Optional `applied_in: <issue#>` when status moves to `applied`. Closure loop: future Stage 1 Step 0 picks up `pending` improvements from prior issues + marks them `applied` when the next run satisfies them.
+**`improvement_status` enum**: `pending / applied / partial / superseded / rejected`. When status moves to `applied` or `partial`, set `applied_in: <issue#>`. Closure loop: future Stage 1 Step 0 picks up `pending` improvements from prior issues + marks them `applied` (or `partial` for multi-bullet improvements) when the next run satisfies them.
+
+**Closure-loop content-match format (#460 Phase 5)**: Stage 1 closure-loop entries MUST quote the first 80 chars of the source improvement field verbatim so Stage 5 can byte-match without ambiguity:
+
+```
+<repo>#<issue> stage=<N> [bullet=<i>]: "<first 80 chars verbatim>" → <applied-where>
+```
+
+The `[bullet=<i>]` qualifier is REQUIRED for multi-bullet improvement fields (1-indexed), OPTIONAL when the entire improvement is a single bullet. The byte-match rule is: take the first 80 chars of the improvement bullet (after `**improvement**:` or `- ` bullet prefix), strip leading/trailing whitespace, that's the canonical key.
+
+**Multi-bullet partial-application schema**: when only a subset of bullets in a multi-bullet improvement field is applied this run, mark per-bullet rather than per-improvement:
+
+```
+**improvement_status**: partial
+**applied_in_bullets**: [1, 3]
+**carry_forward_bullets**: [2]
+**applied_in**: <issue-number>
+```
+
+Inline per-bullet markers go AFTER the bullet text using HTML comments — e.g. ``- **template-vs-mirror lane mapping** ...<!-- applied_in: 459 -->``. The aggregator and `check-closure-loop-applied.py` (Phase 6) parse these markers via `feedback_parser.py`; the parser emits `applied_in_bullets` + `carry_forward_bullets` into the NDJSON index for cross-issue reporting.
 
 **Soft-cap guidance**: tiny issues 10-20 lines per stage block / medium 30-60 / large 60-120 / >150 revisit. **Hard cap**: 10 fields exactly. Parser emits stderr WARNING (advisory, exit 0) if a per-stage block exceeds 80 lines. Tiny-issue terminal one-liners permitted (`rule_user_caught: none` / `friction: trivial`).
 
