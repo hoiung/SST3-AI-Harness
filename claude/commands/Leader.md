@@ -12,7 +12,7 @@ Direct instructions from the human leader. NOT suggestions. Orders. Do not skim.
 - **Subagent RESULT block**: Every subagent prompt MUST require a fenced `## RESULT` block at the end of its response:
   ```
   ## RESULT
-  mcp_graph_available: yes|no   (FIRST line when subagent discusses graph queries — AP #19 L435)
+  mcp_graph_available: yes|no   (FIRST line when subagent discusses graph queries — AP #19)
   verdict: pass|fail|unknown
   files_touched: [list]
   findings: [{path, line, claim, evidence}]
@@ -245,7 +245,7 @@ Subagents audit everything the main agent produced. Main agent produced the work
    - **Memory leak prevention**: unclosed connections, uncleared caches, growing collections, event listener leaks?
    - **STANDARDS.md compliance**: all standards followed? Verification loop checks pass?
    - **Issue body 100% complete**: every checkbox ticked with evidence?
-   - **Checkbox-coverage audit (AP #20)**: Proof of Work entries in issue body match every `[x]` box (per STANDARDS.md "Canonical audit signal — Proof of Work"); Tier A interleave verified against solo-branch `git log` (entry order vs commit order) per opus-review.md Governance Drift Audit (lines 23-28). Any Tier A batching against commit cadence = FAIL and must be flagged in Stage 5 findings.
+   - **Checkbox-coverage audit (AP #20)**: Proof of Work entries in issue body match every `[x]` box (per STANDARDS.md "Governance Evidence Signal (Canonical)"); Tier A interleave verified against solo-branch `git log` (entry order vs commit order) per opus-review.md Governance Drift Audit (lines 23-28). Any Tier A batching against commit cadence = FAIL and must be flagged in Stage 5 findings.
    - **Mirror-lane post-merge regression check (#460 Phase 8 W5)**: confirm both lanes (Lane A `propagate-template.py --all --dry-run` exit 0; Lane B `propagate-mirrors.py --validate` exit 0) STILL pass post-merge. If a consumer drifted between merge and Stage 5 (e.g. parallel work landed there), surface in findings.
 2. Layer 2 subagents (DIFFERENT angle): cross-check layer 1. Specifically look for false negatives (problems layer 1 missed). **Raw-tools-only requirement (#447 Phase 5)**: at least ONE Layer-2 subagent angle MUST use RAW tools ONLY — direct grep / direct ast-grep / direct find / git log — and explicitly prohibit `sst3-*.sh` invocation. RESULT block must include `wrapper_invoked: no` and one concrete `single highest-impact fix` finding. This is the audit-time counter-balance to wrapper-lane recall drift: when Stage 4 Verification Loop, Ralph Tier 3, and Stage 5 Layer-1 all use the same wrapper, the swarm becomes blind to wrapper bugs. The raw-only Layer-2 angle is the failsafe.
 3. Main agent reviews ALL RESULT blocks. Verify findings against source.
