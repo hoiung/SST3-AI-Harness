@@ -13,6 +13,14 @@ name: Stage 5 completeness (Layer B failsafe)
 on:
   issue_comment:
     types: [created]
+  # workflow_dispatch enables manual re-run against an arbitrary Issue
+  # (per AC 11.9). The auto-fire path remains issue_comment.created.
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: 'Issue number to re-run gate against'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -22,6 +30,7 @@ jobs:
   replay-gate:
     runs-on: ubuntu-latest
     if: |
+      github.event_name == 'workflow_dispatch' ||
       contains(github.event.comment.body, '## Stage 5 — Post-Implementation Review') ||
       contains(github.event.comment.body, '### Stage 5 — Post-Implementation Review') ||
       contains(github.event.comment.body, 'Stage 5 (Post-Implementation Review) complete')
@@ -46,7 +55,9 @@ jobs:
         run: |
           # owner/repo split (e.g. hoiung/dotfiles -> dotfiles)
           repo_slug=$(echo "${{ github.repository }}" | cut -d/ -f2)
-          echo "issue=${{ github.event.issue.number }}" >> "$GITHUB_OUTPUT"
+          # workflow_dispatch supplies issue via input; issue_comment via event.
+          issue_num="${{ github.event.inputs.issue || github.event.issue.number }}"
+          echo "issue=$issue_num" >> "$GITHUB_OUTPUT"
           echo "repo=$repo_slug" >> "$GITHUB_OUTPUT"
 
       - name: Run Stage 5 completeness gate
