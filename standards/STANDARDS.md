@@ -284,6 +284,28 @@ See also `../reference/tool-selection-guide.md` "Decision Tree: Code-Understandi
 
 **Evidence**: round-5 user observation N32 (2026-04-20) — "Leader 1-6 should incorporate checking against the workflow of the skills that been invoked too, otherwise it just checks SST3 workflow and standard and anti-patterns ... The SST3 should also have this integrated, so it's like a double guardrail." Pre-existing research: `docs/research/LEADER_SKILL_ENGINEERING_2026_04_12.md` (AI-to-AI prompt engineering + Stage-4 conflation fix + Ralph tier design).
 
+#### Skill-Canonical Audit Template (Comprehensive Walk)
+
+**Use for AUDIT prompts** (Stage 2 author / Stage 3 subagent / Stage 5 subagent): walk every section of the invoked-skill canonical, return per-section pass/fail. **NOT for INVARIANT GATES** (Ralph checklists, Stage 4 Gate 1, AC checkboxes, Mirror-lane triggers, file:line/exit-code checks) — gates verify named conditions; audits verify a draft against a multi-section canonical.
+
+**Scaffolding** (subagent receives verbatim):
+
+> Read EVERY file in `skill_canonical_files` (Stage 1 metadata). For each: walk every `## ` and `### ` heading; for non-markdown structure (numbered `### 1.`, `**bold**` headers, prose-only) walk every numbered/bold/prose section as a logical unit. Per section, identify rules + verify [draft|delivered work] does not violate any. Do NOT pre-filter. Return per-section [PASS|FAIL|N/A] with file:line evidence for any FAIL, tagged by `source_file`.
+
+**Fallbacks**: (a) empty `skill_canonical_files` → walk "Double-Guardrail Principle" pointer-table row + URLs; document in RESULT. (b) missing on disk → `verdict: fail` + `error: missing_canonical_file: <path>`. (c) multi-canonical → aggregate `section_failures`, tag by `source_file`.
+
+**RESULT extension**:
+```
+section_failures: [{source_file, section_heading, canonical_file_line, draft_violation, evidence}]
+canonicals_walked: [list of files actually walked]
+fallback_applied: <none|inline_pointer_table|multi_canonical_aggregation>
+```
+Coverage = `canonicals_walked` matches `skill_canonical_files` (no separate counts).
+
+**Failure diagnosis**: (a) subagent failure (in walked file, RESULT omitted → re-dispatch); (b) template failure (heading regex didn't match → widen); (c) canonical incompleteness (absent everywhere → add to canonical / pointer table).
+
+**Prevents**: AP #23 (curator-bounded audit recall). **Stage refs**: Leader.md Stage 2 author + Stage 3 subagent + Stage 5 subagent. Multi-skill dispatch (split >5K tokens) lives in Leader.md Stage 3.
+
 ### Contract Verification — Three Contracts (Issue #1407 post-mortem)
 
 Every change that crosses a boundary must verify all three contracts:

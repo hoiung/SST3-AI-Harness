@@ -538,6 +538,38 @@ Bare `cd <path>` without subshell-protection or trailing `cd -` is **prohibited*
 
 ---
 
+## Anti-Pattern #23: Curator-Bounded Audit Recall
+
+**Problem**: Skill-canonical audit subagents given a curated rule list ("verify A, B, C") miss rules outside the curator's enumeration. The audit's recall is bounded by the curator's memory — and the curator IS the Leader agent, which is precisely the entity the audit is delegated AWAY from.
+
+**Evidence**: ebay-ops#4 Phase 6.4 forensic — `ebay-ops/.claude/skills/ebay-seller-tool/SKILL.md` L651 ("HPE P/N, HPE GPN, HPE spare number") missed at Stage 2 Layer-1 audit because the curated rule list did not include item-specifics field guidance. Caught only at Stage 2 Layer-2 by a different angle. See `dotfiles/SST3-metrics/leader-feedback/feedback-ebay-ops-4.md` L35-37 for the authoritative trail. Filed as dotfiles#458; resolved by this Issue.
+
+**Root Cause**: Subagent prompt phrasing of the form "verify A, B, C; Examples: X, Y, Z" anchors the subagent's audit scope to the enumerated examples. Rules in the canonical that aren't in the example list are silently skipped because the subagent treats the examples as the scope, not as illustrations.
+
+**Detection Patterns** (must match all to avoid false positives on innocent "Examples:" prose):
+- Subagent prompt is for a SKILL-CANONICAL COMPLIANCE angle (not a gate, not a generic example list)
+- Prompt contains an "Examples:" block enumerating 2+ specific named rules (banned-words, Seagate HARD CONTRACT, prompt-caching, etc.)
+- Prompt does NOT instruct the subagent to walk every section of the canonical OR cite the comprehensive-walk template per STANDARDS.md
+- RESULT block lacks `canonicals_walked` or per-source `section_failures` attribution
+
+**Prevention**:
+- ✓ DO: Use the comprehensive-walk template per STANDARDS.md "Skill-Canonical Audit Template (Comprehensive Walk)" — subagent walks every `## ` and `### ` heading of the canonical, returns per-section pass/fail.
+- ✓ DO: Include coverage data in RESULT block (`canonicals_walked` matches Stage 1 `skill_canonical_files`; per-failure `source_file` tagging) so coverage gaps are visible.
+- ✗ DON'T: Use "Examples: A, B, C" as the audit scope — examples become the scope ceiling.
+- ✗ DON'T: Trust an audit verdict without checking section coverage — verdict against an undersized scope is a false-pass.
+
+**Delimiter (applies to AUDIT prompts only)**: this rule does NOT apply to invariant gates (Ralph Review checklists, Stage 4 Gate 1 verification gates, AC verification checkboxes, Mirror-lane trigger conditions, file:line / command + exit-code checks). Gates verify named conditions and are correctly curated by design. The comprehensive-walk template is for AUDIT prompts that verify a draft or delivered work against a multi-section canonical body.
+
+**Self-Healing** (trigger mechanism — explicit per AP #21 no-autonomous-issue-creation):
+- Stage 5 subagent flags an audit verdict that used a curated-list pattern (detection criteria above) → propose comprehensive-walk re-audit as a comment on the parent Issue (NOT a new Issue per AP #21)
+- Operator authorises re-audit OR defers to the next Issue on that skill
+- If re-audit surfaces a previously-missed rule: apply fix + cross-reference inline at the canonical site so the same rule isn't dropped again
+- Do NOT auto-trigger re-audit; require explicit operator authorisation
+
+**Cross-Reference**: STANDARDS.md "Double-Guardrail Principle" → "Skill-Canonical Audit Template (Comprehensive Walk)" subsection. Companion rule: AP #14 (Multi-Layer Subagent Discipline) — different angles per layer + main-agent verification. AP #23 ensures the audit is comprehensive at the SCOPE level; AP #14 ensures multiple angles cover the same scope.
+
+---
+
 ## Pattern Detection
 
 Monitor for these anti-patterns:
