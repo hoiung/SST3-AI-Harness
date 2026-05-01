@@ -36,7 +36,7 @@ jobs:
       contains(github.event.comment.body, 'Stage 5 (Post-Implementation Review) complete')
     steps:
       - name: Checkout dotfiles canonical (gate script + helpers live here)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: hoiung/dotfiles
           ref: master
