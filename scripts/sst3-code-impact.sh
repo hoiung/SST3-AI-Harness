@@ -76,7 +76,12 @@ while IFS= read -r FILE; do
     for SYM in $SYMBOLS; do
         [[ -z "$SYM" ]] && continue
         assert_safe_identifier "$SYM"
-        N=$(ast-grep run --pattern "${SYM}(\$\$\$)" --lang "$LANG" --json=stream 2>/dev/null | wc -l || echo 0)
+        # Zero-caller case: `wc -l` exits 0 with `0` output, but pipe SIGPIPE on
+        # ast-grep failure can yield `0\n0` via `|| echo 0` fallback — strip non-digits
+        # so subsequent arithmetic doesn't fail with "syntax error in expression".
+        N=$(ast-grep run --pattern "${SYM}(\$\$\$)" --lang "$LANG" --json=stream 2>/dev/null | wc -l)
+        N=${N//[^0-9]/}
+        N=${N:-0}
         COUNT=$((COUNT + N))
     done
     jq -nc --arg f "$FILE" --argjson c "$COUNT" '{changed_file: $f, impacted_callers: $c}'
