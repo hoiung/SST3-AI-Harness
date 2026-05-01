@@ -151,7 +151,7 @@ class TestDecisionMatrix:
             f"{BANNED_SAMPLE} and {BANNED_SAMPLE_2} everywhere\n",
             encoding="utf-8",
         )
-        assert cvt.scan_file(f, tmp_path) == []
+        assert cvt.scan_file(f, tmp_path, mode="blog") == []
 
     def test_marker_scans_only_tagged(self, tmp_path):
         f = tmp_path / "x.md"
@@ -166,6 +166,6 @@ class TestDecisionMatrix:
             f"{BANNED_SAMPLE} after\n",
             encoding="utf-8",
         )
-        findings = cvt.scan_file(f, tmp_path)
+        findings = cvt.scan_file(f, tmp_path, mode="blog")
         assert len(findings) == 1
         assert BANNED_SAMPLE_2 in findings[0].detail
