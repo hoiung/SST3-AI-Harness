@@ -66,7 +66,14 @@
     "sec-subprocess/expected.json": "22fe03fb9ba3a11f32b1847e9f326d207c6071608bd2e487897717e9ed064e58",
     "sec-subprocess/input/shellout.py": "b4e07e034e5ea5a272ad4971d31ae5e7558f748d174c5011885ab4afbbbc3fa1",
     "sync-related-code-drift/expected.json": "93c113b916262dca79daa161ff7861c90d1626f9ace45417c7537d359d56ef2c",
-    "sync-related-code-drift/input/has-drift.md": "6cecfd374d7cdffb1a972ed7d330fc2cfc7557936de08ef1129e7694894ec667"
+    "sync-related-code-drift/input/has-drift.md": "6cecfd374d7cdffb1a972ed7d330fc2cfc7557936de08ef1129e7694894ec667",
+    "feedback-parser-strict-469/feedback-test-1.md": "6c8c26ed68af7d49c314670952d371dc6dfa9132fe6ffd957bd4c4ff49fb28ae",
+    "feedback-parser-strict-469/feedback-test-2.md": "44b711bb132bcdb37b429251de552061cf36da9e94ccf2e22ae7a8240daaaf3a",
+    "feedback-parser-strict-469/feedback-test-3.md": "5048467832485341e24b9f6b59fe7868e51891b086f9b371cce26e802e125d32",
+    "feedback-parser-strict-469/feedback-test-4.md": "b29670e25de937bf3f6f726f8b0570e5083ec7f059fa1041b406a168e57ea91b",
+    "feedback-parser-strict-469/feedback-test-5.md": "e60fde9131535b4951aa5122dd31648feafd60d7a59fec549cc9b18033687e2f",
+    "feedback-parser-strict-469/run.sh": "31264f75326e9e3bba77bb6e0cef962320e045399a50a7764c1179b664eddfd6",
+    "feedback-parser-strict-469/expected.json": "011ad6e4e09bd752375b64cb3dfeae43d7a0757eaae739cc60e84d33f0ecbce9"
   },
   "issue": 447,
   "phase": 4,
