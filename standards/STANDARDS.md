@@ -741,6 +741,35 @@ Inline per-bullet markers go AFTER the bullet text using HTML comments — e.g. 
 
 **Canonical scope boundary**: this section is THE canonical source for what / how / why feedback records exist. `../dotfiles/.claude/commands/Leader.md` SIGN-OFF lines reference this section for the per-stage write step. `../dotfiles/.claude/commands/SST3-solo.md` references this section at Per-Session Initialization and Verification Loop. `../workflow/WORKFLOW.md` references this section in each stage trailer. `../dotfiles/CLAUDE.md` is the single place where the literal `SST3-metrics/leader-feedback/...` storage path lives — the workflow files are mirrored to public repos and use this section reference only.
 
+### Cross-Repo Cohabitation Protocol (#469 Phase 4 — closes dotfiles#449 stage=5)
+
+When a sister repo's `/Leader` run writes feedback that references both the sister repo's work AND a dotfiles-side artefact change, both repos may end up needing entries in their own canonical paths but only ONE can be merged at a time (due to branch-safety rule "NEVER switch branches"). The 4-step cohabitation protocol:
+
+1. **Active-branch minimal marker**: while on the sister repo's solo branch, write a minimal one-line marker file at `dotfiles/SST3-metrics/leader-feedback/feedback-<sister-repo>-<issue>.md` containing only the FM block + a placeholder `[parked: full block at /tmp/feedback-<sister-repo>-<issue>-stage-N.md awaiting cross-repo apply post-merge]` body. Stages 1-2 placeholders rather than full blocks because the active sister branch can't switch to dotfiles to commit fully.
+2. **Sister parked full block**: stage the FULL stage block to `/tmp/feedback-<sister-repo>-<issue>-stage-N.md`. This is the data-of-record until applied.
+3. **Sign-off comment with apply commands**: at /Leader 5 sign-off, post the apply commands as a comment on the sister-repo Issue: `cp /tmp/feedback-<sister-repo>-<issue>-stage-N.md $DOTFILES_ROOT/SST3-metrics/leader-feedback/feedback-<sister-repo>-<issue>.md && cd $DOTFILES_ROOT && git add SST3-metrics/leader-feedback/feedback-<sister-repo>-<issue>.md && git commit -m "metrics(feedback): apply parked block from <sister-repo>#<issue> (Phase: 5)"`.
+4. **Post-merge sweep enforcement**: `bash dotfiles/scripts/sweep-parked-feedback.sh <issue> [--repo <sister-repo>]` invoked at Stage 5 step 7a.0 (per Leader.md) BLOCKs sign-off if any `/tmp/feedback-<sister-repo>-<issue>*.md` file remains. Operator MUST apply the full block before sign-off proceeds. The completeness-check C15 enforces server-side via the Layer B GitHub Actions workflow.
+
+**TBD-issue staging via `_drafts/` subdir**: pre-issue feedback (work where the GitHub Issue hasn't been assigned yet) goes to `dotfiles/SST3-metrics/leader-feedback/_drafts/feedback-<repo>-<topic>-pre-issue.md`. Aggregator's non-recursive glob `feedback-*.md` excludes `_drafts/` automatically — no parser regex change needed. When the Issue is assigned, `git mv _drafts/feedback-<repo>-<topic>-pre-issue.md feedback-<repo>-<issue>.md` + update FM `issue:` field. Pattern matches Jekyll/Hugo `_drafts/` precedent.
+
+**Aggregator self-validates per-file** (#469 Phase 1 hook-order fix): `leader-feedback-aggregate.sh` calls `validate_record()` per-file BEFORE `--emit-ndjson` parse — single point of enforcement at the aggregator boundary, eliminating the pre-commit hook-order timing window without touching `.pre-commit-config.yaml`. Belt-and-braces with the parser's strict-mode emit-ndjson which validates at the CLI layer too.
+
+### Canonical field-line format vs Banned legacy formats
+
+The parser strictly requires `**field**:` bare bold form. Banned legacy formats (parser rejects since #469 Phase 3 strict mode):
+
+| Form | Status | Example |
+|------|--------|---------|
+| `**field**: value` | Canonical | `**model**: opus-4-7-1m` |
+| `- **field**: value` | Banned (bullet-prefix-bold) | `- **model**: ...` |
+| `- field: value` | Banned (bullet-prefix-no-bold) | `- model: ...` |
+| `- field: \|<br>    indented value` | Banned (YAML literal block) | (multi-line legacy) |
+| `## Field` (H2 section) | Banned (header-as-field) | `## Model` |
+
+Continuation lines for multi-line values: bare bullets at column 0, no leading `- ` prefix on the field line itself. Migration scripts for the banned forms live transient in `/tmp/` for one-shot use; canonical pattern is to enforce via parser strict mode + per-file validate at aggregator boundary, not retroactive correction.
+
+**Codepath-split note** (#469 Phase 3): pre-Phase-3 the parser had two effective code paths — `parse_record()` (lax, used by `--emit-ndjson`) and `validate_record()` (strict, used by default + by aggregator pre-Phase-1). Files with missing FM fields / wrong heading levels / forward-pref trips silently emitted 0 NDJSON lines via the lax path. Post-Phase-3: both paths run validate first; CLI consumers and Python module consumers see identical strictness. This single-validate-then-emit codepath is the cure for the silent-skip class. Coining a new Anti-Pattern from one instance is premature per Pass-1 hostile FP sweep — if the codepath-split pattern recurs in another tool, operator can authorise the AP separately per AP #21 (no autonomous Issue creation).
+
 ## Path Portability
 
 **Environment Variables**:
