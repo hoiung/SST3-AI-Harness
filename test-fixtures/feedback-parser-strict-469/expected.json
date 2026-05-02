@@ -1,0 +1,16 @@
+{
+  "fixture": "feedback-parser-strict-469",
+  "issue": 469,
+  "phase": 5,
+  "scope": "Strict-mode --emit-ndjson regression gate (#469 Phase 3+5). Imperative driver runs feedback_parser.py against 5 fixture files: 1 canonical-clean (assert exit 0 + N>0 NDJSON + no schema_violation) + 4 broken (assert exit 1 + 1 stub line + schema_violation:true). Catches drift if a future edit reverts strict-mode emit-ndjson back to lax parse_record() (the silent-skip codepath split that #469 closed).",
+  "driver": "run.sh",
+  "exit_code": 0,
+  "stdout_must_contain": [
+    "PASS: feedback-test-1.md (clean: 1 NDJSON lines)",
+    "PASS: feedback-test-2.md (broken: stub emitted, exit 1)",
+    "PASS: feedback-test-3.md (broken: stub emitted, exit 1)",
+    "PASS: feedback-test-4.md (broken: stub emitted, exit 1)",
+    "PASS: feedback-test-5.md (broken: stub emitted, exit 1)",
+    "OK: feedback-parser-strict-469 fixture (5/5 assertions passed)"
+  ]
+}
