@@ -79,7 +79,14 @@ while IFS= read -r FILE; do
         # Zero-caller case: `wc -l` exits 0 with `0` output, but pipe SIGPIPE on
         # ast-grep failure can yield `0\n0` via `|| echo 0` fallback — strip non-digits
         # so subsequent arithmetic doesn't fail with "syntax error in expression".
-        N=$(ast-grep run --pattern "${SYM}(\$\$\$)" --lang "$LANG" --json=stream 2>/dev/null | wc -l)
+        # Stage 5 fix L1.I (ebay-ops#12 post-impl review) — `set -o pipefail`
+        # at line 11 propagates ast-grep's nonzero exit (it returns non-zero on
+        # certain zero-match patterns) through the pipe, aborting the whole
+        # loop after the first symbol with no callers and silently under-
+        # counting impact records. Disable pipefail in this subshell only;
+        # the `${N:-0}` + non-digit strip below already handle the empty
+        # output case safely.
+        N=$( (set +o pipefail; ast-grep run --pattern "${SYM}(\$\$\$)" --lang "$LANG" --json=stream 2>/dev/null | wc -l) )
         N=${N//[^0-9]/}
         N=${N:-0}
         COUNT=$((COUNT + N))
