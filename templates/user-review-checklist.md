@@ -86,6 +86,14 @@ For each item NOT fixed, answer:
 - [ ] If No: **STOP** — fix it now before proceeding. No deferrals, no excuses.
 - [ ] If Yes: Document WHY it's a false positive with evidence.
 
+**3-flag deferral taxonomy (#477 AC 2.6 — Theme 7)**: every item left in this section MUST carry one of three explicit flags. Items lacking a flag default to UNVERIFIED status and trigger the Stage 5 §3-Deferral Re-Litigation Angle (per the Leader workflow Stage 5 step 1).
+
+- `[deferred-FP: <evidence>]` — confirmed false positive (file:line / command output / cross-reference). Evidence is mandatory; "looks fine" / "not relevant" / "pre-existing" are NOT evidence.
+- `[deferred-N/A: <rationale>]` — intentional descope with operator-acknowledged rationale (out of scope for this issue, observed but not in plan, deferred via written agreement). Rationale must name the boundary.
+- `[deferred-tracking-issue: <issue#>]` — feasible fix moved to a tracking issue (must reference an OPEN issue in this or a sibling repo). Comment-only intent ≠ tracking issue; the issue must exist.
+
+The absence of any flag IS the trigger for Stage 5 re-litigation — no explicit `[deferred-UNVERIFIED]` flag needed. **Verify**: `grep -cE '\[deferred-(FP|N/A|tracking-issue):' templates/user-review-checklist.md` returns ≥3 (the three example tokens above).
+
 ### Discovered During Implementation
 - [ ] List any issues/improvements discovered during implementation
 - [ ] For each: Was it fixed? (Yes = good. No = must be confirmed false positive with evidence)

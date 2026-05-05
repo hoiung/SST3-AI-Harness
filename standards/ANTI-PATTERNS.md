@@ -253,7 +253,9 @@ python scripts/check-fallbacks.py --severity warning .
 
 **14c — Trusted without verification**: Main agent treats subagent output as authoritative without reading source. Subagents miss structured data, grep too narrowly, contradict each other. Swarm recommends; main agent verifies; source decides.
 
-**Evidence**: 2026-04-07/08 — Quality DO List deleted based on ONE sonnet subagent's duplication finding; false-positive sweep later restored it.
+**14d — Scope-gap blindness (Stage 1 research specific)** (Theme 8, #477): Layer-1 Stage 1 swarm covers the named scope but misses scope-adjacent surfaces (genuine gaps) AND/OR cites legacy implementations when modern equivalents already exist (false positives). Single-layer Stage 1 research = systematic blind spot. Failure mode: Issues drafted from incomplete scope, leading to mid-Stage-2 AC rewrites or post-Stage-4 false-positive bug-hunts. Prevention: Stage 1 swarm dispatches a Layer-2 adversarial gap-finder subagent (different prompt than Layer-1) with the explicit task: "Layer-1 found X, Y, Z. Find 3 things they missed — either (a) false-positive claims already covered by modern equivalents, or (b) genuine gaps not yet surfaced." Main agent verifies Layer-2 corrections against source before accepting them (per 14c). Cross-reference: Leader.md Stage 1 step 2a + STANDARDS.md "Stage 1 Layer-2 Adversarial Gap-Finder Discipline".
+
+**Evidence**: 2026-04-07/08 — Quality DO List deleted based on ONE sonnet subagent's duplication finding; false-positive sweep later restored it. **2026-05-05 (#477 research)** — initial 8-theme scope from Stage 1 swarm missed 6 candidate themes (9-14, ~31-42% pending-entry coverage gap); C1 false-negative sweep subagent recovered the gap and surfaced themes 9+10 for inclusion. Without C1 (Layer-2-style gap-finder), the rollup would have shipped covering only themes 1-8 of the 10 needed.
 
 **The rule**: MANY subagents, LAYERS, different angles per layer. Main agent verifies every finding against source. Document proof method inline.
 
@@ -359,6 +361,9 @@ For any change that touches pipeline / backtest / SL1 / SL2 / orchestration / CL
 - Multi-module function-arg propagation chains (>1 hop from CLI to DB write)
 - Any change where a `**kwargs`-accepting mock could silently hide the regression
 - Any change to `../scripts/sst3-*.sh` (#447 Phase 5+6 wrapper-script trigger)
+- **Idempotency re-run paths** (#477 Phase 5 AC 5.1a, dotfiles#474 evidence): for changes claiming idempotency or feature-detect logic (install-path scripts, bootstrap guards, "if X already configured: skip" branches), the sample invocation MUST cover BOTH the first-install path AND the re-run-with-feature-already-present path. Single-direction sample (only first install) hides the bug class where the re-run branch silently corrupts already-good state.
+- **Documentation cross-reference resolution** (#477 Phase 5 AC 5.1b, dotfiles#474 evidence): for infrastructure-shape work (homelab bootstrap, runbook scripts, multi-node setup), Stage 5 swarm MUST include an angle that walks every script-path / URL / file-reference / cross-link in the Issue's docs and confirms each resolves (`ls <path>` exit 0, `curl -fsI <url>` HTTP 2xx, `grep -F <ref> <target>` exit 0). Surfaces dangling references that ship with no immediate failure but break next runner.
+- **Every-return-path wiring** (#477 Phase 5 AC 5.1c, apbst#1451 evidence): for cache-read or guard-helper additions (functions whose job is "check state and return early"), Stage 4 must enumerate every `return` statement in the guarded function via `grep -n "return" <file>` and confirm each return path either (a) emits the new instrumentation/cache-write OR (b) is documented as exempt with rationale. Missing return-path = silent skip of the new behaviour on the missed branch.
 
 **Per-shape recipe table** (#447 Phase 7 — codifies what already works across the 6 repo shapes; auto_pb is shape "Service" canonical above):
 
@@ -370,7 +375,7 @@ For any change that touches pipeline / backtest / SL1 / SL2 / orchestration / CL
 | **Config-heavy** (dotfiles, package.json + .github/scripts setups) | Pre-commit dry-run `/tmp/precommit_sample_<date>.txt` showing every modified hook fires + statusline syntax-check + propagate-template.py runs clean across all consumer repos | All consumer repos pass `check-claude-template-propagation`; `propagate-template.py` exits 0 with `5/7 repositories updated successfully`; statusline `node -c` clean | Run pre-commit against the changed file glob + 1 file from each consumer repo | New pre-commit hook, statusline edit, settings.json change, propagate-template / propagate-mirrors edit | Never commit secrets to public repo; secret-scan before issue body posts; mirror-drift hazard documented when canonical changes |
 | **Infra-as-code** (.github/workflows, install.ps1, runbooks) | One workflow run on a non-default branch with `act` (local) OR PR-trigger run captured to `/tmp/ci_run_<workflow>_<date>.log` showing every step exits 0 | CI badge green on solo branch; `act -l` lists the new workflow; install.ps1 dry-run on a clean Windows VM (or PowerShell `-WhatIf`) | n/a — exercise every code path the workflow added (matrix, conditional, secret-using job) | New workflow, new install step, new conditional gate, new secret consumer | Never modify CI/CD pipelines without dry-run; treat workflow YAML as production code |
 | **GAS** (Google Apps Script — tradebook_GAS, future projects) | `tradebook_GAS/scripts/sample_test.gs` runs against the test project URL; outputs identical to live project URL when the same input is fed | Test project sheet shows expected rows; live project URL invocation against a sandbox sheet matches | n/a — exercise the test/live project pair with one real input row before merging | Trigger change, sheet schema change, deployed-as-add-on edit | Test project for rehearsal, live project for production; never edit live project directly; GAS deploys are atomic + irreversible |
-| **Homelab-bootstrap** (single-node NUC provisioning, operator-initiated from master) | `tests/phase5-gate.ps1` (admin pwsh, on-NUC) — 14-15 named hardware-gate + deliverable invariants A1-I7 | Master-side `verify-node.sh --role lab --gh-auth --windows-tasks` exit 0 + `ssh HU-<MODEL>` (port 22) + `ssh HU-<MODEL>-wsl` (port 2222) both reachable | n/a — exercise every invariant the change touched (per-group table in `docs/runbooks/homelab.md` "phase5-gate invariant catalog") | `bootstrap-lab-node.ps1` / `provision.sh` / `secrets-pull.sh` / `verify-node.sh` / `setup-wsl-service.ps1` / `setup-portproxy.ps1` / `refresh-usb-kit.sh` / wsl/packages.txt / homelab runbooks (#474 rename: `bootstrap-nuc.ps1` → `bootstrap-lab-node.ps1`) | Wired-only convention (WiFi disabled, reservation against Ethernet MAC); never schedule destructive `wsl --shutdown` test while operator session active; G14 Modern Standby OFF on laptops; lab-role only for auto-login |
+| **Homelab-bootstrap** (single-node NUC provisioning, operator-initiated from master) | `tests/phase5-gate.ps1` (admin pwsh, on-NUC) — 21-23 named hardware-gate + deliverable + push-model invariants A1-I9 | Master-side `verify-node.sh --role lab --gh-auth --windows-tasks` exit 0 + `ssh HU-<MODEL>` (port 22) + `ssh HU-<MODEL>-wsl` (port 2222) both reachable + `tests/lab-bound-bw-grep-gate.sh` exit 0 (no `bw_get`/`Get-BitwardenSecret`/`Bootstrap-BitwardenSession` reaches lab-bound code paths) | n/a — exercise every invariant the change touched (per-group table in `docs/runbooks/homelab.md` "phase5-gate invariant catalog") | `bootstrap-lab-node.ps1` / `provision.sh` / `secrets-pull.sh` / `verify-node.sh` / `setup-wsl-service.ps1` / `setup-portproxy.ps1` / `refresh-usb-kit.sh` / `push-post-bootstrap-secrets.sh` / `configure-auto-login.ps1` / `scripts/utils/USB-Helpers.ps1` / `scripts/utils/Bitwarden-Helpers.ps1` (master-only) / `scripts/utils/bw-helpers.sh` (master-only) / wsl/packages.txt / homelab runbooks (#474 rename: `bootstrap-nuc.ps1` → `bootstrap-lab-node.ps1`; #475 push-model: `bw` master-only, secrets reach lab via Channel 1 USB-bake + Channel 2 master-push-via-Tailscale-SSH) | Wired-only convention (WiFi disabled, reservation against Ethernet MAC); never schedule destructive `wsl --shutdown` test while operator session active; G14 Modern Standby OFF on laptops; lab-role only for auto-login; **NO `bw` on lab** (asserted by G17 + H9-H12: `bw` absent + grep-gate clean + USB-wiped post-consume + no-DPAPI Bitwarden artefact); G16 BATACTIONCRIT/HiberbootEnabled gated `$Role -ne master`; I8 Tailnet identity + tag; I9 no plaintext DefaultPassword leak; extended I6 `gh auth status` content-check requires `repo + workflow + read:org` scopes |
 | **Pre-publication blog research** (blog-priv — voice-guarded private staging for hoiboy-uk) | `blog-priv/scripts/sample_invocation_issue<N>.py` (real CLI: voice-guard + iamhoi balance + secret-scan + commit-msg scan + marker-balance grep + frontmatter validator — 6 distinct steps) | `check-ai-writing-tells.py --mode blog --no-check-only-new` exit 0 (#460 Phase 1: research files commonly pre-date HOIBOY_CUTOFF_DATE; cutoff filter must be off so they are actually scanned) + `check-iamhoi-wrapping.py` exit 0 + `check-public-repo-secrets.py --enforce-on-private` exit 0 + commit-message scan exit 0 + marker-balance check (open `<!-- iamhoi -->` count == close `<!-- iamhoiend -->` count) + frontmatter validator (status ∈ {research, drafting, archived, published}; published_to set iff status=published; wordcount ≤3000) | n/a — run the 6-step gate against ONE representative prep file (clean research preferred, e.g. BOOKS_READING_LIST_RESEARCH.md) | New research file, draft-state transition, hoiboy-uk publish candidate | Drafts stay private until ALL 6 gates pass; published_to SHA captured AFTER hoiboy-uk commit lands; never auto-promote published-archived → drafting without explicit user authorisation |
 
 **How to apply (MANDATORY in Stage 4 Verification Loop)**:
@@ -494,6 +499,21 @@ AP #17 and AP #20 are **complementary, not contradictory**. AP #17 means: do not
 - Stage 4 Verification Loop "Checkbox-MCP coverage gate" fails if the mismatch is detected — retroactively close boxes with evidence before merge.
 - Ralph Review tiers (haiku / sonnet / opus) independently verify MCP-sourced evidence at review time — external defence-in-depth on top of agent self-enforcement.
 
+**Tier-A Automation (post-commit hook + sentinel + GHA processor — #477 Theme 6)**:
+
+The manual `mcp__github-checkbox__update_issue_checkbox` invocation is the canonical floor. On top of that, dotfiles#477 Phase 6 ships an opportunistic automation layer that auto-ticks Tier-A boxes whose AC text references files touched by a Stage 4 commit:
+
+1. **Post-commit hook** (`.pre-commit-config.yaml` registers `sst3-tier-a-auto-tick` at the post-commit stage). Fires after every commit. Runs `scripts/sst3-tier-a-auto-tick.py` which: (a) parses the commit message's `Phase: 4` trailer + `(#N Phase M ...)` subject; (b) queries the parent Issue body via `gh issue view`; (c) extracts Tier-A `[ ]` boxes in phase M; (d) for each box whose AC text references a file touched by the commit, accumulates an entry into `SST3-metrics/.tier-a-auto-tick/<issue#>-<phase>.json`. Graceful degrade: any failure → exit 0 + stderr log (post-commit MUST NOT block the commit chain).
+2. **GitHub Actions processor** (`.github/workflows/tier-a-auto-tick.yml`). Fires on push to `solo/issue-*` branches (and on `workflow_dispatch`). For each sentinel: GET the Issue body via `gh api`, regex-replace the unchecked box anchored on `**(<ac_id>)**` with `[x]`, append a Proof of Work line `- PoW [<ac_id>]: <evidence> (auto-ticked via tier-a-auto-tick.yml)`, PATCH the Issue body via `gh api`. Then delete processed sentinels and commit cleanup with `[skip ci]` + `Phase: 4` trailer.
+
+**Manual MCP override remains the AP #20 fallback** when the automation is unavailable (network failure, GHA disabled, sentinel write blocked, AC text drift away from box-text matcher). The Verification Loop Layer 3 + Stage 5 checkbox-coverage audit STILL run regardless — they enforce the 100% Tier A coverage invariant whether automation or manual closed the boxes.
+
+**Operational notes**:
+- Sentinel JSONs land in the repo (NOT gitignored at the directory level) so the GHA processor can read them on push. The `.gitignore` entry is scoped to `SST3-metrics/.tier-a-auto-tick/.cache/` + `*.tmp` markers only.
+- Sentinel filename pattern: `<issue#>-<phase>.json`. Multiple commits in one phase accumulate entries (deduped by `(ac_id, commit_sha)` tuple).
+- Box-text matching is anchored on the `**(<ac_id>)**` prefix for resilience against text drift in box body wording. AC text drift requires manual MCP override.
+- Automation fires only on Stage 4 (Leader stage) commits (`Phase: 4` trailer). Other stages' commits are no-op.
+
 **Canonical invocation points**: `../dotfiles/.claude/commands/Leader.md` Guardrails block + `../dotfiles/.claude/commands/SST3-solo.md` "Governance Enforcement" section. Rule lives there; this AP documents the failure mode.
 
 **Cadence — two-tier rule (#429 Phase 9 refinement)**:
@@ -567,6 +587,51 @@ Bare `cd <path>` without subshell-protection or trailing `cd -` is **prohibited*
 - Do NOT auto-trigger re-audit; require explicit operator authorisation
 
 **Cross-Reference**: STANDARDS.md "Double-Guardrail Principle" → "Skill-Canonical Audit Template (Comprehensive Walk)" subsection. Companion rule: AP #14 (Multi-Layer Subagent Discipline) — different angles per layer + main-agent verification. AP #23 ensures the audit is comprehensive at the SCOPE level; AP #14 ensures multiple angles cover the same scope.
+
+---
+
+## Anti-Pattern #24: Marker-Substring Changes Without Full Emit-Site Enumeration
+
+**Problem**: When introducing, modifying, or removing a marker substring (error-message partition string, counter name, diagnostic flag, feature-gate literal, status-enum value, log-line prefix), implementing the change at the obvious emission point WITHOUT enumerating and auditing every other site that emits / reads / references / asserts that substring. The scope-incomplete change lands with one of two failure modes: (a) **orphaned/stale references** in test fixtures, mocks, guard clauses, or downstream aggregation logic that silently skip the new wording; (b) **non-deterministic split** where some emission paths use the new substring and others retain the old one, creating downstream inconsistency that surfaces only under certain load patterns.
+
+**Evidence**: auto_pb_swing_trader#1450 + #1451 — error-marker partition introduction. Implementer changed the emission site without running `grep -rn -F` over the codebase, missing 2-3 downstream references per feature. Stage 4 sample passed locally because the sample exercised the changed emission path; downstream aggregation logic that referenced the OLD marker silently dropped the new emissions. Surfaced only at production observation. apbst#1448 follow-up: same class of bug, different feature (status enum partition). See `dotfiles/SST3-metrics/leader-feedback/feedback-auto_pb_swing_trader-1450.md` + `feedback-auto_pb_swing_trader-1451.md` for the authoritative trail. Filed as #477 Theme 2 (this Issue, Phase 4).
+
+**Root Cause**: Marker substrings are conceptually atomic but mechanically scattered across emission sites, test fixtures, mocks, downstream consumers, and assertion clauses. The implementer's mental model treats the marker as "one thing to change" because its semantic role IS one thing — but the codebase reality is N places that all need to move together. Without an enumeration pass at Stage 1, the scope is implicitly bounded by the implementer's recall of where the marker lives.
+
+**Relationship to AP #10 (Search Before Adding)**: AP #10 prevents creating a duplicate of something that already exists. AP #24 prevents incomplete change of something that already exists. Different scope: AP #10 = "does this marker already exist anywhere?"; AP #24 = "have I found EVERY reference to this specific marker substring?".
+
+**Relationship to AP #18 (Sample Invocation)**: Complementary, both fire when the marker change affects pipeline / CLI args / cross-module propagation. AP #18 validates the end-to-end sample lands rows; AP #24 validates the scope of marker references is enumerated and updated. AP #18's sample run can pass even when AP #24 is violated (the sample exercises the changed path; the orphaned references are silently inactive). Both gates required.
+
+**Detection Patterns** (must match all to avoid false positives on non-marker substring changes):
+- Change introduces, modifies, or removes a string literal that gates downstream behaviour (error-message text checked by aggregator, status enum compared with `==`, feature-gate literal in `if config["mode"] == "X"`, log-line prefix consumed by parser, partition key in dict / DB column / queue topic)
+- The literal is referenced from MORE than one source location (emitter + at least one consumer / asserter / mock / fixture)
+- The change is applied at the emitter without prior enumeration (no Stage 1 `grep -rn -F '<exact_literal>'` evidence in research file)
+
+**Prevention**:
+- ✓ DO: Run `grep -rn -F '<exact_literal>' src/ tests/ scripts/ --include='*.py'` (or per-language equivalent) at Stage 1 BEFORE any implementation. Record count + per-site triage (emission / fixture / mock / stale) in research file as "Known Emit Sites: (N)".
+- ✓ DO: At Stage 4 Gate 1, re-run the same grep AND confirm count matches Stage 1 baseline. Mismatch (new sites added without scope expansion) = FAIL.
+- ✓ DO: Use `-F` (fixed-string) flag — marker literals often contain regex metacharacters that get mis-interpreted under default `-E`.
+- ✗ DON'T: Trust the change is scope-complete because the obvious emitter was updated. Marker scope is mechanical, not semantic.
+- ✗ DON'T: Skip the Stage 4 count-drift check because Stage 1 was thorough — the diff itself can introduce new references that need to land in the count baseline.
+- ✗ DON'T: Substring-grep without `-F` on markers containing `(`, `)`, `.`, `*`, `?`, `[`, `]`, `|`, `+`, `^`, `$`, `\` — silent regex failure is the worst failure mode.
+
+**How to apply** (procedural):
+- **Stage 1 enumeration angle**: dispatch a dedicated subagent with the prompt "Find every site in the codebase where this exact substring `<literal>` is emitted, referenced, or checked. Use `grep -rn -F '<literal>' src/ tests/ scripts/ --include='*.py'` BEFORE any implementation. List every match with file:line + triage (emission / fixture / mock / stale)." Record count + triage in Issue body as "Known Emit Sites: (N)".
+- **Stage 4 count-drift verification gate**: at Verification Loop, re-run the same grep. Compare count to Stage 1 baseline. Mismatch = either (a) implementation added new emission sites that should have been in scope (fix: expand scope to include them) OR (b) implementation removed sites that shouldn't have changed (fix: revert removal). Either way, FAIL the gate until reconciled.
+
+**Self-Healing** (trigger mechanism — explicit per AP #21 no-autonomous-issue-creation):
+- Stage 5 subagent flags an Issue that introduced/modified/removed a marker substring without a Stage 1 enumeration step → propose retroactive count-baseline + drift-check as a Stage 5 fix (NOT a new Issue per AP #21)
+- Operator authorises retroactive enumeration OR defers to a follow-up Issue
+- If retroactive enumeration surfaces a missed site: apply fix + cross-reference inline at the marker definition site so the same marker isn't fragmented again
+
+**Enforcement**:
+- `STANDARDS.md` "Marker-Substring Discipline" subsection (cross-reference paragraph).
+- `.claude/commands/Leader.md` Stage 1 step 2.1 (Marker-enumeration angle subagent dispatch).
+- `WORKFLOW.md` Verification Loop "Marker-substring enumeration (AP #24)" checkbox (Stage 4 Gate 1).
+
+**Codependencies**: AP #18 (Sample Invocation) — both fire when marker change affects pipeline; AP #10 (Search Before Adding) — adjacent failure mode (duplicate vs incomplete change); AP #14 (Multi-Layer Subagent Discipline) — Layer-2 adversarial gap-finder catches missed marker sites that Layer-1 generic-angle coverage misses.
+
+**See also**: STANDARDS.md "Marker-Substring Discipline".
 
 ---
 

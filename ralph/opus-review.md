@@ -62,6 +62,15 @@ Thorough architectural review. Catches 10% of issues missed by Haiku+Sonnet.
 - [ ] Check: If this fails, will the user/operator know immediately?
 - [ ] Verify: Errors are unmistakable (per Fail Fast standard, STANDARDS.md)
 
+**5.5. State-Machine Mutation Architecture (Conditional, #477 AC 3.2 — Theme 3)**
+
+> Architectural-depth state-machine review. Sonnet covers the trace-level mutation-site audit; Opus adds the cross-boundary architecture concerns: who owns the transition authority, whether the mutation rendezvous is concurrent-safe, whether the state machine has a documented invariant.
+
+- [ ] **Scope**: Does this implementation introduce or modify counters, flags, state enums, queues, semaphores, locks, or any variable that gates downstream control flow? If YES, next checkboxes mandatory. If NO, mark "N/A — no state machines in architectural scope."
+- [ ] **Mutation-path architecture audit** (if scope=YES): For every state variable, enumerate ALL writers across the entire diff + adjacent modules (`grep -rnE '<var>\\s*[+\\-*/]?=' src/`). Verify exactly ONE module owns the transition authority. Multi-writer states = architectural red flag unless documented as intentional fan-in (with concurrency model named: lock / atomic / single-thread / actor / message-bus).
+- [ ] **Authority-duplication detection** (if scope=YES): for any try/except pair, confirm the success-path and error-path are mutually exclusive on state writes. `state += 1` in try-block AND `state += 1` in except-handler (or any function reachable from except) = double-mutation bug class (apbst#1448 evidence). Confirm exactly-once semantics OR document the intentional double-write inline.
+- [ ] **Concurrent-safety check** (if scope=YES + state crosses thread/process/coroutine boundary): named concurrency primitive present (asyncio.Lock / threading.Lock / DB row-lock / atomic op). If absent, the state mutation is racy by construction = FAIL.
+
 **6. Cross-Boundary Contract Audit — Architectural (Issue #1407 post-mortem)**
 
 > Deep cross-system reasoning. Every value that crosses a boundary (code↔DB, code↔config, caller↔callee, backend↔frontend) must have its contract verified.
@@ -119,7 +128,7 @@ Preconditions (code-touching PRs, run once): `bash dotfiles/scripts/sst3-code-st
 > **CRITICAL**: This Opus tier runs BEFORE merge. The items below are pre-merge preconditions for posting `user-review-checklist.md` to the user. They are NOT the user review itself — that happens after merge with the actual user reading the posted checklist. Do NOT confuse the two.
 
 - [ ] All Expected Behavior items verified (preconditions for posting checklist)
-- [ ] All Acceptance Criteria items verified
+- [ ] All Acceptance Criteria items verified — **Stage 5 re-litigates any deferred items via the §3-Deferral Re-Litigation Angle per `../dotfiles/.claude/commands/Leader.md` Stage 5 step 1 (#477 AC 2.7)**. Items left in user-review-checklist §3 "Items Not Fixed" without one of the three flags `[deferred-FP|N/A|tracking-issue]` will be re-classified by the Stage 5 angle; bidirectional cross-reference with `../templates/user-review-checklist.md` §3 3-flag taxonomy (AC 2.6).
 - [ ] Engineering Requirements met
 - [ ] Cleanup Requirements completed
 

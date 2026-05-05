@@ -84,6 +84,26 @@
 - [ ] Run regression tests — if not run yet, run them now
 - [ ] Per-stage feedback per STANDARDS.md §Per-Stage Feedback Capture — write the Stage 5 block before declaring complete
 
+### Stage 5 Layer-B Failsafe — DOTFILES_READ_TOKEN (closes #473 via #477 Phase 8)
+
+**Why it exists**: Layer-B failsafe `.github/workflows/stage5-completeness.yml` checks out canonical `dotfiles` (private) on every Stage 5 sign-off via `actions/checkout`. The default `secrets.GITHUB_TOKEN` is repo-scoped; cross-repo private-repo checkout returns `Repository not found` and the workflow silently FAILs across all 7 consumer repos. **Path A choice rationale**: a fine-grained PAT (`DOTFILES_READ_TOKEN`) scoped to `Contents:Read` on `dotfiles` ONLY is the minimum-scope fix — no `repo` write, no other-repo access, no organization-wide GitHub App overhead.
+
+**Rotation cadence**: PAT expires 1 year from creation. Calendar reminder set 11 months out. When the PAT expires, Layer-B will resume failing silently — re-issue PAT in GitHub UI, re-run `setup-dotfiles-read-token.sh` against all 7 consumers (no canonical workflow change needed since the secret name `DOTFILES_READ_TOKEN` is unchanged). The `--validate` mode of any future iteration of `setup-dotfiles-read-token.sh` should grep `gh secret list` for `DOTFILES_READ_TOKEN` presence on every consumer; absence = re-run helper.
+
+**Recovery procedure (Layer-B failures post-rotation)**:
+1. **Symptom**: GHA workflow `stage5-completeness.yml` fails on a consumer-repo Stage 5 sign-off with `Repository not found` or `Bad credentials`. Verify via `gh run view <run-id> --repo hoiung/<consumer>` log output.
+2. **Diagnose**: `gh secret list --repo hoiung/<consumer> | grep DOTFILES_READ_TOKEN` — empty = secret absent or expired.
+3. **Re-issue PAT**: GitHub UI → Settings → Developer settings → Personal access tokens → Fine-grained tokens → Regenerate `DOTFILES_READ_TOKEN`. Same scope: `Contents → Read-only` on `dotfiles` only. New 1-year expiration.
+4. **Redistribute**: paste new PAT into `/tmp/.dotfiles-pat`, `chmod 600 /tmp/.dotfiles-pat`, run `bash scripts/setup-dotfiles-read-token.sh --token-file /tmp/.dotfiles-pat`, verify all 7 consumers via `gh secret list --repo hoiung/<consumer> | grep DOTFILES_READ_TOKEN`. Delete `/tmp/.dotfiles-pat`.
+5. **Re-trigger failed workflow**: `gh workflow run stage5-completeness.yml --repo hoiung/<consumer> -f issue=<closed-issue#>` and confirm receipt comment posts with PASS verdict.
+
+**Security note**: `DOTFILES_READ_TOKEN` carries `Contents:Read` permission on `dotfiles` ONLY. It cannot:
+- Perform write operations on `dotfiles` (cannot push, cannot create issues, cannot edit issue bodies — the workflow's `gh api PATCH` calls use the consumer-side `secrets.GITHUB_TOKEN` for that, which is repo-scoped to the consumer).
+- Access any other repository under `hoiung/` or any organization.
+- Read GitHub Actions secrets (cannot exfiltrate sibling secrets via the same token).
+
+The token's blast radius is bounded to "read public + private file contents of `dotfiles` master branch" — equivalent to the read access an authorized collaborator would have on the canonical repo. Compromise impact: same as a clone of the dotfiles repo at the moment the token was leaked. Compromise response: regenerate per the Recovery procedure above.
+
 ## Verification Loop
 
 - [ ] **Scope completeness gate**: Enumerate every Acceptance Criteria checkbox from issue body. For EACH one: state file:line that implements it. Any checkbox without file:line = NOT DONE. Do NOT proceed until all checkboxes have evidence.
@@ -98,6 +118,7 @@
   2. Every config key added to YAML is read by code (grep for key name in source — zero results = dead config). YAML is unsupported by graph, so grep is the primary tool here.
   3. Every SQL query's column names exist in the target table (verify with `\d tablename` or migration file)
   4. Every None-producing code path: confirm callee's type annotation accepts `Optional` / has null guard
+- [ ] **Marker-substring enumeration (AP #24, #477 Phase 4 AC 4.4)**: if the change introduces, modifies, or removes a marker substring (error-message partition, counter name, diagnostic flag, feature-gate literal, status-enum value, log-line prefix, partition key), run `grep -rn -F '<exact_marker_substring>' src/ tests/ scripts/ --include='*.py'` (or per-language equivalent) and confirm the count matches the Stage 1 baseline recorded in the Issue body as "Known Emit Sites: (N)". Mismatch = FAIL — either implementation added emission sites that should have been in scope (expand scope) or removed sites that shouldn't have changed (revert removal). Skip-clean if no marker substring change in this Issue. Canonical rule: `ANTI-PATTERNS.md` AP #24 (Marker-Substring Changes Without Full Emit-Site Enumeration); cross-reference: `STANDARDS.md` "Marker-Substring Discipline".
 - [ ] **Regression tests**: Run project test suite, verify no regressions
 - [ ] **Quality scan**: No inefficiencies, no bottlenecks, no memory leaks, no dead code, STANDARDS.md compliant
 - [ ] **AP #18 Sample Invocation Gate (#447 Phase 5 wrapper-script trigger)**: if the change touches pipeline / backtest / SL1 / SL2 / orchestration / CLI-wiring / cross-module function-arg propagation / **persistent-state write (JSONB schema mutation, SQL literal drift across SET and READ sites, DB column rename, enum-value drift)** / **any `../scripts/sst3-*.sh` wrapper change** → a REAL-CLI sample invocation must be run BEFORE close. For service shapes: 8-item liquid basket against real DB. **For wrapper-script shapes: real-CLI invocation against ≥3 repo shapes (auto_pb / job-hunter / dotfiles) + raw-tool counter-query for recall comparison**. Exit code 0 alone insufficient — verify row-count landed, downstream consumers succeeded, contamination audit OK, wrapper-vs-raw delta within tolerance. Document the sample log path + verification queries + wrapper/raw delta in an Issue comment. If NOT in-scope, document the scope-skip reason. Canonical: ANTI-PATTERNS.md #18 (per-shape table from #447 Phase 7) + STANDARDS.md "Testing Priority — Workflow Validation Gate".

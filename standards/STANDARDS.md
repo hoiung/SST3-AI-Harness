@@ -140,6 +140,7 @@ See: ../workflow/WORKFLOW.md (Stage 1 — Research) for research-specific critic
 
 **Rules**:
 1. **User asserts → grep source immediately**, with multiple synonyms and partial-figure variants. Don't grep just `676K`; grep `676|redhill|3fp|digital realty`.
+1b. **Handover claim → grep source immediately** (Theme 1, #477): same discipline applies to claims sourced from prior-research handovers, post-compact recovery summaries, or memory entries — not just user assertions. When entering a session with a handover that names file:lines / counts / table sizes / function-existence assertions, the main agent extracts 3-5 headline claims and verifies each via raw-grep / direct read BEFORE dispatching the Stage 1 swarm. Document drift in the research file as "handover claim X corrected from Y to Z before swarm dispatch". Memory ≠ source of truth; a handover is a starting hypothesis, not a frozen contract. Cross-reference: Leader.md Stage 1 step 1a.5 (PRE-SWARM SOURCE-VERIFICATION GATE for handover claims); ANTI-PATTERNS.md AP #14d (Scope-gap blindness — Stage 1 research specific).
 2. **Never say "you're right" before checking**. Verification is the response, not validation.
 3. **Never debate or push back** based on a subagent's earlier finding. The subagent could have missed it.
 4. **Trust structured data** (tables, PO lists, project enumerations) over narrative paraphrases or subagent summaries.
@@ -192,6 +193,58 @@ See: ../workflow/WORKFLOW.md (Stage 1 — Research) for research-specific critic
 5. Layer 3 swarm (3-5 subagents): verify applied edits didn't break cross-references or surface new violations
 
 **See ANTI-PATTERNS.md #14** for the no-discipline failure modes.
+
+#### Stage 1 Layer-2 Adversarial Gap-Finder Discipline (Theme 8, #477)
+
+**Principle**: Layer-1 swarm finds what's in scope; Layer-2 adversarial swarm finds what Layer-1 missed. Different lens = different blind spots = real gap coverage. Mandatory for infrastructure / governance / cross-cutting Stage 1 research.
+
+**The Layer-2 prompt** (verbatim template): "Layer-1 found X, Y, Z. Find 3 things they missed — either (a) false-positive claims already covered by modern equivalents, or (b) genuine gaps not yet surfaced." Layer-2 prompt MUST differ from Layer-1 (per AP #14c).
+
+**Two failure modes Layer-2 catches**:
+
+1. **False-positive legacy claims**: Layer-1 cites an obsolete API / registry key / convention that has a modern equivalent already in use. Examples (worked examples, surfaced in #477 research):
+   - Layer-1 cited Win10 `SetUserFTA` legacy API → Layer-2 surfaces Win11 24H2 modern path: `UserChoice ProgId` registry under `HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts`. Apply: replace SetUserFTA invocation with UserChoice ProgId write.
+   - Layer-1 cited deprecated registry key for default-app association → Layer-2 surfaces `dism.exe /Set-DefaultAppAssociation` modern equivalent shipped in Win10+. Apply: prefer dism.exe over registry direct-write.
+
+2. **Scope-adjacent genuine gaps**: Layer-1's angles cover the named scope but miss adjacent surfaces. Examples:
+   - Layer-1 swarm covers Stage 1 hooks → Layer-2 surfaces Stage 4 sample-invocation gate also needs the same angle (#477 Themes 1+8 cross-cutting).
+   - Layer-1 covers `feedback_parser.py` schema → Layer-2 surfaces `check-closure-loop-applied.py` pre-commit hook also reads the schema (closure-loop integrity gap).
+
+**Main-agent verification gate**: when Layer-2 surfaces a false-positive correction (e.g. "Layer-1 cited X but modern equivalent Y exists"), the main agent MUST verify the equivalence against source before accepting the correction. Document the verification method inline (command run, file:line, URL). Drift between Layer-1, Layer-2, and source = block scope-acceptance until reconciled. Pattern: dispatch a verification subagent with the prompt "Run `grep / ls / Query` against <file>:<line> to confirm whether <Layer-1 legacy claim> or <Layer-2 modern equivalent> is present in the actual codebase. Report file:line + verbatim quote." Both Layer-1 and Layer-2 outputs are recommendations; the source decides (per AP #14c).
+
+**Enforcement**: Leader.md Stage 1 step 2a (Layer-2 adversarial gap-finder MANDATORY). ANTI-PATTERNS.md AP #14d (Scope-gap blindness — Stage 1 research specific).
+
+#### Acceptance Criteria Measurability Gate (Theme 10, #477)
+
+**Principle**: Every Acceptance Criteria checkbox MUST have an explicit verification command/method that is **falsifiable** (binary pass/fail). Unfalsifiable ACs leak through Stage 2 audit because subagents can rubber-stamp ambiguity ("looks reasonable") — the gate MUST fire BEFORE swarm dispatch, not after.
+
+**Failure mode**: subjective ACs ("cleaner architecture", "better performance", "improved coverage") get marked `[x]` at Stage 4 with vibes-based evidence. Stage 5 audit can't reject them because there's no falsifiable test to fail. The contract becomes infinitely flexible.
+
+**Reject (unfalsifiable)** — examples observed in #477 prior-feedback aggregation:
+- "subsystem length ≤500 lines" — line counts not bound to a specific file/path
+- "improved coverage" — no metric, no threshold, no source of truth
+- "cleaner architecture" — subjective, no test
+- "better performance" — no baseline, no measurement, no pass/fail
+- "more maintainable" — no proxy metric (cyclomatic complexity, file count, dep count)
+- "reduce duplication" — no count of duplicates eliminated
+
+**Accept (falsifiable)**:
+- ``wc -l <specific-file>`` returns N where N ≤ 500 (file path explicit)
+- ``pytest tests/<specific>.py`` exit 0 (or specific test count)
+- ``grep <pattern> <specific-file>`` returns ≥N matches (pattern + file explicit)
+- ``coverage report --include=<file>`` returns ≥N% (N stated)
+- ``radon cc <file> -a`` returns avg ≤B (or per-function rank ≤C)
+- File at `<specific-path>:<line-range>` contains the named text/structure (verbatim)
+- Command + expected output recorded inline in the AC
+
+**Enforcement**:
+- Leader.md Stage 2 step 4e (AC verifiability sweep — author runs before subagent dispatch).
+- issue-template.md "AC Verifiability Gate" subsection (template-time gate).
+- Stage 3 sanity-check subagent angle: any AC without falsifiable verification = block issue creation until rewritten.
+
+**Apply rule**: ACs without falsifiable verification get rewritten in-place OR moved to Cleanup Requirements with rationale BEFORE subagent dispatch. Do NOT pass unfalsifiable ACs into the Stage 3 swarm — subagents anchor on whatever scope they receive.
+
+**Verify**: ``grep -cE '^- \[ \] \*?\*?\(?[0-9]+\.[0-9]+' <issue-draft>`` returns count of ACs; spot-check 3-5 random ACs and confirm each carries either a verification command (`grep`/`wc`/`pytest`/`exit 0`) OR a verbatim file:line target. Document any reject→rewrite in the per-stage feedback file Stage 2 `worked` field.
 
 #### Scope Snippet Rule (#406 F5.1)
 
@@ -960,6 +1013,9 @@ Cross-link: the **three-signal contract policy** + **Raw-tool cross-validation R
 - Coverage pre-flights, auto-bootstrap paths, snapshot-suffix / experiment-path logic
 - Multi-module function-arg propagation chains (>1 hop from CLI to DB write)
 - Any change where a `**kwargs`-accepting mock could silently hide the regression
+- **Idempotency re-run paths** (#477 Phase 5 AC 5.2 — Theme 4): for changes claiming idempotency or feature-detect logic (install-path scripts, bootstrap guards, "if X already configured: skip" branches), the sample MUST cover BOTH first-install AND re-run-with-feature-already-present paths. (dotfiles#474 evidence — single-direction sample hides re-run-corruption bug class.)
+- **Documentation cross-reference resolution** (#477 Phase 5 AC 5.2 — Theme 4): for infrastructure-shape work (homelab bootstrap, runbook scripts, multi-node setup), Stage 5 swarm MUST include an angle that walks every script-path / URL / file-reference / cross-link in the Issue's docs and confirms each resolves (`ls <path>` / `curl -fsI <url>` / `grep -F <ref> <target>`). (dotfiles#474 evidence — dangling references pass Stage 4 but break next runner.)
+- **Every-return-path wiring** (#477 Phase 5 AC 5.2 — Theme 4): for cache-read or guard-helper additions (functions whose job is "check state and return early"), Stage 4 must enumerate every `return` statement in the guarded function via `grep -n "return" <file>` and confirm each return path either emits the new instrumentation/cache-write OR is documented as exempt. (apbst#1451 evidence — missed return-path silently skips the new behaviour on the missed branch.)
 
 **Gate (verification loop item — NOT optional)**:
 1. Small liquid basket (8 tickers typical), real CLI, real DB.
@@ -968,6 +1024,42 @@ Cross-link: the **three-signal contract policy** + **Raw-tool cross-validation R
 4. Stage 5 integration test added for every new cross-module signature or CLI flag.
 
 **Enforcement**: AP #18, Stage 4 Verification Loop, `issue-template.md` PREREQUISITE CHECKPOINT.
+
+### Test-Prod Call Coverage Discipline (Theme 9, #477)
+
+**Distinct from**: AP #18 Workflow Validation Gate (end-to-end pipeline sample) AND the regression-test gate (broader). This discipline targets the specific failure mode where a function compiles, lints, and ships but is never actually exercised by any test — the **call-site seam** between new prod code and tests is missing.
+
+**Three-bullet doctrine** (each bullet is a falsifiable check):
+
+1. **Function call seams**: For every new public function/method added in a phase, name the test file that imports + invokes it. Verification: `grep -rnE 'from <new-module> import|<new-module>\\.<callable>' tests/`. Empty grep on a new public callable = FAIL.
+2. **Response-payload field assertions**: For every new field added to an API response / JSON payload / dict structure, name the test that asserts the field's presence + value. Verification: `grep -rnE '<field-name>' tests/`. Field with no assertion = FAIL.
+3. **Config-key read coverage**: For every new config key read by code (YAML/env/dict), name the test that exercises the read path. Verification: `grep -rnE '<config-key>' tests/`. Config read with no test = FAIL.
+
+**Why it's distinct from AP #18**: AP #18 verifies the end-to-end pipeline lands rows (downstream-consumer verification). Test-Prod Call Coverage verifies the function-level seam exists at all (a function with no test caller can pass AP #18 if the pipeline never invokes it during the sample run, and pass Workflow Validation Gate if it ships untouched).
+
+**Why it's distinct from regression tests**: regression tests cover existing behavior; this discipline targets NEW prod code added in the current phase. The grep pattern is scoped to the diff, not the full codebase.
+
+**Enforcement**:
+- `ralph/sonnet-review.md` Test-Prod Call Coverage section (Tier 2 logic-depth gate).
+- `.claude/commands/Leader.md` Stage 4 step 3.5 (per-phase-boundary author sweep before MCP close-out).
+- Phase-boundary AP #20 close-out: every Tier A box claiming a new public callable MUST cite the test file in evidence.
+
+**Apply rule**: when phase work introduces a new public callable / response field / config key, the implementer runs the matching grep BEFORE closing the phase via MCP. Empty grep = test seam missing = FAIL the phase boundary; either add the test seam OR document explicit no-test-needed rationale (rare; usually only valid for trivial dataclasses or pure-data exports).
+
+### Marker-Substring Discipline (Theme 2, #477)
+
+**Cross-reference**: full rule lives in `ANTI-PATTERNS.md` AP #24 ("Marker-Substring Changes Without Full Emit-Site Enumeration"). This subsection is the STANDARDS.md anchor — short paragraph + two-stage contract. (Sample-run anchor for #477 Phase 6 AC 6.7 — `STANDARDS.md` edited to exercise the post-commit `sst3-tier-a-auto-tick` hook end-to-end against the live #477 Issue body.)
+
+**Two-stage contract** (all marker substring changes — error-message partition string, counter name, diagnostic flag, feature-gate literal, status-enum value, log-line prefix):
+
+1. **Stage 1 baseline grep enumeration** — before any implementation, run `grep -rn -F '<exact_literal>' src/ tests/ scripts/ --include='*.py'` (or per-language equivalent) over the entire codebase. Record count + per-site triage (emission / fixture / mock / stale) in the Issue body as "Known Emit Sites: (N)".
+2. **Stage 4 count-drift verification gate** — at Verification Loop, re-run the same grep. Confirm count matches the Stage 1 baseline. Mismatch = either implementation added emission sites that should have been in scope (expand scope) or removed sites that shouldn't have changed (revert removal). Either way FAIL until reconciled.
+
+**Why it's distinct from AP #18**: AP #18 verifies the end-to-end pipeline lands rows under sample invocation. Marker-Substring Discipline verifies the SCOPE of marker references is enumerated and updated together. The two gates are complementary; both fire when the marker change affects pipeline / CLI args / cross-module propagation.
+
+**Why it's distinct from AP #10**: AP #10 prevents creating a duplicate of something that already exists (search before adding). AP #24 prevents incomplete change of something that already exists (enumerate every reference before modifying).
+
+**Enforcement**: ANTI-PATTERNS.md AP #24 (canonical rule), `.claude/commands/Leader.md` Stage 1 step 2.1 (subagent dispatch), `WORKFLOW.md` Verification Loop (Stage 4 Gate 1 checkbox).
 
 ## Modularity Standards
 

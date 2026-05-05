@@ -79,6 +79,26 @@
 - No false positives — everything real gets fixed
 - No such thing as high priority or low priority — all must be fixed
 
+### AC Verifiability Gate (#477 AC 2.8 — Theme 10)
+
+Every Acceptance Criteria checkbox MUST have an explicit verification command/method that is **falsifiable** (binary pass/fail). Codified in `../standards/STANDARDS.md` "Acceptance Criteria Measurability Gate". Author runs the verification sweep at Stage 2 step 4e per the Leader workflow.
+
+**Reject (unfalsifiable)**:
+- "subsystem length ≤500 lines" — line counts not bound to a specific file/path
+- "improved coverage" — no metric, no threshold, no source of truth
+- "cleaner architecture" — subjective, no test
+- "better performance" — no baseline, no measurement, no pass/fail
+
+**Accept (falsifiable)**:
+- ``wc -l <specific-file>`` returns N where N ≤ 500
+- ``pytest tests/<specific>.py`` exit 0 (or specific test count)
+- ``grep <pattern> <specific-file>`` returns ≥N matches
+- ``coverage report --include=<file>`` returns ≥N% (with N stated)
+- File at `<specific-path>:<line-range>` contains the named text/structure
+- Command + expected output recorded inline in the AC
+
+**Rule**: ACs without falsifiable verification get rewritten OR moved to Cleanup Requirements with rationale BEFORE subagent dispatch — do NOT pass unfalsifiable ACs into the Stage 3 swarm.
+
 ## Cleanup Requirements
 
 ### Code Hygiene (REMOVAL)
