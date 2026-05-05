@@ -36,14 +36,20 @@ jobs:
       contains(github.event.comment.body, 'Stage 5 (Post-Implementation Review) complete')
     steps:
       - name: Checkout dotfiles canonical (gate script + helpers live here)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: hoiung/dotfiles
           ref: master
           path: dotfiles
+          # Cross-repo private-repo checkout requires a fine-grained PAT
+          # (#473 / #477 Phase 8). DOTFILES_READ_TOKEN is scoped Contents:Read
+          # on hoiung/dotfiles ONLY. No-op for harness-side runs (same-repo
+          # checkout works without the token); load-bearing for consumer-side
+          # runs where default GITHUB_TOKEN is repo-scoped to the consumer.
+          token: ${{ secrets.DOTFILES_READ_TOKEN }}
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
@@ -81,7 +87,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Post receipt comment to Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const ex = `${{ steps.gate.outputs.exit }}`;

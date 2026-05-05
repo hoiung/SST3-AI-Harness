@@ -42,6 +42,20 @@ Medium-depth validation. Catches 30% of issues missed by Haiku.
 - [ ] No empty `except:` blocks, bare `pass` on exception, silent `return None` on error, or `continue` on unexpected state
 - [ ] Logs are searchable (consistent field names, no log-and-pray)
 
+### State-Machine Mutation Correctness (Conditional, #477 AC 3.1 — Theme 3)
+- [ ] **Scope**: Does this implementation introduce or modify code that uses counters, flags, state enums, queues, semaphores, or any variable that gates a downstream decision? If YES, next checkbox is mandatory. If NO, mark "N/A — no state machines in scope."
+- [ ] **Mutation-site audit** (if scope=YES): For every variable identified above, list all mutation sites (`grep -n '<var>\\s*[+\\-*/]?=\\|<var>\\s*=\\s*[^=]' <file>`) and trace every code path to confirm exactly one mutation per logical event. Specifically inspect `try`/`except` patterns: if `state += 1` (or any state mutation) occurs in the try-block AND the except-handler may reach the same state variable, confirm the except-handler's path is mutually exclusive (the try-block raised before completing the mutation) OR the double-mutation is intentional and documented inline. Authority duplication (two code paths claiming "I own this transition") = FAIL.
+
+### Test-Prod Call Coverage (Theme 9, #477 AC 3.4)
+
+> Distinct from AP #18 (end-to-end pipeline sample) and from the regression-test gate (broader coverage). This angle verifies the **call-site seam** between new prod code and tests — the specific bug class where a function compiles, lints, and ships but is never exercised by any test.
+
+- [ ] For every new public function/method added in this phase, name the test file that imports + invokes it (`grep -rnE 'from <new-module> import|<new-module>\\.<callable>' tests/`). Empty grep on a new public callable = FAIL (test seam missing).
+- [ ] For every new response-payload field added (API/JSON/dict key), name the test that asserts the field's presence + value (`grep -rnE '<field-name>' tests/`). Field with no test assertion = FAIL.
+- [ ] For every new config key read by code (YAML/env/dict), name the test that exercises the read path (`grep -rnE '<config-key>' tests/`). Config read with no test = FAIL.
+
+Cross-reference: STANDARDS.md "Test-Prod Call Coverage Discipline".
+
 ### Code Reuse
 - [ ] Searched codebase before creating new modules (Glob/Grep/Explore) — **evidence required**: name 2-3 grep patterns or Glob queries actually run, with results count
 - [ ] No duplicate modules created

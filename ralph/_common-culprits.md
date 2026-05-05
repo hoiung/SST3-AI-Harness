@@ -13,6 +13,7 @@ Each tier checks these patterns. Bullets in the per-tier files differ by depth, 
 | 3 | Hardcoded Settings | Embedded URLs/paths/credentials | R-multiples, percentages, timeouts | User-configurable values in code |
 | 4 | Obsolete/Dead Code (LMCE) | Commented-out blocks, dead TODOs | Never-called functions, unused imports | Modules never instantiated, dead endpoints |
 | 5 | Silent Fallbacks (Fail Fast) | `catch{}` swallow, `\|\| default` | `.get(k, {})` chains, `try/except: pass` | Cascading defaults masking root cause |
+| 6 | State-Machine Mutation Correctness (Conditional) | Visible counter / flag / enum mutations | Mutation-site trace, exactly-once semantics, try/except double-mutation | Authority duplication across modules, concurrent-safety primitives present |
 
 ## Tier Files
 - `haiku-review.md` — surface checks (60% of issues)
