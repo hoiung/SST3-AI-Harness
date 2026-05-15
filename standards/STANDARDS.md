@@ -493,6 +493,47 @@ AP #12 builds the observability surfaces; AP #16 enforces reading them.
 
 ---
 
+### Polish vs Twist (Semantic Frame Preservation)
+
+**Principle**: When integrating operator-supplied content (a paragraph, sentence, point, rough thought) into any draft — blog, LinkedIn, CV, cover letter, anywhere — polish it for flow but preserve his meaning AND his interpretive frame. He writes rough thoughts to AI specifically to have them turned into publishable prose, so editing is mandatory; verbatim copy-paste defeats the point, and so does twisting. The marker-driven voice guard (above) catches banned WORDS — it is structurally blind to a semantic FRAME shift. This subsection is the semantic-frame companion to that lexical guard. The instinct to "improve / sharpen / tighten" must be bounded: fire ONLY on AI-drafted prose that integrates operator-supplied source, never on the load-bearing nouns / verbs / hedges Hoi actually wrote.
+
+**Scope — when this rule fires** (bound it; over-application is the symmetric failure): fires ONLY when AI integrates operator-supplied source content (a rough paragraph / sentence / point he wrote) into voice-bearing prose — blog, LinkedIn, CV, cover letter, profile narrative. Does NOT fire on: fully-AI-authored governance/standards/docs prose (this very subsection is not operator-voice), code or config, or the operator's own words preserved verbatim as a marked quote. The fire-condition is authorship-gated: no operator-supplied source in-diff → rule is inert.
+
+**MUST — CLEAN UP (allowed, expected, the whole point)**:
+- Grammar normalisation (subject-verb agreement, tense)
+- Sentence-boundary adjustments (split a run-on, join clunky fragments)
+- Remove duplicated words from rough-draft input
+- Punctuation standardisation (Oxford comma preference, quote-style)
+- Light connectors ("also", "and", "but") so ideas flow
+- Capitalise proper nouns
+- Slight word reorder for natural English sentence rhythm
+
+**MUST NOT — TWIST (forbidden)**:
+- Add qualifiers that change interpretation: "at that size", "by comparison", "in essence", "fundamentally", "ultimately"
+- Reframe a comparison as a verdict. **Canonical worked example (verbatim — load-bearing)**: Hoi wrote `costs vs value` (a relationship/comparison the reader weighs); AI wrote `costs outweigh the value` (a verdict the writer hands down). Same surface words, opposite interpretive frame. This single example is THE canonical case — any future twist detector that cannot separate these two is measuring nothing.
+- Drop hedges Hoi used: "probably", "just", "really", "maybe"
+- Add hedges Hoi did not use
+- Substitute "smoother" synonyms that lose nuance ("doesn't scale" replacing his "doesn't scale economically")
+- Add analytical phrases ("the economics here", "the real point is") that impose interpretive structure
+- Add subject-clarifications that change emphasis ("for them", "for those companies") when context already carried it — light disambiguating connectors that just maintain context flow are OK; **the test is whether the addition changes the reader's interpretation**
+
+**Mechanical procedure when integrating operator-supplied content** (5 steps):
+1. Quote his literal phrasing in chat before editing, so the source is visible.
+2. Identify the interpretive load — what is he claiming, hedging, comparing, framing? What is the SHAPE of the point?
+3. Polish for grammar / flow — fix rough-draft artefacts (typos, missing articles where clunky, sentence boundaries).
+4. Test each candidate phrasing against the TWIST checklist above. Adds a qualifier / reframes a comparison as a verdict / drops a hedge → back it out.
+5. Show the polished version in the response before the final sync-and-push iteration so Hoi can spot drift early.
+
+**Why it is load-bearing**: operator-voice trades on authenticity AND on his interpretive frame being preserved. `costs vs value` → `costs outweigh value` is invisible to AI generic-good-writing instinct but load-bearing for Hoi — the first is observational (a comparison the reader weighs), the second conclusive (a verdict the writer hands down). Over-correcting the other way (verbatim copy-paste) is the symmetric failure and equally wrong.
+
+**No programmatic detector is possible — subagent-only semantic check (architecturally foreclosed)**: there is no `check-twist*.py` and none should be scoped. `voice_rules.py` is a `re.escape`-literal single-document word/phrase matcher with no source-vs-draft input channel; the canonical `costs vs value` → `costs outweigh value` example has 0% lexical separability (identical tokens, opposite frame); the fire-condition is authorship-gated (only when AI-integrated operator-supplied source is in-diff). Enforcement is therefore a semantic subagent check, NOT a heuristic script. A future agent proposing a programmatic detector must first explain why the `tests/fixtures/` foreclosure-regression fixture (a twisted paragraph the word-list guard PASSES at exit 0) now fails — it cannot.
+
+**Enforcement**: ANTI-PATTERNS.md AP #25 (Twisting Hoi-Supplied Content — the failure mode + Evidence). Ralph `sonnet-review.md` "Voice-Frame Preservation (semantic)" angle (fires when `invoked_skill ∈ {blog, voice-doc-repo}` and prose is in-diff). Leader.md Stage 3 + Stage 5 skill-canonical twist sub-prompt. Memory `feedback_use_hoi_literal_phrasing_no_twist.md` is the ≤30-line pointer — if memory and this file diverge, this file wins.
+
+**Reference**: rule promoted from auto-memory `feedback_use_hoi_literal_phrasing_no_twist.md` (now the ≤30-line pointer) onto the canonical surface in dotfiles#484. Lexical sibling: "Voice Content Protection (Marker-Driven)" above + ANTI-PATTERNS.md AP #15 (banned-words guard); this subsection is the semantic-frame half of the same protection.
+
+---
+
 ### Public Repo Secret Detection
 
 **Principle**: Public repos (`ebay-seller-tool`, `SST3-AI-Harness`, `hoiboy-uk`) must never contain secrets, business identifiers, or private filesystem paths. Repos opt in via `.public-repo` marker file at root.
@@ -583,7 +624,7 @@ AP #12 builds the observability surfaces; AP #16 enforces reading them.
 
 ### E2E Tests Must Reuse Production Code
 
-**Principle**: E2E tests must reuse production code paths (calculators, order gateways, price validation), not build parallel logic. Search production code before writing any test helper.
+**Pointer**: folded into ANTI-PATTERNS.md AP #26 "E2E System Verification" (single source of truth — the E2E/System Tier). The reuse principle (E2E tests reuse production code paths — calculators, order gateways, price validation — never build parallel logic; search production code before writing any test helper) lives there + in STANDARDS.md "Three-Tier Testing Framework" → E2E Tier.
 
 ---
 
@@ -975,6 +1016,88 @@ Housekeeping in 3 places (during work, after merge, STANDARDS.md) is intentional
 - [ ] Merge without passing tests
 - [ ] Ignore linter warnings
 
+## Three-Tier Testing Framework
+
+> **Source of truth**: the operator's verbatim framing of the three tiers (the car analogy + the BUILD-vs-USE clarification), recorded in the originating Issue's verbatim Source block. This section transcribes that framing; it does NOT paraphrase it into any one project's failure-mode list. On any conflict the verbatim Source block wins. (Meta: the anti-twist rule — "Polish vs Twist (Semantic Frame Preservation)" / ANTI-PATTERNS.md AP #25 — applies to this section's own wording.)
+
+SST3 **builds and uses three co-equal test tiers** that work together (they compose, never substitute). They are named (namespace decision — these are NEVER rendered as bare "Tier 1/2/3" inside Ralph review files, which already use that for the Haiku/Sonnet/Opus review tiers, nor confused with the AP #20 "Tier A/B" checkbox cadence): **Unit Tier**, **Workflow Tier**, **E2E Tier**. The only permitted compact form is "Test-Tier 1 / Test-Tier 2 / Test-Tier 3".
+
+**the operator's car analogy** (comprehension aid — NOT the label):
+- **Unit Tier** = a QC check on a single cog / process / part — like a piston in a car engine. Checks the quality and calculations are correct and the part works as designed and intended.
+- **Workflow Tier** = many cogs / processes / parts working together as a component — like the car engine working. Ensures the whole component works; finds problems that need fixing, and wiring.
+- **E2E Tier** = the system: all components working together systematically end to end — like taking the car for a driving test. Everything works together, no breakage, results as expected and intended; finds problems that need fixing systematically, and wiring.
+
+### Unit Tier
+- **Scope**: a single unit — one function / cog / calculation / part on its own.
+- **What it catches**: wrong calculations, wrong output for a given input, the part not behaving as designed/intended.
+- **When run**: on any change touching that unit; cheapest and fastest, run most often.
+- **Where it lives**: the project's unit-test suite (checked in).
+- **Who writes it**: whoever changes the unit, in the same change.
+- **SST3 enforcement primitive**: the call-seam grep — "Test-Prod Call Coverage Discipline" (a new public callable / payload field / config key with no test exercising it = FAIL). That seam IS the cog-QC gate.
+
+### Workflow Tier
+- **Scope**: a component — many units wired together (a pipeline, an orchestration path, a multi-step workflow).
+- **What it catches**: units individually fine but the COMPONENT broken — wiring gaps, cross-module arg propagation, a step that silently does nothing, mismatched contracts between parts.
+- **When run**: when a change affects how units connect (more than one unit, or the wiring between them).
+- **Where it lives**: the project's workflow/integration tests + the real-CLI sample invocation.
+- **Who writes it**: whoever changes the workflow wiring.
+- **SST3 enforcement primitive**: ANTI-PATTERNS.md AP #18 "Smoke-Tested Pipeline Shipped Without End-to-End Sample Run (Workflow-Tier validation)" — smoke is necessary but NOT sufficient for component wiring.
+
+### E2E Tier
+- **Scope**: the whole system — all components together, end to end, against the real environment (real DB, real downstream consumers, real interfaces).
+- **What it catches**: what only the full system reveals — real-DB schema drift, downstream-consumer rejection, environmental assumptions, integration regressions no single component test sees. The driving test.
+- **When run**: when a change can impact the whole system (cross-component, schema, contract, environment).
+- **Where it lives**: the project's E2E/system tests, exercising production code paths — NOT parallel test logic (search production code before writing any helper).
+- **Who writes it**: whoever ships a change with whole-system blast radius.
+- **SST3 enforcement primitive**: ANTI-PATTERNS.md AP #26 "E2E System Verification".
+
+### BUILD vs USE (load-bearing — preserve BOTH halves; do not collapse into one phrase)
+- **BUILD: always all 3 tiers.** Every change ships with Unit + Workflow + E2E tests. The tests must EXIST. There is no "this is only a unit, skip tier 2/3" exemption at authoring time.
+- **USE: situational, scope-matched.** Which tiers are *required to fire / pass* at the Verification Loop matches the change's scope: entire-system change → all 3; workflow-component change → Unit + Workflow (E2E may confirm); single-unit change → Unit (Workflow/E2E fire if they exercise the affected unit). Tiers **compose, never substitute** — a higher tier passing does not excuse a missing lower-tier test, and a lower tier passing does not prove the system.
+- **Why both halves**: building all 3 means the E2E Tier is THERE the day a future "small" change unexpectedly impacts the whole system. Using situationally means a one-line unit fix is not blocked by an unrelated E2E-tier flake. Drop BUILD → the safety net is absent when suddenly needed. Drop USE → every trivial fix drags the whole suite and people start skipping tests entirely.
+
+### Scope-decision procedure (operationalises BUILD-vs-USE — which tiers must FIRE for this change)
+Run this at authoring time AND again at the Verification Loop:
+1. **Identify the blast radius.** One unit only? The wiring of a component? Cross-component / schema / contract / environment?
+2. **BUILD is unconditional**: regardless of the answer, all 3 tiers' tests must EXIST for the affected surface — write the missing ones in this change. No "unit-only, skip the rest" at authoring time.
+3. **USE is scope-matched** — which tiers are REQUIRED to fire & pass before close:
+   - **Single-unit change** → Unit Tier must pass. Workflow/E2E fire only if they exercise the changed unit (they stay GREEN, just are not the gating signal).
+   - **Workflow-component change** (wiring, multi-unit, cross-module arg propagation) → Unit + Workflow must pass. E2E confirms if the component sits on a whole-system path.
+   - **Whole-system change** (schema, contract, environment, cross-component) → all 3 must pass, E2E against the real environment.
+4. **When unsure, escalate one tier up.** Under-scoping the USE decision is the failure mode — a "small unit fix" that was really a contract change ships a regression the Unit Tier can never catch. Over-running a tier is cheap; missing one is the incident.
+5. **Record the tier decision** in the Verification-Loop evidence (which tiers fired, which were N/A + why). "All tests pass" without naming the tier scope is not evidence.
+
+### Tier composition — never substitute (worked illustration, general)
+A change adds a new calculation, used by a pipeline step, consumed by a downstream system:
+- Unit GREEN, Workflow + E2E absent → the calculation is correct in isolation but nothing proves the step calls it right or the downstream accepts the result. **Not done.**
+- Workflow GREEN, Unit absent → the pipeline runs on sample input but a boundary input the sample missed is mis-calculated. **Not done.**
+- E2E GREEN, Unit + Workflow absent → the system worked for the one path E2E hit; a sibling path is silently broken with no cheap signal to localise it. **Not done.**
+- All 3 BUILT, USE scoped to the change → the correct tier gates the merge; the others stand ready for the day the blast radius grows. **Done.**
+Higher tiers do NOT substitute for lower (a passing system does not prove every unit); lower do NOT substitute for higher (correct units do not prove the wired system). They COMPOSE.
+
+### Why three — not two, not four
+Three is canonical because it maps to the three real failure surfaces: a part is wrong (Unit), the parts are wired wrong (Workflow), the whole system meets reality wrong (E2E). Collapsing Workflow into Unit loses the wiring-gap class; collapsing E2E into Workflow loses the real-environment / real-downstream class. Adding a fourth tier (mutation / property / contract testing) is explicitly out of scope — those are *techniques applied within* a tier, not a fourth surface. the operator's 3-tier framing is the canonical taxonomy; do not split or merge it.
+
+### Glossary: "regression test" vs the three tiers
+"**The project test suite**" — what the Stage 4 Verification Loop runs, and what "no regressions" refers to — is the **union of the checked-in Unit + Workflow + E2E tests**, not any single tier. "**Regression test**" is NOT a synonym for the Unit Tier, nor for any one tier: it is the property that the existing suite (all tiers together) still passes after a change. "**Smoke test**" is a fast subset (typically Unit-Tier-weighted) — necessary but NOT sufficient for the Workflow or E2E tiers (AP #18). Use a tier name when you mean a tier; say "the project test suite" / "regression run" when you mean "all checked-in tests still pass".
+
+### Cost of skipping each tier (why BUILD is unconditional)
+- **Skip the Unit Tier** → boundary-input and calculation errors ship; the bug surfaces deep in a workflow or in production where it is expensive to localise back to the single wrong cog. The cheapest possible signal was simply never built.
+- **Skip the Workflow Tier** → every unit is correct in isolation but the component is mis-wired (a step that silently no-ops, an arg dropped across a module boundary, a contract mismatch between parts). Unit tests are structurally blind to this — it is exactly the #1424 class (component tests passed; the wiring did not).
+- **Skip the E2E Tier** → the component bench-tests fine but the live system rejects it: real-DB schema drift, a downstream consumer's real contract, an environment assumption only production encodes. Only the assembled system against the real environment reveals it — by then it is an incident, not a test failure.
+- **Compounding**: a skipped lower tier also makes a higher-tier failure harder to localise (an E2E failure with no Unit/Workflow coverage gives no narrowing signal — you bisect the whole system by hand).
+- **The asymmetry**: building a tier costs minutes once; the absent tier costs an incident at the worst possible time, plus the localisation tax above. That asymmetry is precisely why BUILD is unconditional and USE (not BUILD) is the part that is scope-matched.
+
+### Where this is enforced
+- **WORKFLOW.md Verification Loop** — the three named tier checkboxes, each encoding BUILD (tests exist) + USE (scope-matched fire). Canonical; this is where the gate actually lives.
+- **Leader.md Gate 1 + SST3-solo.md Verification Loop** — reference the WORKFLOW.md tiers; they do NOT re-define them (single-source).
+- **issue-template.md PREREQUISITE CHECKPOINT** — splits into three tier bullets so every Issue scopes all three at draft time.
+- **Ralph `sonnet-review.md`** — per-tier test sections + the E2E-Tier system gate (review-time verification).
+- **Anti-pattern / enforcement anchors** — Unit Tier = "Test-Prod Call Coverage Discipline" (call-seam grep); Workflow Tier = AP #18 "Smoke-Tested Pipeline … (Workflow-Tier validation)"; E2E Tier = AP #26 "E2E System Verification".
+- **Per-shape mapping** — ANTI-PATTERNS.md AP #18's per-shape recipe table carries a "Tier coverage (Unit / Workflow / E2E)" column; the CLAUDE.md per-repo narrative twin is annotated to match and kept in sync in the same pass (AP #9 single-source-edits).
+
+---
+
 ## Testing Priority
 
 Test in this order:
@@ -1026,6 +1149,8 @@ Cross-link: the **three-signal contract policy** + **Raw-tool cross-validation R
 **Enforcement**: AP #18, Stage 4 Verification Loop, `issue-template.md` PREREQUISITE CHECKPOINT.
 
 ### Test-Prod Call Coverage Discipline (Theme 9, #477)
+
+**Tier: Unit Tier enforcement primitive.** The call-seam grep (every new public callable / response-payload field / config key must be exercised by a test) IS the cog-QC gate of the **Unit Tier** — see STANDARDS.md "Three-Tier Testing Framework". A unit that no test calls is a piston nobody QC'd.
 
 **Distinct from**: AP #18 Workflow Validation Gate (end-to-end pipeline sample) AND the regression-test gate (broader). This discipline targets the specific failure mode where a function compiles, lints, and ships but is never actually exercised by any test — the **call-site seam** between new prod code and tests is missing.
 

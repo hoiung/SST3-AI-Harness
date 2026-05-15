@@ -261,7 +261,7 @@ mcp__github__add_issue_comment(
 mcp__github-checkbox__update_issue_checkbox(
     issue_number=364,
     checkbox_text="Add new STANDARDS.md section 'MCP Tool Schema Loading'",
-    evidence="Added section STANDARDS.md:552-601 with deferred-tool rule + ToolSearch pattern"
+    evidence="Added section STANDARDS.md 'MCP Tool Schema Loading' with deferred-tool rule + ToolSearch pattern"
 )
 ```
 

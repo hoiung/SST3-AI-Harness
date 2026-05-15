@@ -36,7 +36,10 @@
 > - [ ] **LMCE**: Lean, Mean, Clean, Effective
 > - [ ] **JBGE**: Just Barely Good Enough (only what prevents problems)
 > - [ ] **Single Objective**: This Issue has ONE objective. If mixed (fix + refactor), split now.
-> - [ ] **Sample Invocation Gate (AP #18)**: if this Issue touches pipeline / data-processing / orchestration / CLI-wiring / cross-module function-arg propagation, Stage 4 MUST include a real-CLI sample invocation (real DB, 8-item liquid basket) that exercises the full pipeline end-to-end before close. Unit + smoke tests alone are INSUFFICIENT. Mocks MUST assert explicit `call_args.kwargs[...]` — never rely on `**kwargs`-swallowing. Skip only if change does NOT trigger AP #18 scope; document the skip reason when checking the box.
+> - [ ] **Three-Tier test gate** (canonical: STANDARDS.md "Three-Tier Testing Framework"; WORKFLOW.md "Verification Loop"). BUILD = always all 3; USE = scope-matched fire. Confirm Stage 4 will satisfy each:
+>   - [ ] **Unit Tier** — every changed/added unit (callable / response field / config key) gets a checked-in test (cog/piston QC); fires for any code change.
+>   - [ ] **Workflow Tier (AP #18 sample-invocation gate)** — a workflow/integration test + a real-CLI sample invocation (real DB, 8-item liquid basket; or wrapper-script ≥3-repo-shape + raw-tool counter-query) EXIST; fires when the Issue touches pipeline / data-processing / orchestration / CLI-wiring / cross-module function-arg propagation / persistent-state write / `sst3-*.sh` wrapper change. Unit + smoke alone INSUFFICIENT; mocks MUST assert explicit `call_args.kwargs[...]` — never `**kwargs`-swallowing. Document the scope-skip reason if it does not fire.
+>   - [ ] **E2E Tier** — an end-to-end/system test EXISTS; fires when the Issue affects how whole components connect end-to-end (multi-component / cross-repo contract / orchestration / persistent-state spanning the pipeline / a real downstream consumer's contract) — real DB + real downstream + live invocation. The three compose, none substitutes. Document the scope-skip reason if it does not fire.
 
 ## Problem/Goal
 

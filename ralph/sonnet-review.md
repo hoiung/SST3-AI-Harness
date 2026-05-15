@@ -46,9 +46,11 @@ Medium-depth validation. Catches 30% of issues missed by Haiku.
 - [ ] **Scope**: Does this implementation introduce or modify code that uses counters, flags, state enums, queues, semaphores, or any variable that gates a downstream decision? If YES, next checkbox is mandatory. If NO, mark "N/A — no state machines in scope."
 - [ ] **Mutation-site audit** (if scope=YES): For every variable identified above, list all mutation sites (`grep -n '<var>\\s*[+\\-*/]?=\\|<var>\\s*=\\s*[^=]' <file>`) and trace every code path to confirm exactly one mutation per logical event. Specifically inspect `try`/`except` patterns: if `state += 1` (or any state mutation) occurs in the try-block AND the except-handler may reach the same state variable, confirm the except-handler's path is mutually exclusive (the try-block raised before completing the mutation) OR the double-mutation is intentional and documented inline. Authority duplication (two code paths claiming "I own this transition") = FAIL.
 
-### Test-Prod Call Coverage (Theme 9, #477 AC 3.4)
+### Test-Prod Call Coverage (Theme 9, #477 AC 3.4) — Unit Tier seam check (#484 T4.2)
 
 > Distinct from AP #18 (end-to-end pipeline sample) and from the regression-test gate (broader coverage). This angle verifies the **call-site seam** between new prod code and tests — the specific bug class where a function compiles, lints, and ships but is never exercised by any test.
+>
+> **Three-Tier placement**: this is the **Unit Tier** enforcement primitive (the cog/piston QC — does a test exercise this single unit at all). Canonical: STANDARDS.md "Three-Tier Testing Framework" → Unit Tier + "Test-Prod Call Coverage Discipline". Not a Ralph "Tier" — this file is `# Tier 2: Sonnet Review`; "Unit Tier" here is the *test* tier per P0.1, not a relabel of the review tier.
 
 - [ ] For every new public function/method added in this phase, name the test file that imports + invokes it (`grep -rnE 'from <new-module> import|<new-module>\\.<callable>' tests/`). Empty grep on a new public callable = FAIL (test seam missing).
 - [ ] For every new response-payload field added (API/JSON/dict key), name the test that asserts the field's presence + value (`grep -rnE '<field-name>' tests/`). Field with no test assertion = FAIL.
@@ -132,10 +134,27 @@ Cross-reference: STANDARDS.md "Test-Prod Call Coverage Discipline".
 ### Bash Output Discipline (#406 F4.9)
 - [ ] If you ran any bash command producing > 200 lines (pytest, git diff, log tail, etc.), you wrapped it with `../scripts/tee-run.sh <label> -- <cmd>`. Return only the tee path + verdict in your RESULT block; do NOT paste the full output back to the main agent.
 
-### AP #18 — Sample Invocation Gate (workflow validation)
+### AP #18 — Sample Invocation Gate (Workflow Tier validation gate, #484 T4.2)
+
+> **Three-Tier placement**: the **Workflow Tier** gate — the assembled engine runs, wiring/cross-module propagation works. Canonical: STANDARDS.md "Three-Tier Testing Framework" → Workflow Tier; ANTI-PATTERNS.md AP #18 "Smoke-Tested Pipeline Shipped Without End-to-End Sample Run (Workflow-Tier validation)". A pure-Unit change need not fire this; a workflow/wiring change must. Not a Ralph "Tier" relabel (file is `# Tier 2: Sonnet Review`).
+
 - [ ] Scope check: does this change touch pipeline / backtest / SL1 / SL2 / orchestration / CLI-wiring / cross-module function-arg propagation? If **yes** → the next checkbox is mandatory. If **no** → document the scope-skip reason here.
 - [ ] If in-scope: evidence of a real-CLI sample invocation exists — either a log file path (e.g. `logs/sample_<issue>_validation.log`), or an Issue comment with exit code + DB row-count + contamination-audit verdict. Exit code 0 alone is NOT sufficient (we have history of exit-0 runs writing zero rows). The proof must show rows landed + downstream consumers succeeded.
 - [ ] If in-scope: any mock used in the fix's tests uses explicit `call_args.kwargs["<key>"] == <expected>` assertions — NOT a `**kwargs`-swallowing mock that would pass regardless of whether the code actually propagated the arg.
+
+### E2E — System Verification Gate (E2E Tier system gate, #484 T4.2)
+
+> **Three-Tier placement**: the **E2E Tier** gate — the whole car passes a driving test end-to-end, no breakage, results as intended. Distinct from the Workflow Tier above: the Workflow Tier proves the component's wiring; the E2E Tier proves the *whole system* under real conditions the component-level run cannot encode (real-DB schema drift, downstream-consumer rejection of the real contract, environmental assumptions only the live system reveals). Canonical: STANDARDS.md "Three-Tier Testing Framework" → E2E Tier; ANTI-PATTERNS.md AP #26 "E2E System Verification". Not a Ralph "Tier" relabel (file is `# Tier 2: Sonnet Review`). BUILD: an E2E test exists for the system path regardless of this change's scope. USE (this gate fires): when the change affects how whole components connect end-to-end — multi-component / cross-repo / orchestration / persistent-state that spans the pipeline / a contract a real downstream consumer reads. A single-unit or single-workflow change does not fire it; document the scope-skip reason.
+
+- [ ] Scope check: does this change affect the end-to-end system path (multiple components together / cross-repo contract / orchestration / persistent-state spanning the pipeline / a real downstream consumer's contract)? If **yes** → next checkbox mandatory. If **no** → document the scope-skip reason here ("N/A — Unit/Workflow-Tier-only change").
+- [ ] If in-scope: evidence of an E2E/system verification exists — the change exercised against the real system (real DB + real downstream consumer + live invocation), not a component-isolated sample. The proof must show the downstream consumer accepted the real contract and the system produced the intended result end-to-end (schema/enum/contract drift surfaced if present). A Workflow-Tier sample log alone is NOT sufficient for a system-scope change — they compose, neither substitutes (the operator's rule: "3 forms as they work together").
+
+### Voice-Frame Preservation (semantic) — Conditional, #484 V2.2
+
+> Distinct from the lexical voice guard (`check-ai-writing-tells.py` / banned words) and from AP #18. This angle catches a **semantic frame shift** in AI-integrated operator-supplied content — the twist failure mode (AP #25 / STANDARDS.md "Polish vs Twist (Semantic Frame Preservation)"). Subagent-only; no programmatic detector is architecturally possible (`voice_rules.py` has no source-vs-draft channel; the canonical example has 0% lexical separability). This is an *angle*, NOT a Ralph "Tier" — the file is already `# Tier 2: Sonnet Review`; do not relabel it "Tier N".
+
+- [ ] **Scope**: does this change's diff integrate operator-supplied source content (a rough paragraph / sentence / point he wrote) into voice-bearing prose (blog / CV / LinkedIn / cover letter) AND is `invoked_skill ∈ {blog, voice-doc-repo}`? If **no** → mark "N/A — no operator-supplied prose in-diff" and skip the next checkbox. If **yes** → next checkbox mandatory.
+- [ ] **Twist check (if scope=YES)**: for each in-diff prose hunk, identify the operator-supplied source phrasing (this conversation / corpus / research), then test each polished output line against the STANDARDS.md "Polish vs Twist" TWIST-forbidden checklist — qualifier added that changes interpretation / comparison reframed as a verdict (`costs vs value` → `costs outweigh value`) / hedge dropped or added / analytical lens imposed. Return PASS/FAIL **per hunk** with the source phrasing + the polished output + which TWIST rule fired. Any FAIL hunk = section FAIL. The test is whether the addition changes the reader's interpretation. Polish (grammar / flow / connectors) is allowed and expected — only a frame shift fails this angle.
 
 ### Required when wrapper-lane available: Wrapper-Lane Checks
 
