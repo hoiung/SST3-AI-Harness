@@ -3,8 +3,16 @@
 #
 # Usage:   sst3-doc-lint.sh [globs...]
 # Default: lints SST3/**/*.md + docs/**/*.md + CLAUDE.md + README.md
-# Output:  NDJSON, one object per violation: {file, line, rule, description}
+# Output:  STDOUT — NDJSON, one object per violation: {file, line, rule, description}
+#          STDERR — always emits a "scan complete" sentinel:
+#                   "sst3-doc-lint: scanned <N> path(s), <M> finding(s)"
+#                   The stderr sentinel lets consumers distinguish "all clean"
+#                   (exit 0, empty stdout, sentinel present) from "didn't run"
+#                   (no sentinel / "ENGINE CRASHED" line). #484 Stage-5 — parity
+#                   with sst3-doc-links.sh; closes the silent-clean failure mode.
 # Engine:  markdownlint-cli2 (npm). Exit 127 + stderr contract on missing engine.
+# Exit:    0 = ran (clean or findings reshaped to NDJSON), 2 = engine crashed,
+#          127 = engine missing.
 
 set -euo pipefail
 export LC_ALL=C
@@ -56,11 +64,44 @@ fi
 #   <file>:<line>:<col> error <rule> <description>
 # We reshape to NDJSON. Both forms are handled by stripping line+col prefix and
 # parsing the remainder for the MD### rule code and description.
-markdownlint-cli2 "${GLOBS[@]}" 2>&1 | grep -E '^[^[:space:]]+:[0-9]+(:[0-9]+)? (error|warning) MD' | while IFS= read -r LINE; do
+#
+# #484 Stage-5 reliability fix: capture markdownlint's exit code OUT of the
+# pipe so a crashed engine is NOT silently swallowed by `| while ... done
+# || true` (the silent-clean failure mode). markdownlint-cli2 exit: 0 = no
+# findings, 1 = findings found (NORMAL here — the repo has no .markdownlint*
+# config so canonical docs carry a default-rule baseline), >=2 = engine /
+# config crash, 127 = not installed (handled above). Parity with the sibling
+# sst3-doc-links.sh capture-exit + crash-guard + unconditional sentinel.
+set +e
+RAW=$(markdownlint-cli2 "${GLOBS[@]}" 2>&1)
+MDL_EXIT=$?
+set -e
+
+if [[ $MDL_EXIT -ne 0 && $MDL_EXIT -ne 1 ]]; then
+    echo "ERROR: markdownlint-cli2 crashed (exit=$MDL_EXIT) — output is NOT a clean run" >&2
+    echo "sst3-doc-lint: ENGINE CRASHED (exit=$MDL_EXIT) — do NOT treat as clean" >&2
+    exit 2
+fi
+
+OUT=$(printf '%s\n' "$RAW" | { grep -E '^[^[:space:]]+:[0-9]+(:[0-9]+)? (error|warning) MD' || true; } | while IFS= read -r LINE; do
     FILE=$(echo "$LINE" | sed -E 's/^([^:]+):.*$/\1/')
     LN=$(echo "$LINE" | sed -E 's/^[^:]+:([0-9]+).*$/\1/')
     RULE=$(echo "$LINE" | grep -oE 'MD[0-9]+(/[a-z-]+)?' | head -1)
     DESC=$(echo "$LINE" | sed -E "s|^[^:]+:[0-9]+(:[0-9]+)? (error\|warning) MD[0-9]+(/[a-z-]+)? ||; s| \[Context: .*\]$||")
     jq -nc --arg f "$FILE" --argjson l "${LN:-0}" --arg r "${RULE:-unknown}" --arg d "$DESC" \
         '{file: $f, line: $l, rule: $r, description: $d}'
-done || true
+done)
+
+[[ -n "$OUT" ]] && printf '%s\n' "$OUT"
+
+# Stderr sentinel: always emitted, regardless of exit code, so consumers can
+# distinguish "ran clean" (sentinel present, 0 findings) from "didn't run"
+# (no sentinel / ENGINE CRASHED line). Parity with sst3-doc-links.sh:108.
+N_PATHS=${#GLOBS[@]}
+if [[ -n "$OUT" ]]; then
+    N_FINDINGS=$(printf '%s\n' "$OUT" | grep -c .)
+else
+    N_FINDINGS=0
+fi
+echo "sst3-doc-lint: scanned $N_PATHS path(s), $N_FINDINGS finding(s)" >&2
+exit 0

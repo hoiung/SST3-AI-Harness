@@ -414,17 +414,17 @@ For any change that touches pipeline / backtest / SL1 / SL2 / orchestration / CL
 - Over-trust: structured JSON with `status: ok` reads as authoritative; the 5 tools' help text doesn't call out freshness or language-coverage gaps per call.
 
 **Evidence (file:line citations — 12 subagent-only moments that must NOT be demoted by a "graph-first" rule)**:
-1. Voice Content Protection + AI-tells — `STANDARDS.md:357-377` + `../scripts/voice_rules.py`
-2. Intentional-vs-accidental architecture — `STANDARDS.md:183` + `ANTI-PATTERNS.md:198-206` (AP #11b)
-3. Research Applied Collectively (cross-lens) — `STANDARDS.md:158-171` (Rule #9)
+1. Voice Content Protection + AI-tells — STANDARDS.md "Voice Content Protection (Marker-Driven)" + `../scripts/voice_rules.py`
+2. Intentional-vs-accidental architecture — STANDARDS.md "Subagent Orchestration Discipline" + ANTI-PATTERNS.md AP #11b
+3. Research Applied Collectively (cross-lens) — STANDARDS.md "Research Must Be Applied Collectively, Never Singularly" (Rule #9)
 4. Chat-history scope-drift / opposite-scoping — `WORKFLOW.md:41-42` (Stage 3)
 5. False-positive sweep for confirmed violations — `ANTI-PATTERNS.md:203`, `user-review-checklist.md:71-77`
 6. Scope vs audit 100% alignment — `WORKFLOW.md:39`, `issue-template.md:121-126`
 7. Overengineering / out-of-scope detection — `WORKFLOW.md:40`, `issue-template.md:223`
-8. Design rationale explanation — `STANDARDS.md:87`, `user-review-checklist.md:106-107`
-9. Factual claims provenance validation — `STANDARDS.md:111-157` (user-assertion rule)
-10. YAML/JSON/SQL/shell/TOML/Dockerfile/Jinja/HTML/CSS semantic content audits — `STANDARDS.md:239` (unsupported-languages list in "Structural Code Queries")
-11. Markdown voice-prose AI-tells — `STANDARDS.md:357` (Voice Content Protection), `ANTI-PATTERNS.md:270-285` (AP #15)
+8. Design rationale explanation — STANDARDS.md "Use Existing Before Building" (document why existing solutions rejected), `user-review-checklist.md:106-107`
+9. Factual claims provenance validation — STANDARDS.md "Factual Claims Must Have Provenance" + "User Assertion = Immediate Source Verification"
+10. YAML/JSON/SQL/shell/TOML/Dockerfile/Jinja/HTML/CSS semantic content audits — STANDARDS.md "Structural Code Queries — Wrapper-Lane First, Subagent Fallback" (unsupported-languages list)
+11. Markdown voice-prose AI-tells — STANDARDS.md "Voice Content Protection (Marker-Driven)", ANTI-PATTERNS.md AP #15
 12. Acceptance-criteria prose → code file:line evidence mapping — `WORKFLOW.md:82`, `user-review-checklist.md:9-15`
 
 **How to apply**:
