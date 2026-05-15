@@ -69,6 +69,7 @@ KNOWN_REPOS: List[str] = [
     'idea-repo',
     'voice-staging',
     'lab-harness',
+    'consultancy-ops',
 ]
 
 
