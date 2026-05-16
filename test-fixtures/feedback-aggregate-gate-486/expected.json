@@ -1,0 +1,14 @@
+{
+  "fixture": "feedback-aggregate-gate-486",
+  "issue": 486,
+  "phase": 4,
+  "scope": "Commit-path strict/advisory split regression gate (#486). Imperative driver runs leader-feedback-aggregate.sh --summarize (the every-commit `sst3-metrics-feedback-drift` hook entrypoint) against 3 isolated temp corpora via the SST3_FEEDBACK_DIR test seam: (A) clean in-scope -> exit 0; (B) + a broken in-scope feedback file -> exit != 0 (AC5: hard parse failure BLOCKS the commit — pre-#486 --summarize was 0, the silent-rot bug); (C) clean + a non-conforming-filename file -> exit 0 + stderr WARNING (AC7: a misfiled non-telemetry file must not wedge the gate). Catches drift if a future edit reverts --summarize to bare regenerate_index (mtime-short-circuit silent-rot) or makes a non-conforming filename hard-block.",
+  "driver": "run.sh",
+  "exit_code": 0,
+  "stdout_must_contain": [
+    "PASS: scenario A clean-corpus --summarize exit 0",
+    "PASS: scenario B broken-in-scope --summarize exit",
+    "PASS: scenario C non-conforming-filename --summarize exit 0 + WARNING (AC7)",
+    "OK: feedback-aggregate-gate-486 fixture (3/3 assertions passed)"
+  ]
+}
