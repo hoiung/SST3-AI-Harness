@@ -556,7 +556,7 @@ Bare `cd <path>` without subshell-protection or trailing `cd -` is **prohibited*
 
 **Enforcement**: `../scripts/check-ap22-cross-repo-cd.sh` (#460 Phase 9 AC 9.7) — pre-commit hook scans canonical script directories for `cd <path> && git ` patterns NOT wrapped in subshell parens; reports the offending file:line. Wired as a pre-commit hook gated on shell + Python script edits (lightweight).
 
-**Related**: AP #16 (Fire-and-Forget Script Execution — cd-drift surfaces there as a verification gap); STANDARDS.md branch safety (NEVER switch branches — cd-drift can land work on wrong branch via wrong-repo CWD).
+**Related**: AP #16 (Fire-and-Forget Script Execution — cd-drift surfaces there as a verification gap); STANDARDS.md / CLAUDE.md branch safety — under the worktree-per-agent canonical (dotfiles#488 Fix-A) each Stage-4 agent works in its own isolated worktree (own working dir + HEAD + index), so "NEVER switch branches" is the *in-worktree* invariant (correct inside an isolated worktree). cd-drift is *more* dangerous under this model, not less: a wrong-repo / wrong-worktree CWD lands `git` work in the wrong isolated tree, defeating the very isolation the worktree provides.
 
 ---
 

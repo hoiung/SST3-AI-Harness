@@ -56,6 +56,23 @@ jobs:
       - name: Install pyyaml (feedback_parser dep)
         run: pip install --quiet pyyaml
 
+      - name: Whole-corpus feedback #486 silent-rot catch (non-swallowed; #488 AC 3.2(i-a))
+        # The commit-stage `sst3-metrics-feedback-drift` hook is now PER-FILE
+        # (#488 AC 3.2) so a feedback file broken in an EARLIER commit no
+        # longer fails a later per-file commit — that is the intended
+        # bystander-unblocking. This step is the RETAINED whole-corpus
+        # silent-rot catch the dotfiles#486 governance invariant requires:
+        # `--summarize` internally forces `regenerate_index --rebuild`
+        # (leader-feedback-aggregate.sh ~424 — bypassing the md5/mtime
+        # short-circuits that masked an earlier breakage) and returns the
+        # HARD parse/validate verdict ONLY (advisory DRIFT stays exit-0 by
+        # construction). DELIBERATELY no `continue-on-error`: a corpus-wide
+        # parse failure FAILS this job — this is the non-swallowed exit-coded
+        # invocation AC 3.2(i) mandates, distinct from the AC 2.3 `|| true`
+        # C6-feeding prepend (which a swallowed --rebuild cannot fail-catch).
+        working-directory: dotfiles
+        run: bash SST3/scripts/leader-feedback-aggregate.sh --summarize
+
       - name: Compute Issue + repo slug
         id: meta
         run: |

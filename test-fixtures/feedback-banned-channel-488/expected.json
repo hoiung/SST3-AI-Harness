@@ -1,0 +1,14 @@
+{
+  "fixture": "feedback-banned-channel-488",
+  "issue": 488,
+  "phase": 4,
+  "scope": "AC 3.3 + AC 5.3(a) opposite-scoping guard. The Fix-C rewire makes commit-time feedback validation per-file, but the per-file commit-stage hook entry IS `python3 feedback_parser.py <path>` (strict validate_record()). This driver proves the rewire did NOT weaken the governance invariant: (a) a structurally-canonical feedback file whose only defect is a forward-preference channel phrase ('from now on') is still REJECTED (exit != 0); (b) a structurally-malformed file (bare '## Stage 1' heading, the dotfiles#486/#488 halt class) is still REJECTED (exit != 0). Catches drift if the per-file rewire ever swaps the strict parser for a lax one or drops channel-separation.",
+  "driver": "run.sh",
+  "exit_code": 0,
+  "stdout_must_contain": [
+    "PASS: (a) banned-channel phrase 'from now on' still rejected by per-file validate exit",
+    "PASS: (b) malformed bare-'## Stage 1' file still fails its own author's commit, per-file validate exit",
+    "RECORDED EXIT CODES: bc=",
+    "OK: feedback-banned-channel-488 fixture (2/2 assertions passed)"
+  ]
+}

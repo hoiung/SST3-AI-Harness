@@ -125,8 +125,8 @@ Describe the task you need to complete:
 - [ ] Read CLAUDE.md in full
 - [ ] Read STANDARDS.md in full
 - [ ] Read Issue line-by-line (not skim)
-- [ ] Create solo branch: `git checkout -b solo/issue-{number}-{description}`
-- [ ] **HARD STOP**: NEVER switch branches mid-implementation
+- [ ] Enter an isolated worktree per the CLAUDE.md "Branch Safety (CRITICAL — DO NOT VIOLATE)" anchor (dotfiles#488 Fix-A): call the `EnterWorktree` tool named `solo/issue-{number}-{description}` — do NOT bare `git checkout -b solo/...` in the shared clone (a clone has one HEAD/index; a concurrent agent's branch-create moves yours). The CLAUDE.md anchor is authoritative (the tool only activates from a user/CLAUDE.md/memory directive); this line REFERENCES it.
+- [ ] **HARD STOP**: NEVER switch branches mid-implementation — this remains the in-worktree invariant (commit + push to the worktree's solo branch only; Gate-2 uses the AC 1.3 remote-FF procedure, never a shared-tree branch-switch).
 
 ### During Work (At Each Phase Checkpoint)
 - [ ] Post checkpoint to Issue comment

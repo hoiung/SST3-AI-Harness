@@ -301,8 +301,27 @@ Safety features:
 
     # Find template (script is in dotfiles/SST3/scripts/)
     script_dir = Path(__file__).parent.resolve()
-    dotfiles = script_dir.parent.parent
-    template = dotfiles / "SST3" / "templates" / "CLAUDE_TEMPLATE.md"
+    sys.path.insert(0, str(script_dir))
+    import sst3_mirror_utils as _smu  # noqa: E402
+
+    # #488 Fix-A (Option A) — split the two roots the prior P1 attempt conflated:
+    #   * CANONICAL source root  = the tree this script lives in
+    #     (`script_dir.parent.parent`). Run from a worktree it is the WORKTREE
+    #     (carries the in-flight #488 template edits); run from the merged main
+    #     clone it is the main clone (carries them post-merge). Deterministic
+    #     path math — no git subprocess, immune to the pre-commit-sandbox env
+    #     quirk that silently broke the P1 `--git-common-dir` approach.
+    #   * SIBLING base (`devprojects`) = parent of the MAIN clone, derived by
+    #     `sst3_mirror_utils.resolve_main_clone_root` (single source of the
+    #     env-immune `/.claude/worktrees/` strip — AP #9 dedupe). KNOWN_REPOS
+    #     consumers + the dotfiles self-row are siblings of the MAIN clone,
+    #     NEVER of a linked worktree (the silent --all no-op the P1 comment
+    #     warned about is fixed here without the fragile git call).
+    template_src_root = script_dir.parent.parent
+    main_clone = _smu.resolve_main_clone_root(
+        template_src_root / "SST3" / _smu.MANIFEST_FILENAME
+    )
+    template = template_src_root / "SST3" / "templates" / "CLAUDE_TEMPLATE.md"
 
     if not template.exists():
         print(f"[ERROR] Template not found: {template}")
@@ -319,18 +338,19 @@ Safety features:
     # run staging only) from being processed. Without the filter, propagate-
     # to-repo logs "Boundary marker not found" but main() still exits 0,
     # masking partial failure.
-    sys.path.insert(0, str(script_dir))
     from sst3_utils import KNOWN_REPOS  # noqa: E402
 
-    devprojects = dotfiles.parent
+    # Siblings live under the MAIN clone's parent (NEVER a linked worktree's).
+    devprojects = main_clone.parent
     discovered = sorted([
         d for d in devprojects.iterdir()
         if d.is_dir() and (d / "CLAUDE.md").exists() and d.name in KNOWN_REPOS
     ])
-    # Ensure dotfiles is first (it owns the template + tracks its own CLAUDE.md)
-    if dotfiles in discovered:
-        discovered.remove(dotfiles)
-    all_repos = [dotfiles] + discovered
+    # Ensure the dotfiles self-row (the MAIN clone — it owns the template +
+    # tracks its own CLAUDE.md) is first.
+    if main_clone in discovered:
+        discovered.remove(main_clone)
+    all_repos = [main_clone] + discovered
 
     # Print discovered repos so the user can verify the list before propagation runs
     print(f"\n[DISCOVERED] {len(all_repos)} repos (KNOWN_REPOS ∩ CLAUDE.md present):")

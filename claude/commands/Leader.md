@@ -166,6 +166,7 @@ Stage 4 has three sequential gates after the implementation phases complete: Gat
 **Process**:
 1. Invoke `/SST3-solo` FIRST — this reloads STANDARDS.md, CLAUDE.md, and WORKFLOW.md. Mandatory even if already loaded. After a compact, these will be gone. This step ensures the agent is fully armed before touching code.
 2. Read the GitHub issue line-by-line. Not skim — READ.
+2.5. **Enter an isolated worktree BEFORE any code edit (dotfiles#488 Fix-A — per the CLAUDE.md "Branch Safety (CRITICAL — DO NOT VIOLATE)" anchor)**: call the `EnterWorktree` tool (name it `solo/issue-{N}-{desc}`) instead of a bare `git checkout -b solo/...` in the shared clone. A clone has one HEAD/index; a concurrent agent's branch-create otherwise moves your HEAD and muddles implementations. The authoritative trigger is the CLAUDE.md Branch-Safety section (the `EnterWorktree` tool only activates from a user/CLAUDE.md/memory directive — this step REFERENCES that anchor, it does not replace it). `ExitWorktree action:keep` until Gate-2's push is confirmed landed, then `action:remove`.
 3. Implement every phase in the issue's Acceptance Criteria. Commit per file. Push after each phase.
 3.5. **Test-prod call coverage audit at each phase boundary (Theme 9, #477 AC 3.5)**: BEFORE closing phase N via the Layer 1 MCP close-out (step 3a), the implementer runs the call-seam grep for every new public callable / response-payload field / config key added in phase N. Commands: (a) `grep -rnE "from <new-module> import|<new-module>\.<new-callable>" tests/` for every new public function/method; (b) `grep -rnE "<new-field>" tests/` for every new response-payload field; (c) `grep -rnE "<new-config-key>" tests/` for every new config key. **Empty grep on a new public callable / field / config key = FAIL — test seam missing**. Either add the test seam in this phase's commits OR document the explicit no-test-needed rationale (rare; usually valid only for trivial dataclasses / pure-data exports). Skip-clean if phase work is doc-only or wiring-only with no new public surface. Cross-reference: STANDARDS.md "Test-Prod Call Coverage Discipline" + sonnet-review.md "Test-Prod Call Coverage (Theme 9)" section.
 3a. **Layer 1 — Phase-boundary checkbox close-out (AP #20 Tier A, MANDATORY in execute mode only)**: BEFORE moving from phase N to phase N+1, run `mcp__github-checkbox__update_issue_checkbox(issue_number, checkbox_text, evidence)` for every completed Tier A Acceptance Criteria checkbox in phase N. (Plan mode = read-only per CLAUDE.md; MCP write tools only fire when the user has explicitly entered execute mode via `/Leader 4` or `/SST3-solo` invocation.) Interleaved with the phase commits, not batched. Evidence MUST use canonical patterns from `../reference/tool-selection-guide.md` Example 2: file:line / commit hash / command+output / subagent RESULT comment-id. If the tool is deferred: `ToolSearch(query="select:mcp__github-checkbox__update_issue_checkbox,mcp__github-checkbox__get_issue_checkboxes")` first, then invoke. Comment-only progress is a direct AP #20 violation. **No phase boundary may be crossed with a Tier A `[ ]` box behind it.** (Canonical rule: ANTI-PATTERNS.md AP #20; evidence patterns: `../reference/tool-selection-guide.md` Example 2.) Complemented by Gate 1 Layer 3 final-check below.
@@ -201,15 +202,16 @@ Run these checks. Repeat until ALL pass:
 
 If ANY check fails: fix, re-run ALL checks. The loop exits only when every check passes.
 
-### Gate 2: Merge
+### Gate 2: Merge (recursion-safe remote fast-forward — dotfiles#488 AC 1.3)
 
-1. Ensure all work is committed (per-file commits) and pushed to remote.
-2. Merge to main:
-   - `git checkout main && git pull origin main`
-   - `git merge <solo-branch> --no-edit`
-   - Conflicts: preserve BOTH sides (Solo Branch Merge Safety). NEVER silently drop changes.
-   - `git push origin main`
-3. Delete the solo branch (local + remote). Run `git fetch --prune`.
+The pre-#488 block performed a shared-tree branch-switch + pull + local-merge + push to main — the exact shared-HEAD mutation this Issue fixes (a shared-clone branch-switch moves every concurrent agent's HEAD). It is replaced with a pinned remote merge that touches **no shared working tree**:
+
+1. Ensure all work is committed (per-file commits) by exact pathspec.
+2. From the worktree: `git push origin <solo-branch>` (publishes the branch).
+3. Server-side fast-forward of `origin/master`: `git push origin <solo-branch>:master`.
+   - On non-fast-forward rejection (the documented transient pre-push race — `origin/master` advanced; post-fix-B there is no 289-row index to corrupt so this is an ordinary push race that self-heals): `git fetch origin master`, then **inside the worktree** `git rebase origin/master` (preserving BOTH sets of changes — Solo Branch Merge Safety), then retry step 3. Bounded ≤3 attempts. **NEVER** `--force` / `--force-with-lease`.
+   - This gate runs ONLY `git push` / `git fetch` / `git rebase` inside the isolated worktree. It NEVER branch-switches, local-merges, or resets the shared main working tree (the chokepoint #488 removes).
+4. `ExitWorktree action:keep` until the push is confirmed landed (`git ls-remote origin master` == solo tip), then `ExitWorktree action:remove`; `git push origin --delete <solo-branch>`; `git fetch --prune`.
 
 ### Gate 3: User Review Checklist
 

@@ -131,30 +131,30 @@ The token's blast radius is bounded to "read public + private file contents of `
 
 ## Per-Stage Feedback Capture
 
-Canonical: STANDARDS.md §Per-Stage Feedback Capture (the single source of truth — schema, channel-separation rule, FP-handling rule, DRIFT ALERT spec, activation-sha gate, post-compact reconstruction protocol, 3-layer enforcement). Each stage above ends with a per-stage feedback bullet. Aggregator + reporter + shape-match: see `../scripts/leader-feedback-aggregate.sh --report | --summarize | --shape-match | --staleness`. Pre-commit hook `sst3-metrics-feedback-present` is Layer A; persistent sentinels under `.sentinels/` (gitignored) are Layer B; the per-stage bullets above are Layer C.
+Canonical: STANDARDS.md §Per-Stage Feedback Capture (the single source of truth — schema, channel-separation rule, FP-handling rule, DRIFT ALERT spec, activation-sha gate, post-compact reconstruction protocol, 3-layer enforcement). When creating a new per-issue feedback file, copy the write-time template `../templates/leader-feedback-template.md` (canonical frontmatter + `## Stage N — <Title>` H2 headings + 10 `**field**:` lines) — never hand-roll the structure (the bare-heading halt class, dotfiles#486/#488). Each stage above ends with a per-stage feedback bullet. Aggregator + reporter + shape-match: see `../scripts/leader-feedback-aggregate.sh --report | --summarize | --shape-match | --staleness`. Pre-commit hook `sst3-metrics-feedback-present` is Layer A; persistent sentinels under `.sentinels/` (gitignored) are Layer B; the per-stage bullets above are Layer C.
 
 ## Branch & Commit Discipline
 
-```bash
-# Create branch
-git checkout -b solo/issue-{number}-{description}
+Worktree-per-agent is canonical (dotfiles#488 Fix-A). A clone has one HEAD/index; a concurrent agent's branch-create otherwise moves yours. The authoritative trigger is the CLAUDE.md "Branch Safety (CRITICAL — DO NOT VIOLATE)" anchor (the `EnterWorktree` tool only activates from a user/CLAUDE.md/memory directive). `NEVER switch branches` mid-implementation remains the in-worktree invariant — correct *inside* an isolated worktree.
 
-# HARD STOP: NEVER switch branches mid-implementation
+```bash
+# Isolate: EnterWorktree tool, named solo/issue-{number}-{description}
+#   (NOT a bare `git checkout -b solo/...` in the shared clone — #488 Fix-A).
+
+# HARD STOP: NEVER switch branches mid-implementation (in-worktree invariant)
 # NEVER use git add -A or git add . — stage files individually
 
-# After EACH file change
+# After EACH file change (in the worktree, on its solo branch)
 git add {file}
 git commit -m "type: description (#issue)"
-git push
+git push origin <solo-branch>
 
-# Merge and cleanup (after Ralph Review passes, BEFORE user review)
-git checkout main
-git pull origin main
-# Check for conflicts — diff for concurrent edits, preserve BOTH
-git merge solo/issue-{number}-{description}
-git push
-git branch -d solo/issue-{number}-{description}
-git push origin --delete solo/issue-{number}-{description}
+# Merge + cleanup — recursion-safe remote fast-forward (Leader.md Gate 2 / #488 AC 1.3):
+#   git push origin <solo-branch>:master   # server-side FF of origin/master
+#   on non-FF reject: git fetch origin master; git rebase origin/master (in worktree); retry (<=3, NEVER --force)
+#   NO shared-tree branch-switch / local-merge / reset.
+# Then: ExitWorktree action:keep until push landed (git ls-remote origin master == solo tip),
+#   ExitWorktree action:remove; git push origin --delete <solo-branch>; git fetch --prune
 ```
 
 ## Context Management

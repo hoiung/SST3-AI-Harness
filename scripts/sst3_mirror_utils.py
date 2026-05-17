@@ -353,23 +353,83 @@ def _validate_mirror(mirror: Any, prefix: str) -> None:
 # -----------------------------------------------------------------------------
 
 
+_WORKTREE_SEG = "/.claude/worktrees/"
+
+
 def resolve_dotfiles_root(manifest_path: Path) -> Path:
-    """Return the dotfiles repo root, given the manifest path."""
-    # manifest lives at <dotfiles>/SST3/drift-manifest.json
-    return manifest_path.parent.parent
+    """Return the CANONICAL root — the working tree that actually contains
+    this manifest (and therefore the canonical files to read/validate).
+
+    #488 Fix-A correction (Option A). The manifest is ALWAYS at
+    `<root>/SST3/drift-manifest.json`, and `find_manifest()` resolves it
+    relative to `__file__`, so when invoked from inside an `EnterWorktree`
+    worktree this deterministically returns the WORKTREE root — exactly
+    where the in-flight #488 canonical edits live. The prior P1 attempt used
+    `git --git-common-dir` to return the MAIN clone instead; that was both
+    (a) env-fragile — it silently fell back inside the pre-commit hook
+    sandbox, yielding the bogus `<wt>/.claude/worktrees/SST3-AI-Harness`
+    mirror path that hard-blocked every worktree vendored commit — and
+    (b) conceptually wrong: reading canonical from main-clone@master means a
+    worktree branch's edits are never the bytes validated/propagated. Pure
+    deterministic path math here: no git subprocess, no environment
+    sensitivity. The MAIN clone (for sibling mirror/consumer resolution) is
+    a SEPARATE concern — see `resolve_main_clone_root`.
+    """
+    return manifest_path.resolve().parent.parent
+
+
+def resolve_main_clone_root(manifest_path: Path) -> Path:
+    """Return the MAIN clone root (the sibling-resolution base under
+    `DevProjects/`), env-immune.
+
+    Mirror repos (`SST3-AI-Harness`) and KNOWN_REPOS consumers live as
+    siblings of the MAIN `dotfiles/` clone, NOT of a linked worktree. A
+    linked worktree's manifest path contains the `/.claude/worktrees/<name>/`
+    segment; the MAIN clone is the prefix before that segment. In the main
+    clone itself there is no such segment and the canonical root already IS
+    the main clone. Derived purely from path structure (no git subprocess —
+    immune to the pre-commit-sandbox env quirk that broke the P1 attempt);
+    a loud sanity check rejects an implausible result rather than silently
+    returning a bogus path (Fail-Fast — the failure mode #488 forbids).
+    """
+    resolved = manifest_path.resolve()
+    s = str(resolved)
+    if _WORKTREE_SEG in s:
+        main = Path(s.split(_WORKTREE_SEG, 1)[0])
+    else:
+        main = resolved.parent.parent
+    if not (main / "SST3" / MANIFEST_FILENAME).is_file():
+        raise ManifestError(
+            f"resolve_main_clone_root: derived main clone {main} has no "
+            f"SST3/{MANIFEST_FILENAME} (manifest={resolved}). Refusing to "
+            f"return an unverified sibling-resolution base."
+        )
+    return main
+
+
+def in_linked_worktree(manifest_path: Path) -> bool:
+    """True iff invoked from an `EnterWorktree` linked worktree (canonical
+    root differs from the main clone root)."""
+    return (
+        resolve_dotfiles_root(manifest_path).resolve()
+        != resolve_main_clone_root(manifest_path).resolve()
+    )
 
 
 def resolve_canonical(manifest_path: Path, canonical_rel: str) -> Path:
-    """Resolve a manifest `canonical` field to an absolute path."""
+    """Resolve a manifest `canonical` field to an absolute path (reads from
+    the canonical root — the worktree when run from one, so #488 in-flight
+    edits ARE the validated/propagated bytes)."""
     return resolve_dotfiles_root(manifest_path) / canonical_rel
 
 
 def resolve_mirror(manifest_path: Path, mirror_repo: str, mirror_rel: str) -> Path:
     """Resolve a manifest mirror entry to an absolute path.
 
-    Mirror repos live as siblings of `dotfiles/` under `DevProjects/`.
+    Mirror repos live as siblings of the MAIN `dotfiles/` clone under
+    `DevProjects/` — NEVER as siblings of a linked worktree.
     """
-    devprojects = resolve_dotfiles_root(manifest_path).parent
+    devprojects = resolve_main_clone_root(manifest_path).parent
     return devprojects / mirror_repo / mirror_rel
 
 

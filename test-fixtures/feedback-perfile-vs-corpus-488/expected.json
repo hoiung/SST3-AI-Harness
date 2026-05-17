@@ -1,0 +1,16 @@
+{
+  "fixture": "feedback-perfile-vs-corpus-488",
+  "issue": 488,
+  "phase": 4,
+  "scope": "AC 3.2 concrete 4-step proof + AC 5.3(b). Driver proves the Fix-C per-file commit-stage hook does NOT regress the dotfiles#486 silent-rot invariant: the retained non-swallowed whole-corpus CI catch (AC 3.2(i-a) leader-feedback-aggregate.sh --summarize) still exits non-zero on a feedback file broken in an EARLIER commit, while a per-file run scoped to ONLY the later commit's own (valid) file correctly passes (the bystander-unblocking gap the whole-corpus catch closes). Uses the SST3_FEEDBACK_DIR seam. Catches drift if --summarize is reverted to a mtime/md5-short-circuited regen (silent-rot) or the per-file scoping is widened back to whole-corpus.",
+  "driver": "run.sh",
+  "exit_code": 0,
+  "stdout_must_contain": [
+    "PASS: step (1) valid earlier feedback file parses exit 0",
+    "PASS: step (2) later commit owns feedback-test-2.md; earlier feedback-test-1.md heading corrupted to bare '## Stage 1' [applied]",
+    "PASS: step (3) whole-corpus --summarize exit",
+    "PASS: step (4) per-file validate scoped to commit (2)'s own file exit 0 (commit (2) correctly unblocked)",
+    "RECORDED EXIT CODES: c1=0 step2=applied c3=",
+    "OK: feedback-perfile-vs-corpus-488 fixture (4/4 assertions passed)"
+  ]
+}

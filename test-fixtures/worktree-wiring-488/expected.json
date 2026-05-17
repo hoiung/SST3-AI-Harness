@@ -1,0 +1,15 @@
+{
+  "fixture": "worktree-wiring-488",
+  "issue": 488,
+  "phase": 4,
+  "scope": "Fix-A doc-drift guard (#488 AC 1.4). Driver greps the canonical surfaces that wire the EnterWorktree-per-agent isolation model — the PRIMARY fix for 'branches keep getting switched / implementations muddled'. Asserts: CLAUDE.md 'Branch Safety (CRITICAL — DO NOT VIOLATE)' is the authoritative anchor (EnterWorktree + 'work in a worktree' tool-activation phrase + retained 'NEVER switch branches' in-worktree invariant); Leader.md Stage-4 + SST3-solo.md 'Before Starting Work' reference the anchor; Leader.md Gate-2 is the recursion-safe remote-FF form (ExitWorktree present, ZERO shared-tree git checkout/merge/reset — AC 1.3). Fails closed if any wiring silently drifts out.",
+  "driver": "run.sh",
+  "exit_code": 0,
+  "stdout_must_contain": [
+    "PASS: CLAUDE.md Branch-Safety anchor (EnterWorktree + work-in-a-worktree + NEVER-switch invariant)",
+    "PASS: Leader.md references EnterWorktree",
+    "PASS: SST3-solo.md references EnterWorktree",
+    "PASS: Leader.md Gate-2 is recursion-safe remote-FF (ExitWorktree present, zero shared-tree mutation)",
+    "OK: worktree-wiring-488 fixture (4/4 assertions passed)"
+  ]
+}
