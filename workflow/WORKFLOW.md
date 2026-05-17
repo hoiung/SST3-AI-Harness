@@ -61,9 +61,10 @@
 - [ ] Commit after EACH file change: `git add {file} && git commit -m "type: description (#issue)" && git push`
 - [ ] Run Verification Loop (repeat until clean — see below)
 - [ ] Run Ralph Review: Haiku → Sonnet → Opus (all 3 mandatory)
-- [ ] Merge to main BEFORE user review (protects work):
-  - `git checkout main && git pull origin main` (check for conflicts — preserve BOTH)
-  - `git merge solo/issue-{number}-{description} && git push`
+- [ ] Merge BEFORE user review (protects work) — recursion-safe remote fast-forward, NO shared-tree checkout (dotfiles#488 Fix-A / Leader.md Gate 2 / AC 1.3):
+  - From the worktree: `git push origin <solo-branch>` then `git push origin <solo-branch>:master` (server-side FF of `origin/master`)
+  - On non-FF reject: `git fetch origin master` → `git rebase origin/master` (in worktree) → retry (≤3, NEVER `--force`); NO shared-tree branch-switch/local-merge/reset
+  - `ExitWorktree action:keep` until `git ls-remote origin master` == solo tip, then `action:remove`; `git push origin --delete <solo-branch>`; `git fetch --prune`
 - [ ] POST `user-review-checklist.md` from TEMPLATE — not made up, ALL sections mandatory, NONE optional
 - [ ] Work through checklist WITH user
 - [ ] Fix any gaps found — no deferrals, no excuses unless confirmed false positive
