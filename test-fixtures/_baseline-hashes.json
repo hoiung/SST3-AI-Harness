@@ -22,6 +22,8 @@
     "code-orphans/input/orphans.py": "f59ee3a01c40a118361b01136817007b13c2082ef56c282858c6b60f742f4439",
     "code-recent-changes-window/expected.json": "5059f77b0fb0d9ca0d689460add50e3d4fb359219d3af63ecc78dcc4f9f0a2fe",
     "code-recent-changes-window/run.sh": "161c395c22cdb0aba0c55c356a6b2615c20a0fb38de1ca91477f3146f730cced",
+    "code-review-graph-hook-489/clean.md.fixture": "234df3156d11e9e02785b8bfafc5f872a0fbc8e864cf7300b76d7b9ae534ef19",
+    "code-review-graph-hook-489/rot.md.fixture": "edff9f61ba684344f15f97fb21bc2928f3c72088402512094ebc00633fd0a9e4",
     "code-search-keyword/expected.json": "845e05d6bd5b03cd75b4a4b38d83234f083c52342f9dfe19299b9950905d5e7d",
     "code-search-keyword/input/another.py": "637c5b93c2b3e6dd959b260c99e17f20a1b3490091488c313d65f20140f4395c",
     "code-search-keyword/input/sample.py": "b2d0bf9e94ce816be33a6d97374c761c1550c10bb494a003f474fdcdc625e791",

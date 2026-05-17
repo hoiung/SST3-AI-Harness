@@ -416,7 +416,7 @@ Run BEFORE any wrapper-lane call:
 
 **Does NOT answer**: docstring / comment content searches, voice / style / tone analysis, scope-vs-audit alignment, chat-history / opposite-scoping checks, intent / motivation / design-rationale questions, cross-language boundary contracts, cross-document reference integrity, false-positive sweep for confirmed violations, acceptance-criteria prose → code evidence mapping, factual-claims provenance validation.
 
-For any of the above → subagents remain the primary tool (see the 12 subagent-only moments enumerated in STANDARDS.md "Structural Code Queries" and ANTI-PATTERNS.md AP #19).
+For any of the above → subagents remain the primary tool (see the 12 subagent-only moments enumerated in ANTI-PATTERNS.md AP #19, pointed to from STANDARDS.md "Structural Code Queries").
 
 ### Invocation Quick Reference
 

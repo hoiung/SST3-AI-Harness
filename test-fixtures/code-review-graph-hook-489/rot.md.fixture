@@ -1,0 +1,10 @@
+<!-- Frozen rot fixture — dotfiles#489 Phase 2. -->
+<!-- Backtick-wrapped dead code-review-graph daemon syntax. The pre-#489 -->
+<!-- check-no-code-review-graph.sh (literal `grep -Fq`) MISSED this form; -->
+<!-- the Phase-2-fixed hook (backtick-normalised) MUST catch it (exit 1). -->
+<!-- Rot lines below are active prose: not in a historical-references -->
+<!-- block, not an allow-listed reference. -->
+
+- ✓ DO: run graph `query callers_of` / `query impact` for structural questions in supported languages **FIRST** when the pre-gate passes, grep only as fallback — not the reverse.
+- Run graph `action=update` if the index is stale before querying.
+- This non-rot line is wrapper-lane prose: prefer `bash dotfiles/scripts/sst3-code-callers.sh foo python`.

@@ -1,0 +1,8 @@
+<!-- Frozen clean control — dotfiles#489 Phase 2. -->
+<!-- Wrapper-lane-native prose with ZERO dead daemon tokens (even after -->
+<!-- backtick normalisation). Both the pre-#489 and Phase-2-fixed hook -->
+<!-- MUST exit 0 on this file. -->
+
+- ✓ DO: run `bash dotfiles/scripts/sst3-code-callers.sh <symbol> <lang>` / `sst3-code-impact.sh <base-branch>` for structural questions in supported languages **FIRST** when the pre-gate passes, grep only as fallback.
+- The wrapper-lane is stateless; every call re-parses on disk. `sst3-code-search.sh` is keyword-only — synonym-sweep before any "no match" conclusion.
+- Documented grep / subagent fallback is the EXPECTED path, never a degradation.
