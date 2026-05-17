@@ -31,14 +31,10 @@ On each SST3-solo invocation, run this block ONCE (not per subagent dispatch).
 
 **Per-Stage Feedback Capture (canonical: STANDARDS.md §Per-Stage Feedback Capture)**: at session start, if a feedback file exists for the in-flight Issue (per the `solo/issue-N-*` branch), the agent reads any prior `## Stage <N>` blocks to recover stage-level context after compact. Reconstruction-marker convention applies for stages where observations cannot be recovered.
 
-**Graph availability check** — only if `code-review-graph` is registered in `~/.claude.json`.
+**MANDATORY wrapper-lane self-test + status CHECK** — runs unconditionally. The wrapper-lane is MCP-independent: the legacy `code-review-graph` MCP was evicted in #445; the controlled-experiment re-enable path is documented only in `docs/guides/code-query-playbook.md` HISTORICAL-MCP-REFERENCES and is NOT a runtime branch here.
 
-Registration detection (explicit, not try/except): run
-`grep -q '"code-review-graph"' ~/.claude.json && echo registered || echo unregistered`
-- If `unregistered`: log `[GRAPH] Server not registered; skipping pre-session check. Downstream graph calls (WORKFLOW Stage 1, Ralph) will skip with documented fallback.` and continue to main SST3-solo work.
-- If `registered`: proceed with the graph check below.
+Run `sst3-self-test.sh` **FIRST**, then the status CHECK. The wrapper-lane is stateless; there is no staleness or build step. "MANDATORY" refers to the CHECK being unconditionally attempted, NOT to halting the workflow when the tool is unavailable — fallback is documented and Ralph-acceptable. This mirrors the unconditional self-test/status leg in `WORKFLOW.md` Stage 1 and `Leader.md` (the #484 W6.2 three-way consistency contract).
 
-Wrapper-lane check (registered case):
 0. **Self-test BEFORE status (#447 Phase 5)**: run `bash dotfiles/scripts/sst3-self-test.sh` first. ANY drift line in the NDJSON (`{"kind":"fixture-drift",...}`) means a wrapper has regressed against its frozen known-answer fixture. Log `[WRAPPER-LANE self-test drift: <fixture-list>]` and HALT — open `solo/wrapper-fix-<bug>` (NOT this session's branch), reproduce + fix, push fix branch through its own Stage 4, then resume the original session. Engine-missing (exit 127) on the dev host degrades to subagent-only fallback for THIS session, same as wrapper-lane unavailable below. The self-test gate is the regression contract; status check alone cannot catch wrapper drift because status's NDJSON contract is too narrow (single object).
 1. Run `bash dotfiles/scripts/sst3-code-status.sh`. If the call exits non-zero, log `[WRAPPER-LANE] status check failed: <stderr>; retrying once.` and retry once. If second attempt fails, log `[WRAPPER-LANE unavailable: wrapper call failed after retry]` and continue — downstream will fall back to subagent with documented evidence. Common failure: exit 127 (inner engine like ast-grep not installed; see playbook Install section). **Post Issue #456**: exit 127 means the engine is genuinely missing on disk. Pre-#456 the same code ALSO fired when the engine was on disk but PATH was not propagated to non-interactive shells; that case is closed by `sst3-bash-utils.sh` self-bootstrap. Run `scripts/install.sh` to install missing engines — do NOT add custom PATH workarounds in the calling agent.
 2. There is no build step — the wrapper-lane is stateless; every query re-parses on disk.
@@ -58,9 +54,9 @@ Checkbox availability check (registered case):
 1. Load schema: `ToolSearch(query="select:mcp__github-checkbox__health_check,mcp__github-checkbox__get_issue_checkboxes,mcp__github-checkbox__update_issue_checkbox,mcp__github-checkbox__get_issue_events,mcp__github-checkbox__list_issue_comments,mcp__github-checkbox__update_issue_comment")` — mandatory pre-bootstrap per `../standards/STANDARDS.md` "MCP Tool Schema Loading".
 2. Call `mcp__github-checkbox__health_check`. On error, log `[CHECKBOX] health_check failed: <error>; retrying once.` and retry once. If second attempt fails, log `[CHECKBOX unavailable: ...]` and **HARD STOP** — do not proceed with governance-sensitive work under any circumstances. This is fail-fast by design (AP #20 + STANDARDS.md "MCP Tool Schema Loading"). Layer 1 (phase-boundary close-out in "During Work") + Layer 2 (Pre-Verification-Loop baseline in "Verification Loop") both REQUIRE this bootstrap to have succeeded — if the bootstrap STOPs, those layers MUST NOT run. There is no "proceed with warning" path.
 
-Cadence: once per SST3-solo invocation, same as graph check.
+Cadence: once per SST3-solo invocation, same cadence as the wrapper-lane pre-session check.
 
-This is the structural-query layer (graph) + governance-signal layer (github-checkbox); the subagent swarm remains your semantic layer. Rule detail for graph lives in STANDARDS.md "Structural Code Queries"; rule detail for checkbox-MCP bootstrap lives in STANDARDS.md "MCP Tool Schema Loading" + "Governance Evidence Signal (Canonical)".
+This is the structural-query layer (graph) + governance-signal layer (github-checkbox); the subagent swarm remains your semantic layer. Rule detail for the wrapper-lane structural-query layer lives in STANDARDS.md "Structural Code Queries"; rule detail for checkbox-MCP bootstrap lives in STANDARDS.md "MCP Tool Schema Loading" + "Governance Evidence Signal (Canonical)".
 
 ## Solo Mode Summary
 
