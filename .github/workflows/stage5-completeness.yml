@@ -43,10 +43,13 @@ jobs:
           path: dotfiles
           # Cross-repo private-repo checkout requires a fine-grained PAT
           # (#473 / #477 Phase 8). DOTFILES_READ_TOKEN is scoped Contents:Read
-          # on hoiung/dotfiles ONLY. No-op for harness-side runs (same-repo
-          # checkout works without the token); load-bearing for consumer-side
-          # runs where default GITHUB_TOKEN is repo-scoped to the consumer.
-          token: ${{ secrets.DOTFILES_READ_TOKEN }}
+          # on hoiung/dotfiles ONLY. An EMPTY token input does NOT no-op —
+          # actions/checkout hard-fails with "Input required and not supplied:
+          # token". The `|| github.token` fallback makes harness-side (this
+          # repo IS hoiung/dotfiles, same-repo read) runs work via the default
+          # GITHUB_TOKEN; consumer-side runs use the PAT for cross-repo private
+          # read (their GITHUB_TOKEN is repo-scoped to the consumer).
+          token: ${{ secrets.DOTFILES_READ_TOKEN || github.token }}
 
       - name: Set up Python
         uses: actions/setup-python@v6

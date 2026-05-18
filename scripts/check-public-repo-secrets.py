@@ -178,8 +178,12 @@ PRIVATE_KEY_PATTERNS: List[Dict] = [
 
 GENERIC_SECRET_PATTERNS: List[Dict] = [
     {
+        # Quote-flanking on the keyword closes the JSON-object recall hole
+        # (`"password":"dragon"`) per dotfiles#494 Defect 3 — the optional
+        # `['"]?` either side of the keyword preserves bare-keyword forms
+        # (`password = ...`) while also matching JSON quoted-key forms.
         "pattern": re.compile(
-            r"(?i)(?:password|passwd|secret|token|api_?key|auth_?key|credential|seller_id|account_id)"
+            r"(?i)['\"]?(?:password|passwd|secret|token|api_?key|auth_?key|credential|seller_id|account_id)['\"]?"
             r"\s*[=:]\s*['\"]?[^\s'\"]{4,}"
         ),
         "message": "Generic secret assignment",
@@ -253,6 +257,7 @@ PLACEHOLDER_PATTERNS: List[re.Pattern] = [
     re.compile(r"^mock$", re.IGNORECASE),
     re.compile(r"^placeholder$", re.IGNORECASE),
     re.compile(r"^x{3,}$", re.IGNORECASE),
+    re.compile(r"_x{3,}$", re.IGNORECASE),
     re.compile(r"^\*{3,}$"),
     re.compile(r"^todo$", re.IGNORECASE),
     re.compile(r"^fixme$", re.IGNORECASE),
@@ -264,6 +269,22 @@ PLACEHOLDER_PATTERNS: List[re.Pattern] = [
     re.compile(r"^\{\{.+\}\}$"),
     re.compile(r"^<[^>]+>$"),
 ]
+
+# Curated NON-SECRET schema/type/meta wordlist used by `is_likely_prose_value`
+# to suppress the prose false-positive class (`token: input`, `secret: value`,
+# `password: required`, ...). Recall-critical config kept in-source by design
+# per dotfiles#494 AC 1.1.1 — readable to reviewers, no hidden-config drift.
+# Excludes all secret keyword-words; contains zero strings from the must-flag
+# adversarial TP corpus (dragon/monkey/football/qwerty/letmein/hunter2/...).
+CURATED_NONSECRET_VALUES: frozenset = frozenset({
+    "input", "value", "required", "optional",
+    "string", "identifier", "integer", "missing",
+    "boolean", "description", "header", "column",
+    "parameter", "default", "true", "false",
+    "none", "null", "example", "todo",
+    "number", "object", "array", "field",
+    "type", "enum",
+})
 
 # Files/dirs to always skip
 IGNORE_PATTERNS: List[str] = [
@@ -335,9 +356,70 @@ def is_placeholder_value(value: str) -> bool:
     return False
 
 
+# Three accepted assignment forms feed `is_likely_prose_value`:
+#   1) JSON form:        "keyword":"value"   — mandatory JSON quoting, bare-word
+#   2) JSON form (sgl):  'keyword':'value'   — single-quoted JSON variant
+#   3) Bare form:        keyword=value       — env/yaml unquoted prose
+# The Python-literal form `keyword="value"` (bare keyword, quoted value) is
+# DELIBERATELY excluded — quoting an otherwise-bare value is a strong
+# "developer chose to make this a string literal" signal, so the prose
+# discriminator does not suppress it. See dotfiles#494 AC 1.1.2 + research §L2a.
+_KEYWORD_ALT = (
+    r"password|passwd|secret|token|api_?key|auth_?key|"
+    r"credential|seller_id|account_id"
+)
+_PROSE_CONTEXT_RE = re.compile(
+    rf"(?i)(?:"
+    rf"\"(?:{_KEYWORD_ALT})\"\s*[=:]\s*\""
+    rf"|"
+    rf"'(?:{_KEYWORD_ALT})'\s*[=:]\s*'"
+    rf"|"
+    rf"(?<![\"'])(?:{_KEYWORD_ALT})\s*[=:]\s*(?![\"'])"
+    rf")"
+)
+
+
+def is_likely_prose_value(line: str, value: str) -> bool:
+    """Discriminator: True if `value` is benign schema/type/meta prose
+    in a bare-word context (env/yaml unquoted OR JSON mandatory-quote form),
+    and either appears in `CURATED_NONSECRET_VALUES` or is followed by
+    >=1 further lowercase word on the line (multi-word prose run).
+
+    Returns False for any of: digit/uppercase/special in `value`; Python-
+    literal explicit-quote context (`keyword="value"` with bare keyword);
+    non-curated single-word with no trailing lowercase prose run.
+
+    Connection-string patterns ([2]-[5]) are unaffected — they yield
+    `value=None` from `extract_generic_secret_value` and short-circuit
+    the caller's `if value and ...: continue` guard before this runs.
+    """
+    if not re.fullmatch(r"[a-z]+", value):
+        return False
+    m = _PROSE_CONTEXT_RE.search(line)
+    if not m:
+        return False
+    rest = line[m.end():]
+    rest_match = re.match(re.escape(value) + r"(.*)", rest)
+    if not rest_match:
+        return False
+    after_value = rest_match.group(1)
+    if value in CURATED_NONSECRET_VALUES:
+        return True
+    return bool(re.match(r"\s+[a-z]+", after_value))
+
+
+_INLINE_ALLOW_RE = re.compile(r"(?:^|\s)(?:#|//)\s*secret-allow\s*$")
+
+
 def has_inline_allow(line: str) -> bool:
-    """Check if line has an inline secret-allow comment."""
-    return "# secret-allow" in line or "// secret-allow" in line
+    """Return True only when the line ends with a trailing `# secret-allow`
+    or `// secret-allow` token (whitespace-only after it), preceded by
+    whitespace or line-start. Tightened from the prior naive `in` substring
+    test which let prose mentions of the marker self-exempt the whole line
+    (dotfiles#494 Defect 2)."""
+    # Strip trailing newline only — preserve internal whitespace so the
+    # `\s*$` anchor reflects the real end of the source line.
+    return bool(_INLINE_ALLOW_RE.search(line.rstrip("\r\n")))
 
 
 def is_file_exempt(file_path: Path) -> bool:
@@ -363,8 +445,8 @@ def is_line_allowlisted(
 
 
 _GENERIC_VALUE_RE = re.compile(
-    r"(?i)(?:password|passwd|secret|token|api_?key|auth_?key|credential|seller_id|account_id"
-    r"|(?:DB|DATABASE)_(?:PASSWORD|PASS|PWD|SECRET))"
+    r"(?i)['\"]?(?:password|passwd|secret|token|api_?key|auth_?key|credential|seller_id|account_id"
+    r"|(?:DB|DATABASE)_(?:PASSWORD|PASS|PWD|SECRET))['\"]?"
     r"\s*[=:]\s*['\"]?([^\s'\"]+)"
 )
 
@@ -421,12 +503,12 @@ def scan_line(
             ))
             return findings
 
-    # GENERIC_SECRET — with placeholder filtering
+    # GENERIC_SECRET — with placeholder filtering + prose discriminator
     for pat in GENERIC_SECRET_PATTERNS:
         if pat["pattern"].search(line):
             value = extract_generic_secret_value(line)
-            if value and is_placeholder_value(value):
-                continue
+            if value and is_placeholder_value(value): continue
+            if value and is_likely_prose_value(line, value): continue
             findings.append(Finding(
                 line_num=line_num,
                 line=stripped,
@@ -557,21 +639,45 @@ def scan_text_content(
 
 
 def fetch_issue_or_pr_body(repo: str, number: int) -> str:
-    """Fetch issue or PR body + comments via gh CLI. Returns concatenated text."""
+    """Fetch issue/PR body + comments via gh CLI. Returns concatenated text.
+
+    Failure semantics (load-bearing — keep precise):
+    - Issue-body fetch is the only fetch whose failure means "no body": a
+      CalledProcessError here = transferred/redirected/deleted/404 issue, so
+      the caller skips the scan (an unfetchable body cannot leak from THIS
+      repo). It propagates to the caller untouched.
+    - Issue-body JSON unparseable despite gh exit 0 = the issue DOES exist but
+      we cannot read a body that may carry a leak. Do NOT silently skip and do
+      NOT traceback — raise RuntimeError so the caller fails loud (Fail Fast).
+    - Comments fetch is BEST-EFFORT: a comments failure after the body was
+      fetched must NOT discard the body (that would mask a body-resident
+      leak). Warn loudly and scan the body we already have.
+    """
+    import json as _json
     result = subprocess.run(
         ["gh", "api", f"repos/{repo}/issues/{number}"],
         capture_output=True, text=True, check=True,
     )
-    import json as _json
-    issue = _json.loads(result.stdout)
+    try:
+        issue = _json.loads(result.stdout)
+    except _json.JSONDecodeError as e:
+        raise RuntimeError(
+            f"gh returned malformed JSON for {repo}#{number} issue body: {e}"
+        ) from e
     parts = [f"TITLE: {issue.get('title', '')}", f"BODY:\n{issue.get('body', '')}"]
-    # Also fetch all comments
-    comments_result = subprocess.run(
-        ["gh", "api", f"repos/{repo}/issues/{number}/comments", "--paginate"],
-        capture_output=True, text=True, check=True,
-    )
-    for comment in _json.loads(comments_result.stdout):
-        parts.append(f"COMMENT {comment['id']}:\n{comment.get('body', '')}")
+    try:
+        comments_result = subprocess.run(
+            ["gh", "api", f"repos/{repo}/issues/{number}/comments", "--paginate"],
+            capture_output=True, text=True, check=True,
+        )
+        for comment in _json.loads(comments_result.stdout):
+            parts.append(f"COMMENT {comment['id']}:\n{comment.get('body', '')}")
+    except (subprocess.CalledProcessError, _json.JSONDecodeError) as e:
+        print(
+            f"WARNING: could not fetch comments for {repo}#{number} ({e}) — "
+            f"scanning issue body only (comments dropped, NOT skipped)",
+            file=sys.stderr,
+        )
     return "\n\n".join(parts)
 
 
@@ -701,8 +807,34 @@ def main() -> int:
                 return 1
         try:
             body_text = fetch_issue_or_pr_body(repo, args.issue_number)
-        except (subprocess.CalledProcessError, FileNotFoundError) as e:
-            print(f"Error: Could not fetch issue #{args.issue_number}: {e}", file=sys.stderr)
+        except subprocess.CalledProcessError as e:
+            # Reaching here means the ISSUE-BODY fetch itself returned non-zero
+            # (comments-fetch failures are handled inside fetch_issue_or_pr_body
+            # and never propagate here). The real cause is a transferred/
+            # redirected/deleted issue (e.g. transferred to a private sibling
+            # repo the repo-scoped GITHUB_TOKEN cannot read) or a 404 —
+            # genuinely NO body was fetched. Hard-failing CI here is a false
+            # positive that turns the workflow permanently red on every
+            # transferred-issue edit. Skip loudly (not silently): no body was
+            # fetched, so the disjoint real-secret detection path below is
+            # never reached — this cannot mask a genuine leak.
+            print(
+                f"WARNING: could not fetch {repo}#{args.issue_number} "
+                f"(transferred/redirected/deleted/404) — skipping issue/PR-body "
+                f"secret scan for this ref: {e}",
+                file=sys.stderr,
+            )
+            return 0
+        except RuntimeError as e:
+            # gh exited 0 but the issue body JSON was unparseable. The issue
+            # EXISTS (not a transfer) and may carry a leak we cannot read —
+            # do NOT skip, do NOT traceback. Fail loud (Fail Fast).
+            print(f"Error: {e}", file=sys.stderr)
+            return 1
+        except FileNotFoundError as e:
+            # gh binary genuinely absent => broken environment, not a
+            # transferred issue. Fail loud (Fail Fast); do NOT skip.
+            print(f"Error: gh CLI not available, cannot scan issue #{args.issue_number}: {e}", file=sys.stderr)
             return 1
         findings = scan_text_content(body_text, f"{repo}#{args.issue_number}", blocklist, allowlist)
         if findings:
