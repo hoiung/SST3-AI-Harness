@@ -408,15 +408,34 @@ def is_likely_prose_value(line: str, value: str) -> bool:
     return bool(re.match(r"\s+[a-z]+", after_value))
 
 
-_INLINE_ALLOW_RE = re.compile(r"(?:^|\s)(?:#|//)\s*secret-allow\s*$")
+# Match: trailing `# secret-allow` or `// secret-allow` marker, optionally
+# followed by a single `(...)` parenthetical comment. Rejects free-form
+# trailing text (sentence-continuation mid-line prose). Live-system shape
+# evidence from hoiboy-uk: `# secret-allow (BW retrieval at runtime, ...)`,
+# `# secret-allow (placeholder)` — parenthetical-trailer is the common form.
+_INLINE_ALLOW_RE = re.compile(
+    r"(?:^|\s)(?:#|//)\s*secret-allow(?:\s+\([^)]*\))?\s*$"
+)
 
 
 def has_inline_allow(line: str) -> bool:
-    """Return True only when the line ends with a trailing `# secret-allow`
-    or `// secret-allow` token (whitespace-only after it), preceded by
-    whitespace or line-start. Tightened from the prior naive `in` substring
-    test which let prose mentions of the marker self-exempt the whole line
-    (dotfiles#494 Defect 2)."""
+    """Return True when the line ends with a trailing `# secret-allow` /
+    `// secret-allow` marker, optionally followed by a single `(...)`
+    parenthetical comment. Tightened from the prior naive `in` substring
+    test (which let prose mentions of the marker self-exempt entire lines)
+    AND from a too-strict bare-trailing variant (which broke legitimate
+    `# secret-allow (parenthetical)` usage). dotfiles#494 Defect 2.
+
+    Accepted forms (True):
+      foo  # secret-allow
+      foo  # secret-allow (BW retrieval at runtime, not committed)
+      const t = x; // secret-allow (placeholder)
+
+    Rejected forms (False):
+      describes the # secret-allow mechanism in prose
+      `# secret-allow`                   (markdown-fenced docs)
+      foo  # secret-allow trailing-word  (free-form continuation)
+    """
     # Strip trailing newline only — preserve internal whitespace so the
     # `\s*$` anchor reflects the real end of the source line.
     return bool(_INLINE_ALLOW_RE.search(line.rstrip("\r\n")))
