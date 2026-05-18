@@ -277,11 +277,9 @@ PLACEHOLDER_PATTERNS: List[re.Pattern] = [
 # Excludes all secret keyword-words; contains zero strings from the must-flag
 # adversarial TP corpus (dragon/monkey/football/qwerty/letmein/hunter2/...).
 CURATED_NONSECRET_VALUES: frozenset = frozenset({
-    "input", "value", "required", "optional",
-    "string", "identifier", "integer", "missing",
-    "boolean", "description", "header", "column",
-    "parameter", "default", "true", "false",
-    "none", "null", "example", "todo",
+    "input", "value", "string", "identifier",
+    "integer", "missing", "boolean", "description",
+    "header", "column", "parameter", "example",
     "number", "object", "array", "field",
     "type", "enum",
 })
@@ -379,6 +377,10 @@ _PROSE_CONTEXT_RE = re.compile(
 )
 
 
+_LOWERCASE_WORD_RE = re.compile(r"[a-z]+")
+_TRAILING_PROSE_RE = re.compile(r"\s+[a-z]+")
+
+
 def is_likely_prose_value(line: str, value: str) -> bool:
     """Discriminator: True if `value` is benign schema/type/meta prose
     in a bare-word context (env/yaml unquoted OR JSON mandatory-quote form),
@@ -393,7 +395,7 @@ def is_likely_prose_value(line: str, value: str) -> bool:
     `value=None` from `extract_generic_secret_value` and short-circuit
     the caller's `if value and ...: continue` guard before this runs.
     """
-    if not re.fullmatch(r"[a-z]+", value):
+    if not _LOWERCASE_WORD_RE.fullmatch(value):
         return False
     m = _PROSE_CONTEXT_RE.search(line)
     if not m:
@@ -405,7 +407,7 @@ def is_likely_prose_value(line: str, value: str) -> bool:
     after_value = rest_match.group(1)
     if value in CURATED_NONSECRET_VALUES:
         return True
-    return bool(re.match(r"\s+[a-z]+", after_value))
+    return bool(_TRAILING_PROSE_RE.match(after_value))
 
 
 # Match: trailing `# secret-allow` or `// secret-allow` marker, optionally
@@ -416,6 +418,7 @@ def is_likely_prose_value(line: str, value: str) -> bool:
 _INLINE_ALLOW_RE = re.compile(
     r"(?:^|\s)(?:#|//)\s*secret-allow(?:\s+\([^)]*\))?\s*$"
 )
+_PAREN_CONTENT_RE = re.compile(r"\(([^)]*)\)")
 
 
 def has_inline_allow(line: str) -> bool:
@@ -426,6 +429,12 @@ def has_inline_allow(line: str) -> bool:
     AND from a too-strict bare-trailing variant (which broke legitimate
     `# secret-allow (parenthetical)` usage). dotfiles#494 Defect 2.
 
+    Stage-5 hardening: the parenthetical MUST NOT contain a high-confidence
+    PLATFORM_TOKEN shape (ghp_, AKIA, sk_live_, etc.) — otherwise the
+    exemption is refused. Closes the parenthetical-bypass regression
+    introduced by the 1be455f parenthetical relaxation (the marker was
+    absorbing real platform tokens hidden inside `# secret-allow (ghp_...)`).
+
     Accepted forms (True):
       foo  # secret-allow
       foo  # secret-allow (BW retrieval at runtime, not committed)
@@ -435,10 +444,23 @@ def has_inline_allow(line: str) -> bool:
       describes the # secret-allow mechanism in prose
       `# secret-allow`                   (markdown-fenced docs)
       foo  # secret-allow trailing-word  (free-form continuation)
+      foo  # secret-allow (ghp_<36chars>)            (Stage-5 reject)
+      foo  # secret-allow (AKIA<16>)                 (Stage-5 reject)
     """
-    # Strip trailing newline only — preserve internal whitespace so the
-    # `\s*$` anchor reflects the real end of the source line.
-    return bool(_INLINE_ALLOW_RE.search(line.rstrip("\r\n")))
+    stripped = line.rstrip("\r\n")
+    match = _INLINE_ALLOW_RE.search(stripped)
+    if not match:
+        return False
+    paren_match = _PAREN_CONTENT_RE.search(match.group(0))
+    if paren_match:
+        paren_content = paren_match.group(1)
+        for pat in PLATFORM_TOKEN_PATTERNS:
+            if pat["pattern"].search(paren_content):
+                return False
+        for pat in PRIVATE_KEY_PATTERNS:
+            if pat["pattern"].search(paren_content):
+                return False
+    return True
 
 
 def is_file_exempt(file_path: Path) -> bool:
@@ -464,9 +486,9 @@ def is_line_allowlisted(
 
 
 _GENERIC_VALUE_RE = re.compile(
-    r"(?i)['\"]?(?:password|passwd|secret|token|api_?key|auth_?key|credential|seller_id|account_id"
-    r"|(?:DB|DATABASE)_(?:PASSWORD|PASS|PWD|SECRET))['\"]?"
-    r"\s*[=:]\s*['\"]?([^\s'\"]+)"
+    r"(?i)['\"`]?(?:password|passwd|secret|token|api_?key|auth_?key|credential|seller_id|account_id"
+    r"|(?:DB|DATABASE)_(?:PASSWORD|PASS|PWD|SECRET))['\"`]?"
+    r"\s*[=:]\s*['\"`]?([^\s'\"`]+)"
 )
 
 
