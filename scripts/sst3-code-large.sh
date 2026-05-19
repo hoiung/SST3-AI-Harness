@@ -10,7 +10,7 @@
 # `kind: function_definition` rule. The shallow pattern matched only
 # `def NAME(simple): simple_body` shapes — failing on typed parameters,
 # multi-line signatures, return-type annotations, async, decorators.
-# Recall on project-a was 9/52 = 17%; the kind-rule recovers
+# Recall on <consumer-public-1> was 9/52 = 17%; the kind-rule recovers
 # 52/52 (matches python ast.walk baseline), including the biggest hit
 # `src/backtest/engine.py:run_strategy` at 854 lines that the old
 # pattern missed entirely.

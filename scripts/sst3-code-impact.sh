@@ -79,7 +79,7 @@ while IFS= read -r FILE; do
         # Zero-caller case: `wc -l` exits 0 with `0` output, but pipe SIGPIPE on
         # ast-grep failure can yield `0\n0` via `|| echo 0` fallback — strip non-digits
         # so subsequent arithmetic doesn't fail with "syntax error in expression".
-        # Stage 5 fix L1.I (consumer-private-A#12 post-impl review) — `set -o pipefail`
+        # Stage 5 fix L1.I (Issue #12 post-impl review) — `set -o pipefail`
         # at line 11 propagates ast-grep's nonzero exit (it returns non-zero on
         # certain zero-match patterns) through the pipe, aborting the whole
         # loop after the first symbol with no callers and silently under-

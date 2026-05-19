@@ -8,7 +8,7 @@
 #
 # #445 R4 (Bug D): companion to sst3-code-callers.sh, which is blind to
 # inheritance — it only matches expression-position calls `Foo($$$)`, not
-# `class Bar(Foo):` ClassDef nodes. On project-a,
+# `class Bar(Foo):` ClassDef nodes. On <consumer-public-1>,
 # BaseStrategyController has 5 production subclass + production-call sites
 # that callers.sh missed entirely. This wrapper closes that gap.
 #

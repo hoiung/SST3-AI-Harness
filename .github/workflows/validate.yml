@@ -64,7 +64,7 @@ jobs:
       with:
         python-version: '3.12'
 
-    - name: Verify mirror drift manifest (hoiung/dotfiles#418)
+    - name: Verify mirror drift manifest
       run: python3 scripts/check-mirror-drift.py
 
     - name: Secret detection (blocking)

@@ -59,17 +59,16 @@ def log_event(script: str, event: str, level: str = "info", **fields: Any) -> No
 # DevProjects/) — KNOWN_REPOS is the static fallback for scripts that need
 # the canonical list without scanning the filesystem.
 KNOWN_REPOS: List[str] = [
+    # Public-mirror divergent copy (dotfiles#497). The full operator-private
+    # consumer list lives in the canonical sst3_utils.py; only the operator's
+    # publicly-acknowledged consumers + the harness itself appear here so the
+    # public mirror does not enumerate private repo names.
     'dotfiles',
     'auto_pb_swing_trader',
     'tradebook_GAS',
     'hoiboy-uk',
     'ebay-seller-tool',
-    'consumer-private-A',
-    'voice-doc-repo',
-    'idea-repo',
-    'voice-staging',
-    'lab-harness',
-    'consultancy-ops',
+    'SST3-AI-Harness',
 ]
 
 

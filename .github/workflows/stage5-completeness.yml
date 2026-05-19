@@ -51,6 +51,24 @@ jobs:
           # read (their GITHUB_TOKEN is repo-scoped to the consumer).
           token: ${{ secrets.DOTFILES_READ_TOKEN || github.token }}
 
+      # Issue #493 AC 2.9 — second checkout of the actor (consumer) repo so the
+      # drain-gate's D1-D4 git-state queries (status / stash / worktree /
+      # rev-list origin/<br>..<br>) hit the consumer's working tree. The default
+      # github.token grants Contents:Read on the consumer's own repo; no PAT.
+      # Skipped when the actor IS dotfiles to avoid clobbering the canonical
+      # checkout above (drain-check then resolves --repo dotfiles to the
+      # canonical checkout, which is post-merge master state — correct for
+      # post-sign-off replay).
+      - name: Checkout actor (consumer) repo (D1-D4 source — #493 AC 2.9)
+        if: github.event.repository.name != 'dotfiles'
+        uses: actions/checkout@v6
+        with:
+          # No 'repository' arg = default to github.repository = actor repo.
+          # Path matches drain-check's --repo <slug> resolution so
+          # `<workspace>/<slug>` is reachable as the per-repo working tree.
+          path: ${{ github.event.repository.name }}
+          fetch-depth: 0  # full history so git rev-list origin/<br>..<br> works
+
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -106,28 +124,92 @@ jobs:
             echo 'EOF'
           } >> "$GITHUB_OUTPUT"
 
-      - name: Post receipt comment to Issue
+      # Issue #493 AC 2.9 — drain-gate gate runs after the completeness gate;
+      # results merged into ONE consolidated receipt comment below so the
+      # Issue doesn't accumulate dual-receipt noise (Stage-1 G7 design choice).
+      - name: Run Stage 5 drain gate (#493 Phase 2)
+        id: drain
+        continue-on-error: true
+        working-directory: dotfiles
+        run: |
+          set +e
+          # --issue-repo wired from github.repository so any future
+          # --waive-residue invocation posts the HTML-comment receipt to
+          # the ACTOR's Issue (consumer-side or dotfiles-side), not the
+          # script default. Ralph Tier 3 (Opus) cross-repo hardening fix.
+          OUT=$(bash SST3/scripts/leader-stage5-drain-check.sh \
+                  "${{ steps.meta.outputs.issue }}" \
+                  --repo "${{ steps.meta.outputs.repo }}" \
+                  --issue-repo "${{ github.repository }}" 2>err.log)
+          EX=$?
+          {
+            echo 'json<<EOF'
+            echo "$OUT"
+            echo 'EOF'
+            echo "exit=$EX"
+            echo 'err<<EOF'
+            cat err.log
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Post combined receipt comment to Issue (#493 AC 2.9)
         uses: actions/github-script@v9
+        env:
+          # Stage 5 L1-G F4 + L1-F FRAG-2 fix: pass step outputs via env vars
+          # instead of inline `${{ ... }}` template-literal interpolation.
+          # The pre-fix path interpolated drain-check / completeness-check
+          # JSON + err blobs directly into JS backtick template literals,
+          # which would break parsing (and could inject arbitrary JS) if any
+          # output contained backticks or `${...}` sequences. GitHub Actions
+          # `env:` provides full escaping — `process.env.X` reads the value
+          # as a verbatim string with no JS-template-literal expansion.
+          COMP_EX: ${{ steps.gate.outputs.exit }}
+          COMP_JSON: ${{ steps.gate.outputs.json }}
+          COMP_ERR: ${{ steps.gate.outputs.err }}
+          DRAIN_EX: ${{ steps.drain.outputs.exit }}
+          DRAIN_JSON: ${{ steps.drain.outputs.json }}
+          DRAIN_ERR: ${{ steps.drain.outputs.err }}
+          ISSUE_NUM: ${{ steps.meta.outputs.issue }}
         with:
           script: |
-            const ex = `${{ steps.gate.outputs.exit }}`;
-            const json = `${{ steps.gate.outputs.json }}`;
-            const err = `${{ steps.gate.outputs.err }}`;
-            const verdict = ex === '0' ? 'PASS' : 'FAIL';
+            const compEx = process.env.COMP_EX || '';
+            const compJson = process.env.COMP_JSON || '';
+            const compErr = process.env.COMP_ERR || '';
+            const drainEx = process.env.DRAIN_EX || '';
+            const drainJson = process.env.DRAIN_JSON || '';
+            const drainErr = process.env.DRAIN_ERR || '';
+            const issueNumber = parseInt(process.env.ISSUE_NUM || '0', 10);
+            const compVerdict = compEx === '0' ? 'PASS' : 'FAIL';
+            const drainVerdict = drainEx === '0' ? 'PASS' : 'FAIL';
+            const overall = (compEx === '0' && drainEx === '0') ? 'PASS' : 'FAIL';
             const body = [
-              `### Stage 5 completeness — Layer B failsafe receipt: ${verdict}`,
+              `## Stage 5 — Completeness + Drain Gates (Layer B replay): ${overall}`,
               '',
-              '_Server-side replay of `leader-stage5-completeness-check.sh` after Stage 5 sign-off comment posted._',
+              '_Server-side replay of both Layer-A gates after the Stage 5 sign-off comment was posted._',
+              '',
+              `### Completeness gate (\`leader-stage5-completeness-check.sh\`): ${compVerdict}`,
               '',
               '```json',
-              json.trim() || '(no JSON output)',
+              compJson.trim() || '(no JSON output)',
               '```',
-              ex !== '0' ? '\n**Failure detail:**\n```\n' + err.trim() + '\n```' : '',
-              '\n_Issue #460 Phase 7b W4 Layer B — `dotfiles/.github/workflows/stage5-completeness.yml`._',
+              compEx !== '0' ? '\n**Completeness failure detail:**\n```\n' + compErr.trim() + '\n```' : '',
+              '',
+              `### Drain gate (\`leader-stage5-drain-check.sh\`): ${drainVerdict}`,
+              '',
+              '```json',
+              drainJson.trim() || '(no JSON output)',
+              '```',
+              drainEx !== '0' ? '\n**Drain failure detail:**\n```\n' + drainErr.trim() + '\n```' : '',
+              '',
+              '_Issue #460 Phase 7b W4 + #493 Phase 2 — `.github/workflows/stage5-completeness.yml`._',
             ].join('\n');
+            if (!issueNumber) {
+              core.setFailed(`ISSUE_NUM env var missing or invalid: ${process.env.ISSUE_NUM}`);
+              return;
+            }
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: ${{ steps.meta.outputs.issue }},
+              issue_number: issueNumber,
               body,
             });

@@ -85,6 +85,7 @@
 - [ ] Check issue body scope 100% completed — no gaps
 - [ ] Fix ALL problems — no deferrals, no excuses
 - [ ] Run regression tests — if not run yet, run them now
+- [ ] **Task-close drain gate (#493 Phase 2 — Leader.md step 7a.1)**: `bash scripts/leader-stage5-drain-check.sh <issue-number> [--repo <repo>]` exit 0 mandatory before sign-off. Detects D1-D5 residue (uncommitted task-touched files / self-created stash / self-opened worktree / un-pushed commits / unfinished propagation tail). Sits BETWEEN the 7a.0 sweep and the 7a completeness-check in Leader.md Stage 5 sequence; Layer B failsafe replays in `.github/workflows/stage5-completeness.yml`.
 - [ ] Per-stage feedback per STANDARDS.md §Per-Stage Feedback Capture — write the Stage 5 block before declaring complete
 
 ### Stage 5 Layer-B Failsafe — DOTFILES_READ_TOKEN (closes #473 via #477 Phase 8)

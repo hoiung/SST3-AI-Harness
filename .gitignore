@@ -14,3 +14,13 @@ Thumbs.db
 # below is preserved while developer machines may still have legacy dirs from the pre-#445
 # MCP-era server (deprecated; safe to delete locally).
 .code-review-graph/
+
+# Defense-in-depth (#497 A.9) — never propagate operator narrative
+SST3-metrics/
+leader-feedback/
+feedback-*.md
+.tier-a-auto-tick/
+.feedback-aggregate-index.md
+feedback-index.ndjson
+# Phase D ephemeral work-files (must NOT commit accidentally)
+.filter-repo-replacements.txt

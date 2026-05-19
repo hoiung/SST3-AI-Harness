@@ -9,7 +9,7 @@ Purpose:
 
 Problem Solved:
 When SST3 docs reference other SST3 files using repo-relative paths (e.g., `SST3/workflow/...`),
-those paths work from dotfiles repo but BREAK from other repos (auto_pb_swing_trader, tradebook_GAS).
+those paths work from dotfiles repo but BREAK from other repos (<consumer-public-1>, <consumer-public-2>).
 This makes SST3 features undiscoverable from other repos, violating the discoverability requirement.
 
 Correct Pattern:

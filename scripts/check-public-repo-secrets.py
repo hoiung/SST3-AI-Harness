@@ -16,6 +16,7 @@ Usage:
 """
 
 import argparse
+import json
 import re
 import subprocess
 import sys
@@ -322,6 +323,37 @@ SCAN_EXTENSIONS: List[str] = [
 def is_public_repo(repo_root: Path) -> bool:
     """Check if repo has a .public-repo marker file."""
     return (repo_root / ".public-repo").exists()
+
+
+def _expand_hashed_tokens(lines: Set[str], hashes_path: Optional[Path]) -> Set[str]:
+    """Expand `sha256:<prefix>:<class>` opaque-token lines to their literal forms.
+
+    Reads SST3/scripts/.secret-blocklist-hashes.json (canonical-only, unmirrored
+    per drift-manifest:unmirrored_canonical_files; #497 A.2.3) to map each token
+    to its underlying literal substrings. Token strings themselves are kept in
+    the output set (so the substring scan still flags any document that contains
+    a literal token reference) and the literals they cover are added alongside.
+
+    When the hashes file is absent (e.g. running in a public-mirror clone that
+    does not have the operator-private mapping), tokens pass through unmodified
+    so the public-side scan still catches verbatim token references — degraded
+    mode, documented.
+    """
+    if not hashes_path or not hashes_path.exists():
+        return lines
+    try:
+        data = json.loads(hashes_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return lines
+    token_map = data.get("tokens", {})
+    expanded: Set[str] = set(lines)
+    for line in lines:
+        entry = token_map.get(line)
+        if entry:
+            for literal in entry.get("literals", []):
+                if literal:
+                    expanded.add(literal)
+    return expanded
 
 
 def load_file_set(file_path: Optional[Path]) -> Set[str]:
@@ -822,8 +854,15 @@ def main() -> int:
         else:
             return 0
 
-    # Load blocklist and allowlist
+    # Load blocklist and allowlist. Expand opaque hashed tokens against the
+    # canonical-only hashes manifest (#497 A.2.3) — when the operator-private
+    # mapping is present (dev-machine clone of dotfiles), the scanner sees both
+    # the tokens AND their underlying literals, so substring scans catch real
+    # business identifiers in mirror content. In the public-mirror clone where
+    # the mapping is absent, the scanner falls back to verbatim token matching.
     blocklist = load_file_set(repo_root / ".secret-blocklist")
+    hashes_path = repo_root / "SST3" / "scripts" / ".secret-blocklist-hashes.json"
+    blocklist = _expand_hashed_tokens(blocklist, hashes_path)
 
     allowlist_path = Path(args.allowlist) if args.allowlist else repo_root / ".secret-allowlist"
     allowlist = load_file_set(allowlist_path)

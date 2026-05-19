@@ -6,9 +6,28 @@ repos:
   # SST3 Self-Optimizing hooks (Phase 5)
   - repo: local
     hooks:
-      # NOTE: sst3-pre-commit-checks, check-devprojects-clean, check-claude-template-propagation,
-      # and auto-stage-tracked-folders are private-repo hooks (require SST3/ directory structure
-      # or DevProjects/ parent). Scripts are published for reference but not hooked in the mirror.
+      # NOTE: the following 15 canonical hooks are deliberately NOT installed in this mirror
+      # (#497 B.1.3 — closure of Stage 1 §2.4 gap). All are canonical-side propagators or
+      # operator-tooling that consume mirror content as input; the mirror is a consume-only
+      # surface for them.
+      #
+      #   - sst3-managed-block-drift          — canonical-side managed-block propagator hook
+      #   - check-known-repos-sync            — validates KNOWN_REPOS list (canonical-only)
+      #   - check-wrapper-bash-utils-source   — canonical-side wrapper-lane source-line gate
+      #   - sst3-self-test                    — wrapper-lane regression gate (canonical-only)
+      #   - block-code-review-graph-token     — canonical workflow token block
+      #   - ps1-parse-check                   — canonical-side PowerShell parse gate
+      #   - dispatch-chain-test               — canonical-side SSH dispatch-chain regression
+      #   - tailnet-acl-drift                 — canonical-side tailnet ACL gate
+      #   - sst3-sync-related-code            — canonical-side research frontmatter gate
+      #   - sst3-doc-frontmatter              — canonical-side research-doc frontmatter gate
+      #   - sst3-pre-commit-checks            — canonical-side token-budget + observability gates
+      #   - check-devprojects-clean           — requires DevProjects/ parent directory
+      #   - check-claude-template-propagation — canonical-side template propagator
+      #   - auto-stage-tracked-folders        — canonical-side auto-staging (SST3-metrics)
+      #   - check-canonical-propagation       — canonical-side cross-mirror drift gate
+      #
+      # Scripts for these hooks are published in this mirror for reference but not wired here.
       - id: no-temp-folder
         name: Prevent temp/ and tmp/ folder commits
         entry: bash -c 'TEMP_FILES=$(git diff --cached --name-only | grep -E "^temp/|/temp/|^tmp/|/tmp/"); if [ -n "$TEMP_FILES" ]; then echo "ERROR - temp/tmp folders not allowed in repos."; echo "Use C:/temp/ instead and delete the folder."; echo ""; echo "Blocked files -"; echo "$TEMP_FILES"; exit 1; fi'

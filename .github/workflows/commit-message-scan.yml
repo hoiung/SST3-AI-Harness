@@ -1,7 +1,6 @@
 name: Commit message secret scan
 
-# Closes the 2026-04-27 governance gap (Issue hoiung/dotfiles#449 Stage 5
-# Layer 2 finding: blocklist literals in commit messages were unenforced).
+# Closes the 2026-04-27 governance gap.
 # Scans every push for .secret-blocklist matches in the new commit messages
 # (range: ${{ github.event.before }}..${{ github.event.after }}).
 #
@@ -11,7 +10,7 @@ name: Commit message secret scan
 #   - On match: workflow fails loudly (red X). Push has already landed by the
 #     time CI fires, so the response loop is "fix forward" — either rewrite
 #     the offending commit (when feasible: branch is fresh + no downstream
-#     consumers) or accept the leak per `internal-leak-log` private-
+#     consumers) or accept the leak per `a private secret-scan log file` private-
 #     channel pattern.
 #
 # Canonical template: dotfiles/github/workflows/commit-message-scan.yml.

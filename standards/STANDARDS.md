@@ -123,7 +123,7 @@ See: ../workflow/WORKFLOW.md (Stage 1 — Research) for research-specific critic
 1. **Reproducible command**: `git log --oneline | wc -l` → "10,385 commits"
 2. **API query**: `gh issue list --state all --json number` → "1,309 issues"
 3. **Code reference**: `grep -c "def test_" tests/` → "N test functions"
-4. **Document citation**: "per the operator Feb 2022 award citation in MASTER_PROFILE.md"
+4. **Document citation**: "per a documented external citation; see private VOICE_PROFILE for source"
 5. **Calculation**: "(total - open) / total = 99.4% close rate"
 
 **Anti-patterns**:
@@ -246,6 +246,8 @@ See: ../workflow/WORKFLOW.md (Stage 1 — Research) for research-specific critic
 
 **Verify**: ``grep -cE '^- \[ \] \*?\*?\(?[0-9]+\.[0-9]+' <issue-draft>`` returns count of ACs; spot-check 3-5 random ACs and confirm each carries either a verification command (`grep`/`wc`/`pytest`/`exit 0`) OR a verbatim file:line target. Document any reject→rewrite in the per-stage feedback file Stage 2 `worked` field.
 
+**Self-gate Tier A ACs** (dotfiles#495 FRAG-2): Self-gate Tier A ACs (AC whose verification literal IS the Stage-5 sign-off of the Issue containing them — i.e. self-referential closure dependency) MUST be tagged `<!-- self-gate-ac: <reason> -->` on the line IMMEDIATELY preceding the checkbox; see `../templates/issue-template.md` `### Self-Gate AC Marker` for the canonical convention. Without the tag the cadence hook treats the AC as a normal Tier A and blocks Phase-N+1 commits per AP #20.
+
 #### Scope Snippet Rule (#406 F5.1)
 
 When dispatching ≥10 subagents on an issue, the main agent writes a **frozen scope snippet** (≤2K tokens, scope + acceptance criteria only) to `${SST3_TMP:-/tmp}/sst3-issue-<N>-scope.md` and passes the path to subagents instead of the full issue body. ONE "scout" subagent reads the full issue and validates that the snippet covers the relevant scope. Saves O(N × full-issue-tokens) of subagent context bloat.
@@ -323,7 +325,7 @@ See also `../reference/tool-selection-guide.md` "Decision Tree: Code-Understandi
 | `ebay-seller-tool` | Seagate series HARD CONTRACT; 21-field listing contract; SMART gate; dual-path BOTH directions; never-dispute-customer |
 | `claude-api` | Prompt caching wired on every cacheable prompt; model IDs current (no retired models); SDK idioms |
 | `SST3-solo` / `Leader` | Cross-cutting SST3 canonical + AP #19 12-moments carve-out + stage-order discipline |
-| Project-specific (`auto_pb`, `tradebook_GAS`, etc.) | Paper/live parity; never-touch-production-positions; RTH-only E2E; per-project CLAUDE.md rules |
+| Project-specific (`auto_pb`, `project-b`, etc.) | Paper/live parity; never-touch-production-positions; RTH-only E2E; per-project CLAUDE.md rules |
 
 **Stage-by-stage integration**:
 
@@ -482,7 +484,7 @@ AP #12 builds the observability surfaces; AP #16 enforces reading them.
 - For new banned words: edit `voice_rules.py` AND `VOICE_PROFILE.md` Section 8 in the SAME pass (single-source-edits, AP #9).
 
 **MUST NOT**:
-- Sanitise authentic Hoi vocabulary out (passion, journey, deeply, truly, navigate, back to basics, attention to detail — see KEEP_LIST).
+- Sanitise authentic the operator vocabulary out (passion, journey, deeply, truly, navigate, back to basics, attention to detail — see KEEP_LIST).
 - Add banned words anywhere inside iamhoi markers.
 - Duplicate rule data outside `voice_rules.py`.
 - Mix HTML `<!-- iamhoi -->` and `# iamhoi` syntax in the same file (hard fail).
@@ -495,7 +497,7 @@ AP #12 builds the observability surfaces; AP #16 enforces reading them.
 
 ### Polish vs Twist (Semantic Frame Preservation)
 
-**Principle**: When integrating operator-supplied content (a paragraph, sentence, point, rough thought) into any draft — blog, LinkedIn, CV, cover letter, anywhere — polish it for flow but preserve his meaning AND his interpretive frame. He writes rough thoughts to AI specifically to have them turned into publishable prose, so editing is mandatory; verbatim copy-paste defeats the point, and so does twisting. The marker-driven voice guard (above) catches banned WORDS — it is structurally blind to a semantic FRAME shift. This subsection is the semantic-frame companion to that lexical guard. The instinct to "improve / sharpen / tighten" must be bounded: fire ONLY on AI-drafted prose that integrates operator-supplied source, never on the load-bearing nouns / verbs / hedges Hoi actually wrote.
+**Principle**: When integrating operator-supplied content (a paragraph, sentence, point, rough thought) into any draft — blog, LinkedIn, CV, cover letter, anywhere — polish it for flow but preserve his meaning AND his interpretive frame. He writes rough thoughts to AI specifically to have them turned into publishable prose, so editing is mandatory; verbatim copy-paste defeats the point, and so does twisting. The marker-driven voice guard (above) catches banned WORDS — it is structurally blind to a semantic FRAME shift. This subsection is the semantic-frame companion to that lexical guard. The instinct to "improve / sharpen / tighten" must be bounded: fire ONLY on AI-drafted prose that integrates operator-supplied source, never on the load-bearing nouns / verbs / hedges the operator actually wrote.
 
 **Scope — when this rule fires** (bound it; over-application is the symmetric failure): fires ONLY when AI integrates operator-supplied source content (a rough paragraph / sentence / point he wrote) into voice-bearing prose — blog, LinkedIn, CV, cover letter, profile narrative. Does NOT fire on: fully-AI-authored governance/standards/docs prose (this very subsection is not operator-voice), code or config, or the operator's own words preserved verbatim as a marked quote. The fire-condition is authorship-gated: no operator-supplied source in-diff → rule is inert.
 
@@ -510,9 +512,9 @@ AP #12 builds the observability surfaces; AP #16 enforces reading them.
 
 **MUST NOT — TWIST (forbidden)**:
 - Add qualifiers that change interpretation: "at that size", "by comparison", "in essence", "fundamentally", "ultimately"
-- Reframe a comparison as a verdict. **Canonical worked example (verbatim — load-bearing)**: Hoi wrote `costs vs value` (a relationship/comparison the reader weighs); AI wrote `costs outweigh the value` (a verdict the writer hands down). Same surface words, opposite interpretive frame. This single example is THE canonical case — any future twist detector that cannot separate these two is measuring nothing.
-- Drop hedges Hoi used: "probably", "just", "really", "maybe"
-- Add hedges Hoi did not use
+- Reframe a comparison as a verdict. **Canonical worked example (verbatim — load-bearing)**: the operator wrote `costs vs value` (a relationship/comparison the reader weighs); AI wrote `costs outweigh the value` (a verdict the writer hands down). Same surface words, opposite interpretive frame. This single example is THE canonical case — any future twist detector that cannot separate these two is measuring nothing.
+- Drop hedges the operator used: "probably", "just", "really", "maybe"
+- Add hedges the operator did not use
 - Substitute "smoother" synonyms that lose nuance ("doesn't scale" replacing his "doesn't scale economically")
 - Add analytical phrases ("the economics here", "the real point is") that impose interpretive structure
 - Add subject-clarifications that change emphasis ("for them", "for those companies") when context already carried it — light disambiguating connectors that just maintain context flow are OK; **the test is whether the addition changes the reader's interpretation**
@@ -522,15 +524,15 @@ AP #12 builds the observability surfaces; AP #16 enforces reading them.
 2. Identify the interpretive load — what is he claiming, hedging, comparing, framing? What is the SHAPE of the point?
 3. Polish for grammar / flow — fix rough-draft artefacts (typos, missing articles where clunky, sentence boundaries).
 4. Test each candidate phrasing against the TWIST checklist above. Adds a qualifier / reframes a comparison as a verdict / drops a hedge → back it out.
-5. Show the polished version in the response before the final sync-and-push iteration so Hoi can spot drift early.
+5. Show the polished version in the response before the final sync-and-push iteration so the operator can spot drift early.
 
-**Why it is load-bearing**: operator-voice trades on authenticity AND on his interpretive frame being preserved. `costs vs value` → `costs outweigh value` is invisible to AI generic-good-writing instinct but load-bearing for Hoi — the first is observational (a comparison the reader weighs), the second conclusive (a verdict the writer hands down). Over-correcting the other way (verbatim copy-paste) is the symmetric failure and equally wrong.
+**Why it is load-bearing**: operator-voice trades on authenticity AND on his interpretive frame being preserved. `costs vs value` → `costs outweigh value` is invisible to AI generic-good-writing instinct but load-bearing for the operator — the first is observational (a comparison the reader weighs), the second conclusive (a verdict the writer hands down). Over-correcting the other way (verbatim copy-paste) is the symmetric failure and equally wrong.
 
 **No programmatic detector is possible — subagent-only semantic check (architecturally foreclosed)**: there is no `check-twist*.py` and none should be scoped. `voice_rules.py` is a `re.escape`-literal single-document word/phrase matcher with no source-vs-draft input channel; the canonical `costs vs value` → `costs outweigh value` example has 0% lexical separability (identical tokens, opposite frame); the fire-condition is authorship-gated (only when AI-integrated operator-supplied source is in-diff). Enforcement is therefore a semantic subagent check, NOT a heuristic script. A future agent proposing a programmatic detector must first explain why the `tests/fixtures/` foreclosure-regression fixture (a twisted paragraph the word-list guard PASSES at exit 0) now fails — it cannot.
 
-**Enforcement**: ANTI-PATTERNS.md AP #25 (Twisting Hoi-Supplied Content — the failure mode + Evidence). Ralph `sonnet-review.md` "Voice-Frame Preservation (semantic)" angle (fires when `invoked_skill ∈ {blog, voice-doc-repo}` and prose is in-diff). Leader.md Stage 3 + Stage 5 skill-canonical twist sub-prompt. Memory `feedback_use_hoi_literal_phrasing_no_twist.md` is the ≤30-line pointer — if memory and this file diverge, this file wins.
+**Enforcement**: ANTI-PATTERNS.md AP #25 (Twisting the operator-Supplied Content — the failure mode + Evidence). Ralph `sonnet-review.md` "Voice-Frame Preservation (semantic)" angle (fires when `invoked_skill ∈ {blog, voice-doc-repo}` and prose is in-diff). Leader.md Stage 3 + Stage 5 skill-canonical twist sub-prompt. Memory a per-rule pointer file (operator-private) is the ≤30-line pointer — if memory and this file diverge, this file wins.
 
-**Reference**: rule promoted from auto-memory `feedback_use_hoi_literal_phrasing_no_twist.md` (now the ≤30-line pointer) onto the canonical surface in dotfiles#484. Lexical sibling: "Voice Content Protection (Marker-Driven)" above + ANTI-PATTERNS.md AP #15 (banned-words guard); this subsection is the semantic-frame half of the same protection.
+**Reference**: rule promoted from auto-memory a per-rule pointer file (operator-private) (now the ≤30-line pointer) onto the canonical surface in dotfiles#484. Lexical sibling: "Voice Content Protection (Marker-Driven)" above + ANTI-PATTERNS.md AP #15 (banned-words guard); this subsection is the semantic-frame half of the same protection.
 
 ---
 
@@ -544,7 +546,7 @@ AP #12 builds the observability surfaces; AP #16 enforces reading them.
 
 **Enforcement**: Pre-commit hook `check-public-repo-secrets.py` (BLOCKING, `--staged-only` mode) + CI step (full repo scan, no `continue-on-error`). Vendored to consumer repos with drift-check hooks.
 
-**Evidence**: Issue #410. eBay store username, UserHome paths, and business strategies leaked in ebay-seller-tool (2026-04-11), required manual scrub + force-push.
+**Evidence**: Issue #410. eBay store username, private-cloud-folder paths, and business strategies leaked in ebay-seller-tool (2026-04-11), required manual scrub + force-push.
 
 ---
 
@@ -604,7 +606,9 @@ AP #12 builds the observability surfaces; AP #16 enforces reading them.
 
 ### Solo Branch Merge Safety
 
-**Principle**: Before merging any solo branch to main: pull main, diff for concurrent edits, resolve preserving BOTH sets of changes. (Evidence: Issue #1347 — concurrent work overwritten.)
+**Principle**: Solo branches merge to main via the worktree-first server-side fast-forward pattern (dotfiles#488 AC 1.3) — `git push origin <solo-branch>` then `git push origin <solo-branch>:master` from inside the isolated worktree. On non-fast-forward rejection (origin/master advanced concurrently), `git fetch origin master` then `git rebase origin/master` *inside the worktree*, then retry — bounded ≤3 attempts. NEVER `--force` / `--force-with-lease`. NEVER shared-tree branch-switch — no `git checkout main`, no `pull main` instruction in the merge procedure (those would mutate every concurrent agent's HEAD on the shared clone).
+
+**Preserve BOTH principle** (originally from Issue #1347 — concurrent work overwritten): the rebase-inside-worktree produces equivalent preserve-BOTH outcome as the pre-#488 shared-tree resolve. `git rebase origin/master` is 3-way merge semantics; on a conflict it surfaces the conflict for explicit resolution preserving both intent sets — same outcome as the pre-#488 manual resolve, different mechanic, no shared-HEAD mutation.
 
 ---
 
@@ -747,13 +751,17 @@ Canonical audit signal for verifying that `mcp__github-checkbox__update_issue_ch
 
 **Canonical scope boundary**: this section is THE canonical source for which signal Ralph / external audits use. `../ralph/{haiku,sonnet,opus}-review.md` reference this section and do NOT duplicate the procedure. `../reference/tool-selection-guide.md` Example 2 remains canonical for per-deliverable evidence-quality patterns (what to write INTO the Proof of Work entry). This section is canonical for what to DO WITH Proof of Work entries at audit time.
 
+## Task-Close Drain Gate (Canonical)
+
+Every Stage-5 task close must verify residue drained or waived — `bash scripts/leader-stage5-drain-check.sh <issue>` exit 0 mandatory before sign-off. The gate fires on five classes (D1: uncommitted task-touched files / D2: self-created stash / D3: self-opened worktree / D4: un-pushed commits / D5: unfinished propagation tail — dotfiles-scoped). Either drain the residue and re-run, or pass an explicit `--waive-residue <class>:<reason>` flag per class to record the operator's deliberate exception. Layer-A pre-flight (Leader.md step 7a.1, between the 7a.0 sweep and the 7a completeness check) + Layer-B GHA failsafe (`.github/workflows/stage5-completeness.yml`) replay the same gate server-side; both layers are mandatory. Parallel to the completeness-gate principle (#460 W4) but enforces "the task left no residue", not "the feature is complete". Introduced in #493 Phase 2.
+
 ## Per-Stage Feedback Capture (Canonical)
 
 Canonical telemetry mechanism for the SST3 5-stage `/Leader` workflow. Each `/Leader` stage close writes a 10-field feedback record so we accumulate observed patterns across runs (which stage routinely catches what bug class, which subagent angles are wasted, which corrections came from the user vs the agent self-caught).
 
 **Write-time template (use it — do not hand-roll the structure)**: copy `../templates/leader-feedback-template.md` when creating a new `feedback-<repo>-<issue>.md`. It carries the canonical frontmatter (8 fields) + the `## Stage N — <Title>` H2 headings (matching `feedback_parser.py` `STAGE_HEADING_RE`) + the 10 per-stage `**field**:` lines. Authoring a feedback file from memory is the root of the bare-`## Stage N` malformed-heading halt (dotfiles#486/#488) — the strict parser rejects a heading without `— <Title>`, and pre-fix that hard-failed every concurrent committer.
 
-**Storage convention** (literal path lives in unmirrored CLAUDE.md only): one `feedback-<repo>-<issue>.md` per issue under the `SST3-metrics/leader-feedback/` runtime telemetry directory. Filename encodes repo to prevent cross-repo collision (e.g. `dotfiles#449` vs `auto_pb_swing_trader#449`). Pre-commit hook `sst3-metrics-feedback-present` validates filename regex `^feedback-([a-z][a-z0-9_]*(?:-[a-z0-9_]+)*)-([1-9]\d*)\.md$` AND filename↔frontmatter parity. The repo-segment grammar disallows trailing hyphens, double hyphens, and digit-prefix names; the issue segment is a positive int with no leading zeros (rejects `0`, `007`, `00` collisions). All 5 stages append `## Stage <N>` blocks to the same file. Index NDJSON co-located in the same directory.
+**Storage convention** (literal path lives in unmirrored CLAUDE.md only): one `feedback-<repo>-<issue>.md` per issue under the `SST3-metrics/leader-feedback/` runtime telemetry directory. Filename encodes repo to prevent cross-repo collision (e.g. `dotfiles#449` vs `project-a#449`). Pre-commit hook `sst3-metrics-feedback-present` validates filename regex `^feedback-([a-z][a-z0-9_]*(?:-[a-z0-9_]+)*)-([1-9]\d*)\.md$` AND filename↔frontmatter parity. The repo-segment grammar disallows trailing hyphens, double hyphens, and digit-prefix names; the issue segment is a positive int with no leading zeros (rejects `0`, `007`, `00` collisions). All 5 stages append `## Stage <N>` blocks to the same file. Index NDJSON co-located in the same directory.
 
 **Stage discovery**: parser reads `### Stage <N> — <name>` headings from `../workflow/WORKFLOW.md` at runtime. NEVER hardcode the stage list. This is the lesson from the archived `archive/retrospective-template.md` (coupled to a stage that got deleted in #428 and silently broke).
 
@@ -806,7 +814,7 @@ Inline per-bullet markers go AFTER the bullet text using HTML comments — e.g. 
 
 **FP-handling rule**: a false positive correctly identified counts as `worked`, NOT `didnt`. Filter the FP, document why, that's a successful audit. (Avoids inflating DRIFT ALERT counts with the audit's own correctly-rejected hypotheses.)
 
-**Channel-separation rule** (forward-preference-blocklist, NOT attribution-blocklist): feedback files MUST NOT contain forward-looking memory-channel signals: `prefers / always / from now on / default ON / going forward`. Those phrases belong to auto-memory (the user-voice channel). Attribution words that describe what happened in this run (`Hoi flagged`, `user pointed out`, `Hoi caught`) are FINE — they're the natural vocabulary of `rule_user_caught`. Pre-commit hook enforces.
+**Channel-separation rule** (forward-preference-blocklist, NOT attribution-blocklist): feedback files MUST NOT contain forward-looking memory-channel signals: `prefers / always / from now on / default ON / going forward`. Those phrases belong to auto-memory (the user-voice channel). Attribution words that describe what happened in this run (`the operator flagged`, `user pointed out`, `the operator caught`) are FINE — they're the natural vocabulary of `rule_user_caught`. Pre-commit hook enforces.
 
 **DRIFT ALERT spec**: count-based on `(stage, verdict=didnt) >= threshold`. Default threshold 5 (placeholder; calibrate after 10 issues). Configurable via env var `SST3_FEEDBACK_DRIFT_THRESHOLD`. Fires from `leader-feedback-aggregate.sh --summarize` to stderr; AP #21 forbids autonomous Issue creation, so DRIFT ALERTs are advisory signals not actions.
 
@@ -841,7 +849,7 @@ Inline per-bullet markers go AFTER the bullet text using HTML comments — e.g. 
 
 When a sister repo's `/Leader` run writes feedback that references both the sister repo's work AND a dotfiles-side artefact change, both repos may end up needing entries in their own canonical paths but only ONE can be merged at a time (due to branch-safety rule "NEVER switch branches"). The 4-step cohabitation protocol:
 
-1. **Active-branch minimal marker**: while on the sister repo's solo branch, write a minimal one-line marker file at `dotfiles/SST3-metrics/leader-feedback/feedback-<sister-repo>-<issue>.md` containing only the FM block + a placeholder `[parked: full block at /tmp/feedback-<sister-repo>-<issue>-stage-N.md awaiting cross-repo apply post-merge]` body. Stages 1-2 placeholders rather than full blocks because the active sister branch can't switch to dotfiles to commit fully.
+1. **Active-branch minimal marker**: while on the sister repo's solo branch, write a minimal one-line marker file at `dotfiles/SST3-metrics/leader-feedback/feedback-<sister-repo>-<issue>.md` containing only the FM block + a placeholder `[parked: full block at /tmp/feedback-<sister-repo>-<issue>-stage-N.md awaiting cross-repo apply post-merge]` body. Stages 1-2 placeholders rather than full blocks because the active sister-repo `/Leader` session is committing to its own clone's worktree and a CONCURRENT cross-repo dotfiles commit from inside that same chat session would risk a CONTENDED working-tree mutation if it required a shared-tree branch-switch. Post-dotfiles#488 worktree-first the operator MAY parallel-EnterWorktree into the dotfiles clone to commit fully — Cohabitation governs CONTENDED concurrent mutations of the SAME working tree, NOT parallel mutations across ISOLATED worktrees (see `[[feedback-cohabitation-applies-to-contended-clone-mutations-not-cross-repo-commits]]`).
 2. **Sister parked full block**: stage the FULL stage block to `/tmp/feedback-<sister-repo>-<issue>-stage-N.md`. This is the data-of-record until applied.
 3. **Sign-off comment with apply commands**: at /Leader 5 sign-off, post the apply commands as a comment on the sister-repo Issue: `cp /tmp/feedback-<sister-repo>-<issue>-stage-N.md $DOTFILES_ROOT/SST3-metrics/leader-feedback/feedback-<sister-repo>-<issue>.md && cd $DOTFILES_ROOT && git add -f SST3-metrics/leader-feedback/feedback-<sister-repo>-<issue>.md && git commit -m "metrics(feedback): apply parked block from <sister-repo>#<issue> (Phase: 5)"`. The `-f` is the dotfiles#488 AC 4.1 forced-promotion contract: a promoted block may originate from the now-gitignored `_drafts/` staging subdir, so the apply MUST force-add it into tracking; `-f` is a harmless no-op on the non-ignored canonical root path, kept identical to the `sweep-parked-feedback.sh` suggested-apply for single-source consistency (AP #9).
 4. **Post-merge sweep enforcement**: `bash dotfiles/scripts/sweep-parked-feedback.sh <issue> [--repo <sister-repo>]` invoked at Stage 5 step 7a.0 (per Leader.md) BLOCKs sign-off if any `/tmp/feedback-<sister-repo>-<issue>*.md` file remains. Operator MUST apply the full block before sign-off proceeds. The completeness-check C15 enforces server-side via the Layer B GitHub Actions workflow.
@@ -849,6 +857,34 @@ When a sister repo's `/Leader` run writes feedback that references both the sist
 **TBD-issue staging via `_drafts/` subdir**: pre-issue feedback (work where the GitHub Issue hasn't been assigned yet) goes to `dotfiles/SST3-metrics/leader-feedback/_drafts/feedback-<repo>-<topic>-pre-issue.md`. The `_drafts/` subdir is **gitignored + git-untracked** (dotfiles#488 Fix-D / AC 4.1) so a parallel agent's in-flight pre-issue draft is never swept into a bystander's commit during Stages 1-3. Aggregator's non-recursive glob `feedback-*.md` excludes `_drafts/` automatically — no parser regex change needed. When the Issue is assigned, promote with a plain `mv` then a **forced** add (the `_drafts/` source is untracked/ignored, so a `git mv` of a non-tracked entry is not available): `mv _drafts/feedback-<repo>-<topic>-pre-issue.md feedback-<repo>-<issue>.md && git add -f feedback-<repo>-<issue>.md` + update FM `issue:` field. The `git add -f` is required (not optional polish) so the promoted file enters tracking and the Stage-5 `sweep-parked-feedback.sh` BLOCK + completeness-check C15 still see it. Pattern matches Jekyll/Hugo `_drafts/` precedent.
 
 **Aggregator self-validates per-file** (#469 Phase 1 hook-order fix): `leader-feedback-aggregate.sh` calls `validate_record()` per-file BEFORE `--emit-ndjson` parse — single point of enforcement at the aggregator boundary, eliminating the pre-commit hook-order timing window without touching `.pre-commit-config.yaml`. Belt-and-braces with the parser's strict-mode emit-ndjson which validates at the CLI layer too.
+
+### Multi-Agent Multi-Worktree Concurrency Contract
+
+**Principle** (dotfiles#495 / dotfiles#488 worktree-first canonical): the SST3 harness supports multiple agents working in parallel via EnterWorktree-isolated worktrees on the same clone, provided each agent operates on its own solo branch in its own worktree. This section is the explicit scope contract.
+
+**IN-SCOPE**:
+- Multiple agents in parallel worktrees on the SAME clone working on DIFFERENT Issues (e.g. agent-A in `worktree-solo+issue-500-foo`, agent-B in `worktree-solo+issue-501-bar`, both on the same dotfiles clone)
+- Multiple agents across different machines/operators on DIFFERENT Issues (no shared filesystem; coordination via origin/master push race resolved by Gate-2 server-FF rebase-retry)
+- Cross-repo parallelism: agent-A in sister-repo `project-a` worktree + agent-B EnterWorktree into the dotfiles clone for canonical edits (per Cohabitation Protocol clarification above)
+
+**OUT-OF-SCOPE**:
+- Two parallel `/Leader` sessions on the SAME Issue from different chat sessions — see the Single-CONCURRENT-session-per-issue rule above at `:821` (sentinel auto-releases after 24h staleness for sequential compact+resume; concurrent same-issue is forbidden)
+- Cross-machine residue detection — `leader-stage5-drain-check.sh` D3 (self-opened worktree detection) is LOCAL-only by design (`leader-stage5-drain-check.sh:55-62`); residue on a different machine's clone is the operator's responsibility, not the harness's
+- Shared-tree concurrent mutation — two agents committing to the SAME working tree (not the same clone, the same TREE) remains Cohabitation-CONTENDED and forbidden
+
+**IN-WORKTREE INVARIANTS** (every Stage-4 implementing agent in a worktree, no exceptions):
+- NEVER `git checkout main`, `git checkout master`, `git switch main`, `git switch master`
+- NEVER `git pull origin main`, `git pull origin master`, `git merge solo`
+- ALWAYS commit and push to the CURRENT worktree's solo branch
+- Gate-2 merge is ALWAYS the server-FF push pattern (`git push origin <solo>:master` per `### Solo Branch Merge Safety`), NEVER a shared-tree branch-switch + local-merge
+- ExitWorktree cleanup happens AFTER Gate-2 push is confirmed landed (`git ls-remote origin master` == solo tip), per `**Branch and Worktree Cleanup**`
+- Runtime backstop: `claude/hooks/sst3-branch-guard.sh` PreToolUse hook intercepts forbidden branch-switch attempts (WARN by default; DENY via `SST3_BRANCH_GUARD_MODE=DENY`)
+
+**Cross-references**:
+- Worktree-first canonical rule: CLAUDE.md "Branch Safety (CRITICAL — DO NOT VIOLATE)" anchor
+- Merge mechanic: this STANDARDS.md `### Solo Branch Merge Safety` section
+- Cleanup mechanic: this STANDARDS.md `**Branch and Worktree Cleanup**` section
+- Cohabitation distinction: this STANDARDS.md `### Cross-Repo Cohabitation Protocol` section above
 
 ### Canonical field-line format vs Banned legacy formats
 
@@ -869,13 +905,13 @@ Continuation lines for multi-line values: bare bullets at column 0, no leading `
 ## Path Portability
 
 **Environment Variables**:
-- `DOTFILES_ROOT`: Path to dotfiles repository (default: `$HOME/UserHome/DevProjects/dotfiles`)
+- `DOTFILES_ROOT`: Path to dotfiles repository (default: `$HOME/DevProjects/dotfiles`)
 - `SST3_TEMP`: Path to temp folder (default: `C:/temp`)
 
 **Usage in scripts**:
 ```bash
 # Use environment variable with fallback
-cd "${DOTFILES_ROOT:-"$HOME/UserHome/DevProjects/dotfiles"}"
+cd "${DOTFILES_ROOT:-"$HOME/DevProjects/dotfiles"}"
 
 # OR use relative paths from known location
 cd ../dotfiles  # from DevProjects/[repo]
@@ -893,12 +929,12 @@ DevProjects/              ← Local parent (not a git repo, not on GitHub)
 ├── dotfiles/             ← SST3 source of truth (git repo)
 │   ├── SST3/            ← Workflow documentation
 │   └── CLAUDE.md        ← Entry point
-├── auto_pb_swing_trader/ ← Git repo (uses SST3)
+├── project-a/ ← Git repo (uses SST3)
 │   └── CLAUDE.md        → ../dotfiles/SST3/...
-├── tradebook_GAS/        ← Git repo (uses SST3)
+├── project-b/        ← Git repo (uses SST3)
 │   └── CLAUDE.md        → ../dotfiles/SST3/...
 
-C:/temp/                  ← Shared temp folder (outside UserHome, avoids sync conflicts)
+C:/temp/                  ← Shared temp folder
 ```
 
 **Key Implications**: DevProjects/ is local only. Each repo is independent. SST3 lives in dotfiles/, referenced via `../dotfiles/SST3/`. Temp: `C:/temp/{repo}-{issue}-{description}.ext`.
@@ -916,7 +952,7 @@ C:/temp/                  ← Shared temp folder (outside UserHome, avoids sync 
 **Pre-commit hook** `check-devprojects-clean` validates DevProjects/ before every commit:
 
 **Allowed:**
-- Known repos: `dotfiles/`, `auto_pb_swing_trader/`, `tradebook_GAS/`
+- Known repos: `dotfiles/`, `project-a/`, `project-b/`
 - Shared temp: `temp/`
 - New git repos: Any directory containing `.git/`
 - Disabled git: `.git.DISABLED.*` pattern
@@ -977,12 +1013,14 @@ C:/temp/                  ← Shared temp folder (outside UserHome, avoids sync 
 - **Naming**: `filename_ARCHIVED_YYYYMMDD_reason.ext`
 - **Example**: `old-config.json` → `/archive/old-config_ARCHIVED_20250108_superseded-by-new-config.json`
 
-**Branch Cleanup** (MANDATORY after merge):
-- **When**: Immediately after merge to main
-- **Local**: `git branch -d {branch-name}`
-- **Remote**: `git push origin --delete {branch-name}`
-- **Verify**: `git branch -a` shows no orphaned branches for completed issues
-- **Monthly**: `git branch --merged main | grep -v "main" | xargs git branch -d`
+**Branch and Worktree Cleanup** (MANDATORY after merge):
+- **When**: Immediately after merge to main, in the canonical sequence below
+- **Step 1 — Confirm push landed**: `git ls-remote origin master` reports the solo-branch tip SHA (Gate-2 server-FF succeeded; do NOT proceed to step 2 until this is confirmed)
+- **Step 2 — Remove worktree**: `ExitWorktree action:remove` (releases the worktree directory + drops the local solo branch metadata; metadata-only operation, AP-safe per `[[feedback-worktree-remove-is-metadata-not-cohabitation-mutation]]`)
+- **Step 3 — Delete remote solo branch**: `git push origin --delete {branch-name}` (cleans up the worktree-published branch on origin)
+- **Step 4 — Prune local refs**: `git fetch --prune` (drops stale `origin/<solo>` ref)
+- **Verify**: `git branch -a` shows no orphaned branches for completed issues; `git worktree list` shows no orphaned worktrees
+- **Monthly**: `git branch --merged master | grep -v "master" | xargs -r git branch -d`; `git worktree prune` to clean up any stragglers
 
 **Rollback Cleanup**: See `../reference/self-healing-guide.md` for full rollback procedures. Key: one logical change per commit (enables surgical `git revert`), separate debug commits, document rollback in Issue before restarting.
 - **Implementation guidance**: Commit incrementally (per-file) supports this strategy
@@ -1140,7 +1178,7 @@ Cross-link: the **three-signal contract policy** + **Raw-tool cross-validation R
 - Any change where a `**kwargs`-accepting mock could silently hide the regression
 - **Idempotency re-run paths** (#477 Phase 5 AC 5.2 — Theme 4): for changes claiming idempotency or feature-detect logic (install-path scripts, bootstrap guards, "if X already configured: skip" branches), the sample MUST cover BOTH first-install AND re-run-with-feature-already-present paths. (dotfiles#474 evidence — single-direction sample hides re-run-corruption bug class.)
 - **Documentation cross-reference resolution** (#477 Phase 5 AC 5.2 — Theme 4): for infrastructure-shape work (homelab bootstrap, runbook scripts, multi-node setup), Stage 5 swarm MUST include an angle that walks every script-path / URL / file-reference / cross-link in the Issue's docs and confirms each resolves (`ls <path>` / `curl -fsI <url>` / `grep -F <ref> <target>`). (dotfiles#474 evidence — dangling references pass Stage 4 but break next runner.)
-- **Every-return-path wiring** (#477 Phase 5 AC 5.2 — Theme 4): for cache-read or guard-helper additions (functions whose job is "check state and return early"), Stage 4 must enumerate every `return` statement in the guarded function via `grep -n "return" <file>` and confirm each return path either emits the new instrumentation/cache-write OR is documented as exempt. (project-x#1451 evidence — missed return-path silently skips the new behaviour on the missed branch.)
+- **Every-return-path wiring** (#477 Phase 5 AC 5.2 — Theme 4): for cache-read or guard-helper additions (functions whose job is "check state and return early"), Stage 4 must enumerate every `return` statement in the guarded function via `grep -n "return" <file>` and confirm each return path either emits the new instrumentation/cache-write OR is documented as exempt. (Issue #1451 evidence — missed return-path silently skips the new behaviour on the missed branch.)
 
 **Gate (verification loop item — NOT optional)**:
 1. Small liquid basket (8 tickers typical), real CLI, real DB.
@@ -1187,6 +1225,8 @@ Cross-link: the **three-signal contract policy** + **Raw-tool cross-validation R
 **Why it's distinct from AP #10**: AP #10 prevents creating a duplicate of something that already exists (search before adding). AP #24 prevents incomplete change of something that already exists (enumerate every reference before modifying).
 
 **Enforcement**: ANTI-PATTERNS.md AP #24 (canonical rule), `.claude/commands/Leader.md` Stage 1 step 2.1 (subagent dispatch), `WORKFLOW.md` Verification Loop (Stage 4 Gate 1 checkbox).
+
+**Generalisation to pattern-classes (AP #14e — dotfiles#495)**: the same enumeration discipline applies when the change is not a single string literal but a regex/glob/pattern-class extension across multiple files (e.g. extending `^solo/issue-(\d+)-` to `^(?:solo/|worktree-solo\+)issue-(\d+)-` across cadence-gate + branch-guard + auto-tick + metrics-feedback + GHA branch triggers). Stage 1 enumerates every site of the class via `grep -rnE '<class-pattern>' SST3/ scripts/ claude/ tests/ .github/ --include='*.py' --include='*.sh' --include='*.yml' --include='*.md'`; classifies each match as (a) canonical-aligned, (b) intentionally narrower (with WHY), (c) BUG (silent class-blindness — in-scope AC, partial-fix not an option). Stage 4 Verification Loop re-runs the enumeration. See ANTI-PATTERNS.md AP #14e for evidence + the dotfiles#495 instantiation (parse_issue_from_branch + GHA branch trigger were two distinct sibling-fix-pattern misses in one Issue).
 
 ## Modularity Standards
 

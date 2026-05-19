@@ -35,9 +35,11 @@ from pathlib import Path
 
 try:
     import sst3_mirror_utils as smu
+    from sst3_block_utils import find_boundary_lines, extract_managed_block, strip_marker_lines
 except ImportError as exc:  # pragma: no cover — only hits if script is run standalone
     print(
-        f"ERROR: cannot import sst3_mirror_utils (must be in same dir): {exc}",
+        f"ERROR: cannot import sst3_mirror_utils / sst3_block_utils "
+        f"(must be in same dir): {exc}",
         file=sys.stderr,
     )
     sys.exit(2)
@@ -103,7 +105,77 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "Use at push / CI time for repo-wide enforcement."
         ),
     )
+    parser.add_argument(
+        "--managed-blocks",
+        action="store_true",
+        help=(
+            "Check `managed_blocks[]` (paired-marker pre-commit blocks) "
+            "instead of `vendored_files[]`. Issue #493 AC 1.7. Same "
+            "staged-aware gate (#492) — drift on a non-staged target is a "
+            "warning, drift on a staged target blocks (unless --strict)."
+        ),
+    )
     return parser.parse_args(argv)
+
+
+def _check_managed_block_drift(
+    manifest_path: Path,
+    entry: dict,
+    mirror: dict,
+    canonical_text: str,
+) -> tuple[bool, str]:
+    """Return (has_drift, detail) for one managed_blocks entry × mirror.
+
+    Drift = the bytes BETWEEN the marker lines in the target file do not
+    match the transformed canonical (after substitute_repo_slug etc.) with
+    the canonical's own marker lines stripped. Missing markers = drift
+    (first-apply needed). Exactly-one-marker = drift (corruption signal).
+    Issue #493 AC 1.7.
+    """
+    marker_start: str = entry["marker_start"]
+    marker_end: str = entry["marker_end"]
+    target_path = smu.resolve_mirror(manifest_path, mirror["repo"], mirror["path"])
+    if not target_path.is_file():
+        return True, f"{mirror['repo']}/{mirror['path']}: target file missing"
+
+    target_text = target_path.read_text(encoding="utf-8")
+    ctx = {
+        "repo": mirror["repo"],
+        "canonical": entry["canonical"],
+        "path": mirror["path"],
+    }
+    transformed = smu.apply_transforms(
+        canonical_text, mirror.get("transforms", []), ctx
+    )
+    # Strip the canonical template's own marker lines so we compare body-to-body.
+    # Stage 5 DEDUP-1 (L1-F): uses public strip_marker_lines helper now (was
+    # duplicated inline here + in propagate-block.py:79-92 pre-fix).
+    expected_body = strip_marker_lines(transformed, marker_start, marker_end)
+    expected_body_normalised = expected_body.strip("\n")
+
+    try:
+        start, end = find_boundary_lines(target_text, marker_start, marker_end)
+    except ValueError as exc:
+        return True, f"{mirror['repo']}/{mirror['path']}: marker error: {exc}"
+    if start == -1 and end == -1:
+        return True, (
+            f"{mirror['repo']}/{mirror['path']}: managed-block markers absent "
+            f"(first-apply needed — run propagate-block.py --apply)"
+        )
+    if start == -1 or end == -1:
+        return True, (
+            f"{mirror['repo']}/{mirror['path']}: corrupted file — found one "
+            f"marker but not both (start={start} end={end})"
+        )
+
+    actual_body = extract_managed_block(target_text, marker_start, marker_end) or ""
+    actual_body_normalised = actual_body.strip("\n")
+    if actual_body_normalised != expected_body_normalised:
+        return True, (
+            f"{mirror['repo']}/{mirror['path']}: managed-block content drifts "
+            f"from canonical (run propagate-block.py --apply to sync)"
+        )
+    return False, ""
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -133,6 +205,41 @@ def main(argv: list[str] | None = None) -> int:
     checked = 0
     drifted: list[tuple[str, str]] = []  # (mirror_path, detail)
     canonical_cache: dict[str, str] = {}
+
+    # --managed-blocks: iterate managed_blocks[] instead of vendored_files[].
+    # Issue #493 AC 1.7 — same staged-aware semantics as vendored mode.
+    if args.managed_blocks:
+        for entry, mirror in smu.iter_managed_block_entries(
+            manifest, repo_filter=args.repo, file_filter=args.file
+        ):
+            checked += 1
+            canonical_rel = entry["canonical"]
+            canonical_text = canonical_cache.get(canonical_rel)
+            if canonical_text is None:
+                canonical_path = smu.resolve_canonical(manifest_path, canonical_rel)
+                if not canonical_path.is_file():
+                    print(
+                        f"ERROR: canonical block template missing: {canonical_path}",
+                        file=sys.stderr,
+                    )
+                    return smu.EXIT_CONFIG
+                canonical_text = canonical_path.read_text(encoding="utf-8")
+                canonical_cache[canonical_rel] = canonical_text
+            try:
+                has_drift, detail = _check_managed_block_drift(
+                    manifest_path, entry, mirror, canonical_text
+                )
+            except smu.ManifestError as exc:
+                print(f"ERROR: {exc}", file=sys.stderr)
+                return smu.EXIT_CONFIG
+            if has_drift:
+                drifted.append((mirror["path"], detail))
+            elif args.verbose:
+                print(f"OK: {mirror['repo']}/{mirror['path']}", file=sys.stderr)
+
+        # Reuse the existing emit-and-exit block below.
+        return _emit_and_exit(drifted, checked, staged, args)
+
     for entry, mirror in smu.iter_mirror_entries(
         manifest, repo_filter=args.repo, file_filter=args.file
     ):
@@ -155,6 +262,17 @@ def main(argv: list[str] | None = None) -> int:
         elif args.verbose:
             print(f"OK: {mirror['repo']}/{mirror['path']}", file=sys.stderr)
 
+    return _emit_and_exit(drifted, checked, staged, args)
+
+
+def _emit_and_exit(
+    drifted: list[tuple[str, str]],
+    checked: int,
+    staged: set[str] | None,
+    args,
+) -> int:
+    """Shared staged-aware emit-and-exit logic for both vendored_files
+    and managed_blocks modes (AC 1.7 — preserves #492 staged gate)."""
     if drifted:
         if args.strict or staged is None:
             blocking = drifted
@@ -170,9 +288,14 @@ def main(argv: list[str] | None = None) -> int:
 
         if blocking:
             why = "(--strict block-all)" if args.strict else "and STAGED"
+            sync_hint = (
+                "Run propagate-block.py --apply to sync."
+                if args.managed_blocks
+                else "Run propagate-mirrors.py --apply to sync."
+            )
             print(
                 f"\n{len(blocking)} mirrored file(s) drifted {why} out of "
-                f"{checked} checked. Run propagate-mirrors.py --apply to sync.",
+                f"{checked} checked. {sync_hint}",
                 file=sys.stderr,
             )
             return smu.EXIT_DRIFT
@@ -180,15 +303,19 @@ def main(argv: list[str] | None = None) -> int:
         print(
             f"\n{len(unstaged)} mirrored file(s) drifted but NOT staged "
             f"(out of {checked} checked) — surfaced as warnings, commit "
-            f"allowed. Run propagate-mirrors.py --apply to sync; push/CI "
+            f"allowed. Run propagate-{'block' if args.managed_blocks else 'mirrors'}.py --apply to sync; push/CI "
             f"--strict still enforces repo-wide.",
             file=sys.stderr,
         )
         return smu.EXIT_OK
 
     scope = f"repo={args.repo}" if args.repo else "all mirrors"
+    mode = "managed-blocks" if args.managed_blocks else "vendored"
     if not args.quiet:
-        print(f"OK: {checked} files checked ({scope}), no drift.", file=sys.stderr)
+        print(
+            f"OK: {checked} {mode} file(s) checked ({scope}), no drift.",
+            file=sys.stderr,
+        )
     return smu.EXIT_OK
 
 

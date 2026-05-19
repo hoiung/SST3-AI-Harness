@@ -8,7 +8,7 @@
 # Note:    Heuristic — extracts backtick-quoted snake_case / camelCase / PascalCase
 #          identifiers from doc prose and verifies each has at least one match in code.
 #
-# #445 R4 Bug G: pre-fix FP rate was 45% (9/20 on auto_pb CLAUDE.md were
+# #445 R4 Bug G: pre-fix FP rate was 45% (9/20 on <consumer-public-1-short> CLAUDE.md were
 # Python builtins, JS files, PG config keys, third-party libs, tool params).
 # Now applies a 4-source allowlist: (1) Python builtins + keywords (computed),
 # (2) file-extension regex (.js, .ts, .yaml, etc.), (3) pyproject.toml

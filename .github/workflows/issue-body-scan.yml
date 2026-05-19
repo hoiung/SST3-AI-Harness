@@ -1,12 +1,12 @@
 name: Issue/PR body secret scan
 
-# Closes the 2026-04-22 leak class (memory: internal-leak-pattern-doc).
+# Closes the 2026-04-22 leak class.
 # Scans issue bodies, issue comments, PR bodies, and PR review comments for .secret-blocklist matches.
 #
-# Alert-mechanism design rule (Issue hoiung/dotfiles#438):
+# Alert-mechanism design rule:
 #   - NEVER auto-comment on the public issue when a match is detected — that amplifies
 #     the leaked content via a second public surface. Fail the workflow run loudly
-#     instead (red X in the run list, notifies Hoi via configured GH notifications).
+#     instead (red X in the run list, notifies the operator via configured GH notifications).
 #   - The script itself suppresses matched content from stdout; only line numbers
 #     + categories are printed to the Actions log.
 #
