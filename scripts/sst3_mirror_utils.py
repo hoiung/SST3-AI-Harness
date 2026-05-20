@@ -180,6 +180,18 @@ def private_term_scrub(text: str, ctx: dict) -> str:
 
     Idempotent: each replacement consumes its input substring; second pass is
     a no-op because no replacement output equals any other pair's input key.
+
+    **Known trade-off (operator-authorised, dotfiles#497 checkpoint comment
+    issuecomment-4493556489)**: the `_PRIVATE_TERM_PAIRS` mapping table itself
+    is visible in the vendored mirror copy of this file (mirror's
+    `scripts/sst3_mirror_utils.py` byte-identical to canonical per manifest
+    `transforms: []`). The mapping reveals the OLD→NEW correspondence
+    (`Hoi-supplied → operator-supplied`, `job-hunter → voice-doc-repo`, etc.) —
+    a bounded deanonymization-oracle. Operator-acknowledged trade-off: this
+    bounded one-file exposure is preferred over the alternative of literal
+    identifiers scattered through dozens of rule documents (orders-of-magnitude
+    larger surface). The scrub still strips the literals from rule docs; only
+    the substitution table itself remains visible.
     """
     out = text
     for old, new in _PRIVATE_TERM_PAIRS:
