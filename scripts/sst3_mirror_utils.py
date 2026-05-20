@@ -166,7 +166,14 @@ _PRIVATE_TERM_PAIRS: list[tuple[str, str]] = [
     ("auto_pb_v1", "generic-pipeline-v1"),
     ("feedback_public_artefact_leaks_in_issues.md", "internal-leak-pattern-doc"),
     ("secret_scan_leak_log.md", "internal-leak-log"),
-    ("NUC", "node"),
+    # NOTE: `NUC` and bare `Hoi` are intentionally absent from this literal-pair
+    # list — they are 3-char tokens whose substring `replace` produces collateral
+    # damage (`NUClear` → `nodelear`) and the literal table cannot catch bare-Hoi
+    # phrases (`the Hoi quote`). They are handled by `_WORD_BOUNDED_TERM_PAIRS`
+    # below with a word-boundary regex, applied AFTER this literal sweep so any
+    # longer compound (`Hoi-supplied`, `Hoi flagged`, `HU-<MODEL>`) matches the
+    # literal table first and never reaches the word-bounded fall-through.
+    # Stage 5 #497 fix (S6+S7 finding).
     # #497 E.4.4 — Tier 3 Opus residue sweep follow-up. Bare-word `Hoi` and
     # capital-S `Hoi-Supplied` forms surfaced in canonical ANTI-PATTERNS.md
     # AP #25 body + scripts/check-ai-writing-tells.py comment + voice_rules.py
@@ -189,6 +196,23 @@ _PRIVATE_TERM_PAIRS: list[tuple[str, str]] = [
     ("feedback_hoi_handwrites_notes_no_forget.md", "internal-handwriting-memory"),
     ("feedback_nad9_is_production_not_lab.md", "internal-production-memory"),
 ]
+
+
+# Word-boundary-anchored pairs — applied AFTER `_PRIVATE_TERM_PAIRS` literal
+# sweep. These exist for 3-character tokens whose substring `replace` would
+# create collateral damage. Stage 5 #497 fix (S6+S7 finding):
+#   - `NUC` literal-replace produces `NUClear → nodelear`, `NUCleus → nodeleus`.
+#   - bare `Hoi` cannot live in `_PRIVATE_TERM_PAIRS` as a literal (would hit
+#     `Hoist`, `Hoity-toity`), yet phrases like `the Hoi quote`, `Hoi can
+#     install`, `Hoi 'eyes and ears'` MUST be scrubbed before they propagate
+#     to the public mirror — load-bearing privacy constraint.
+# Ordering: compound forms (`Hoi-supplied`, `Hoi flagged`, `Hoi: `,
+# `HU-<MODEL>`, ...) match the literal table above FIRST; this fall-through
+# only catches genuinely bare uses.
+_WORD_BOUNDED_TERM_PAIRS: tuple[tuple[re.Pattern[str], str], ...] = (
+    (re.compile(r"\bNUC\b"), "node"),
+    (re.compile(r"\bHoi\b"), "operator"),
+)
 
 
 def private_term_scrub(text: str, ctx: dict) -> str:
@@ -217,6 +241,8 @@ def private_term_scrub(text: str, ctx: dict) -> str:
     out = text
     for old, new in _PRIVATE_TERM_PAIRS:
         out = out.replace(old, new)
+    for pat, repl in _WORD_BOUNDED_TERM_PAIRS:
+        out = pat.sub(repl, out)
     return out
 
 
