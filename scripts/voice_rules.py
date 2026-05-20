@@ -4,7 +4,7 @@ Single source of truth for operator-voice guard rules.
 
 Canonical Python copy of the rules described in the human-readable companion
 `cv-linkedin/VOICE_PROFILE.md` Section 8 (anti-vocabulary) and Section 19
-(banned phrases / AI tells Hoi never makes).
+(banned phrases / AI tells the operator never makes).
 
 This module is consumed by:
   - dotfiles/SST3/scripts/check-ai-writing-tells.py  (canonical hook)
@@ -52,9 +52,9 @@ SMART_QUOTE_CHARS: tuple[str, ...] = ("\u201c", "\u201d", "\u2018", "\u2019")
 UNICODE_ARROW_CHARS: tuple[str, ...] = ("\u2192", "\u21d2", "\u2190", "\u21d0")
 
 # ---------------------------------------------------------------------------
-# KEEP list — authentic Hoi vocabulary (NEVER add to BANNED_WORDS)
+# KEEP list — authentic operator vocabulary (NEVER add to BANNED_WORDS)
 # ---------------------------------------------------------------------------
-# These words are used sincerely by Hoi 50+ times across his pre-AI corpus.
+# These words are used sincerely by the operator 50+ times across his pre-AI corpus.
 # Documented in cv-linkedin/VOICE_PROFILE.md Section 8.
 KEEP_LIST: tuple[str, ...] = (
     "passion",
@@ -76,7 +76,7 @@ KEEP_LIST: tuple[str, ...] = (
     "aligning",
     "aligns",
     "alignments",
-    # Additional whitelist 2026-04-22 — Hoi confirmed these are his natural
+    # Additional whitelist 2026-04-22 — the operator confirmed these are their natural
     # vocabulary in the same conversation (enterprise/project words he uses
     # in emails, chats, prep). Same meta-rule as align*.
     "synergy", "synergies",
@@ -87,7 +87,7 @@ KEEP_LIST: tuple[str, ...] = (
     "deliverable", "deliverables",
     "bandwidth",
     "actionable",
-    # Third pass same day — Hoi: "why is stakeholder there? I use that word".
+    # Third pass same day — Operator: "why is stakeholder there? I use that word".
     # Same meta-rule. stakeholder/stakeholders moved here.
     "stakeholder", "stakeholders",
 )

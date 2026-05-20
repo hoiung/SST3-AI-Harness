@@ -84,7 +84,7 @@ REGION_SCAN_GLOBS_CV: tuple[str, ...] = (
 
 # CV mode: paths NEVER scanned (#405 Phase 7 — MASTER_PROFILE.md is
 # the canonical voice corpus; treating it as exempt prevents iamhoi
-# whitelist from sanitising thousands of authentic Hoi vocabulary uses).
+# whitelist from sanitising thousands of authentic operator vocabulary uses).
 EXEMPT_PATHS_CV: tuple[str, ...] = (
     "SST3/",
     "cv-linkedin/job-research/",

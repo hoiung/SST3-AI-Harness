@@ -167,6 +167,27 @@ _PRIVATE_TERM_PAIRS: list[tuple[str, str]] = [
     ("feedback_public_artefact_leaks_in_issues.md", "internal-leak-pattern-doc"),
     ("secret_scan_leak_log.md", "internal-leak-log"),
     ("NUC", "node"),
+    # #497 E.4.4 — Tier 3 Opus residue sweep follow-up. Bare-word `Hoi` and
+    # capital-S `Hoi-Supplied` forms surfaced in canonical ANTI-PATTERNS.md
+    # AP #25 body + scripts/check-ai-writing-tells.py comment + voice_rules.py
+    # comments. Each pair below was confirmed by a literal grep against the
+    # actual canonical files (not hypothetical patterns). Order: capital-S form
+    # FIRST (otherwise `Hoi-supplied`'s substring `Hoi` would steal the match
+    # at the capital-S site via the bare-word rule below).
+    ("Hoi-Supplied", "operator-supplied"),
+    ("by Hoi", "by the operator"),
+    ("Hoi writes", "the operator writes"),
+    ("Hoi never", "the operator never"),
+    ("Hoi framed", "the operator framed"),
+    ("Hoi did", "the operator did"),
+    ("Hoi stated", "the operator stated"),
+    ("Hoi confirmed", "the operator confirmed"),
+    ("Hoi: ", "Operator: "),
+    ("Hoi vocabulary", "operator vocabulary"),
+    ("non-Hoi", "non-operator"),
+    ("Hoi 50+", "the operator 50+"),
+    ("feedback_hoi_handwrites_notes_no_forget.md", "internal-handwriting-memory"),
+    ("feedback_nad9_is_production_not_lab.md", "internal-production-memory"),
 ]
 
 
