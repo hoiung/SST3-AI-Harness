@@ -73,19 +73,13 @@ repos:
         pass_filenames: false
         always_run: true
 
-      - id: secret-rules-drift
-        name: Secret detection script drift check
-        entry: bash
-        args:
-          - -c
-          - |
-            CANONICAL=../dotfiles/SST3/scripts/check-public-repo-secrets.py
-            LOCAL=scripts/check-public-repo-secrets.py
-            [ -f "$CANONICAL" ] || { echo "SKIP: dotfiles not found — drift check skipped" >&2; exit 0; }
-            cmp -s "$LOCAL" "$CANONICAL" || { echo "ERROR: $LOCAL has drifted. Run: cp $CANONICAL $LOCAL" >&2; exit 1; }
-        language: system
-        pass_filenames: false
-        always_run: true
+      # secret-rules-drift (legacy byte-identity check for scripts/check-public-repo-secrets.py)
+      # REMOVED #497 E.4.3: superseded by manifest-driven sst3-mirror-drift below.
+      # The check-public-repo-secrets.py file now carries `private_term_scrub` transform
+      # (canonical My Drive/Google Drive/OneDrive → mirror UserHome), so canonical and
+      # mirror are intentionally non-byte-identical. The manifest-driven drift check
+      # applies transforms before comparing, which is the correct semantics; the legacy
+      # cmp -s hook would always FAIL for this file under the new architecture.
 
       - id: check-mirror-drift-self-drift
         name: Self-check that vendored check-mirror-drift.py + sst3_mirror_utils.py match canonical

@@ -71,9 +71,9 @@ _PRIVATE_PATH_RE = re.compile(r"logs/sample_\d+_validation\.log")
 # `auto_pb_swing_trader` + `tradebook_GAS` are operator-acknowledged-public
 # project names per Stage 1 §3.10 — kept out of this transform (project_name_scrub
 # handles the bare name elsewhere; URL forms still block via .secret-blocklist).
-# Includes `project-x` (legacy private slug for auto_pb_swing_trader internal Issues).
+# Includes `apbst` (legacy private slug for auto_pb_swing_trader internal Issues).
 _PRIVATE_REPO_ISSUE_RE = re.compile(
-    r"\b(consumer-private-A|voice-doc-repo|idea-repo|voice-staging|lab-harness|consultancy-ops|project-x)#(\d+)\b"
+    r"\b(ebay-ops|job-hunter|brainstorm|blog-priv|lab-ops|consulting-ops|apbst)#(\d+)\b"
 )
 # Strict start-of-line match — only lines of the form `# [identifier]` (optional trailing whitespace).
 # Data lines containing `[` (e.g. `ERROR_[42]`) do NOT match and are preserved as data. (#441 Phase 2 defensive regex.)
@@ -106,7 +106,7 @@ def private_repo_issue_scrub(text: str, ctx: dict) -> str:
     """Replace `<private-repo>#<num>` shorthand with `Issue #<num>` (#497 A.5.1).
 
     Mirrors should not enumerate private consumer repo names via cross-repo
-    issue references like `consumer-private-A#12` / `lab-harness#7` / `project-x#1346`. The
+    issue references like `ebay-ops#12` / `lab-ops#7` / `apbst#1346`. The
     operator-acknowledged-public project names (`auto_pb_swing_trader`,
     `tradebook_GAS`) are NOT scrubbed by this transform — `project_name_scrub`
     handles bare name occurrences, and URL-form references still block via
@@ -121,6 +121,70 @@ def private_repo_issue_scrub(text: str, ctx: dict) -> str:
 def repo_ref_scrub(text: str, ctx: dict) -> str:
     """Strip `hoiung/` org prefix from repo refs (e.g. `hoiung/dotfiles` → `dotfiles`)."""
     return _REPO_REF_RE.sub(r"\1", text)
+
+
+# #497 Phase E — content-level scrubs mirroring `.filter-repo-replacements.txt`
+# (the canonical mapping table used by Phase D's history rewrite). Single source
+# of truth for both lanes: filter-repo rewrites past history; this transform
+# scrubs runtime canonical→mirror propagation, so they produce identical mirror
+# state. Order matters — longer/compound patterns first so substring shadowing
+# does not fire (e.g. `Hoi-supplied` must precede `Hoi's` so the latter does
+# not partially-match the former's residue).
+_PRIVATE_TERM_PAIRS: list[tuple[str, str]] = [
+    # Operator-identity scrubs (case-sensitive; the `iamhoi`/`iamhoiend` marker
+    # names are lowercase + non-overlapping and remain unchanged).
+    ("Hoi-supplied", "operator-supplied"),
+    ("Hoi-voice", "operator-voice"),
+    ("Hoi-flagged", "operator-flagged"),
+    ("Hoi's", "the operator's"),
+    ("Hoi flagged", "operator flagged"),
+    ("Hoi raised", "operator raised"),
+    ("Hoi rule", "operator rule"),
+    ("Hoi 2026", "the operator 2026"),
+    ("Joel Sing", "the operator"),
+    # Private consumer repo names — same substitutions as filter-repo replacements.
+    # `auto_pb_swing_trader` / `tradebook_GAS` are NOT scrubbed here (operator-
+    # acknowledged public per Stage 1 §3.10 — handled by project_name_scrub when
+    # additional anonymisation is desired). Substring replacement is intentional:
+    # filter-repo rewrote history with the same substring rule, so canonical-with-
+    # transform output matches the post-filter-repo mirror tree byte-for-byte.
+    ("ebay-ops", "consumer-private-A"),
+    ("job-hunter", "voice-doc-repo"),
+    ("brainstorm", "idea-repo"),
+    ("blog-priv", "voice-staging"),
+    ("lab-ops", "lab-harness"),
+    ("consulting-ops", "consultancy-ops"),
+    ("bakeoff-priv", "private-bake-off"),
+    ("apbst", "project-x"),
+    # Personal cloud-drive paths + private hostnames + leak-tracking memory
+    # filenames — same substring-replacement semantics as filter-repo. Order is
+    # longest-first so `HU-<MODEL>` precedes any potential `NUC` collision.
+    ("HU-<MODEL>", "node-<MODEL>"),
+    ("My Drive", "UserHome"),
+    ("Google Drive", "UserHome"),
+    ("OneDrive", "UserHome"),
+    ("auto_pb_v1", "generic-pipeline-v1"),
+    ("feedback_public_artefact_leaks_in_issues.md", "internal-leak-pattern-doc"),
+    ("secret_scan_leak_log.md", "internal-leak-log"),
+    ("NUC", "node"),
+]
+
+
+def private_term_scrub(text: str, ctx: dict) -> str:
+    """Replace operator-identity + private-repo-name literals (#497 Phase E).
+
+    Mirrors `.filter-repo-replacements.txt` used by Phase D's history rewrite,
+    so canonical→mirror runtime propagation produces the same output as the
+    filter-repo history rewrite. Pure substring replacement (matches the
+    filter-repo `--replace-text` semantics byte-for-byte).
+
+    Idempotent: each replacement consumes its input substring; second pass is
+    a no-op because no replacement output equals any other pair's input key.
+    """
+    out = text
+    for old, new in _PRIVATE_TERM_PAIRS:
+        out = out.replace(old, new)
+    return out
 
 
 def project_name_scrub(text: str, ctx: dict) -> str:
@@ -217,6 +281,7 @@ TRANSFORMS: dict[str, TransformFn] = {
     "path_scrub": path_scrub,
     "private_path_scrub": private_path_scrub,
     "private_repo_issue_scrub": private_repo_issue_scrub,
+    "private_term_scrub": private_term_scrub,
     "project_name_scrub": project_name_scrub,
     "repo_ref_scrub": repo_ref_scrub,
     "substitute_repo_slug": substitute_repo_slug,

@@ -548,6 +548,21 @@ AP #12 builds the observability surfaces; AP #16 enforces reading them.
 
 **Evidence**: Issue #410. eBay store username, private-cloud-folder paths, and business strategies leaked in ebay-seller-tool (2026-04-11), required manual scrub + force-push.
 
+**Mirror propagation transform tiers** (#497 A.5 / E.2.1): the canonical-side propagator (`../scripts/sst3_mirror_utils.py`) exposes the following named transforms; each canonical-mirrored entry in `SST3/drift-manifest.json:vendored_files` declares which transforms apply to which mirror:
+
+- `path_scrub` — rewrites cross-repo `../dotfiles/SST3/<subdir>/` references to the mirror's flattened root.
+- `issue_url_scrub` — collapses `https://github.com/dotfiles/issues/NNN` URLs to bare `Issue #NNN` form.
+- `repo_ref_scrub` — strips the `hoiung/` org prefix from public-repo URL refs.
+- `project_name_scrub` — replaces operator-acknowledged-public project names with `project-a` / `project-b` generic placeholders for the public mirror surface.
+- `private_repo_issue_scrub` (NEW #497 A.5.1) — replaces `<private-repo>#NNN` shorthand with `Issue #NNN`, removing the cross-repo issue references that enumerate the operator's private consumer repos (`consumer-private-A`, `voice-doc-repo`, `idea-repo`, `voice-staging`, `lab-harness`, `consultancy-ops`, `project-x`).
+- `blocklist_subset` — emits the `[shared]` + per-target sections of `.secret-blocklist-canonical` to each mirror.
+- `private_path_scrub` — generic log-path scrubber for run-time path leaks.
+- `trading_term_scrub` — genericises pipeline/SL1/SL2/backtest trading-pipeline terminology.
+- `user_quote_scrub` — strips `User quote: *"..."*` inline attribution blocks.
+- `substitute_repo_slug` — substitutes the `<REPO_SLUG>` token in managed-block propagation.
+
+The opaque-token mechanism for hash-redacting literal business identifiers in public mirror `.secret-blocklist` files is documented inline at `../scripts/.secret-blocklist-hashes.json` (`unmirrored_canonical_files` — never propagated). `check-public-repo-secrets.py` expands tokens via that mapping when the canonical-side dev-clone is the scanner's working tree; public-mirror clones fall back to verbatim-token matching (degraded mode, documented).
+
 ---
 
 ### No Backwards-Compatibility Hacks
