@@ -2,6 +2,7 @@
 
 > 26 documented failure modes. Origin: Issue #79.
 
+<!-- stages: 4 -->
 ## Anti-Pattern #1: Propagation Failures
 
 **Problem**: Changes in one repo don't reach others, causing inconsistency
@@ -25,6 +26,7 @@
 
 ---
 
+<!-- stages: 2 -->
 ## Anti-Pattern #2: Template Chaos
 
 **Problem**: Too many templates create confusion and inconsistency
@@ -41,6 +43,7 @@
 
 ---
 
+<!-- stages: 4 -->
 ## Anti-Pattern #3: Skipped Verification
 
 **Problem**: Bugs merge because verification stage was skipped
@@ -57,6 +60,7 @@
 
 ---
 
+<!-- stages: 4 -->
 ## Anti-Pattern #4: Documentation Drift
 
 **Problem**: Docs don't match actual implementation
@@ -73,12 +77,16 @@
 
 ---
 
+<!-- stages: 4 -->
 ## Anti-Pattern #5: Workflow Shortcuts
 
-Subsumed by AP #3 (Skipped Verification) + AP #6 (Skipped Pre-Commit Validation). Same root cause, same fix. See those.
+**See AP #3 + AP #6 — subsumed.**
+
+[Historical: original AP #5 ("Workflow Shortcuts") covered skipped verification + skipped pre-commit validation as one pattern; split into AP #3 + AP #6 for separate enforcement. `git log --grep="AP #5"` for full history.]
 
 ---
 
+<!-- stages: 4 -->
 ## Anti-Pattern #6: Skipping Pre-Commit Validation
 
 **Problem**: Committing without validating branch hygiene, file counts, or syntax
@@ -98,6 +106,7 @@ Subsumed by AP #3 (Skipped Verification) + AP #6 (Skipped Pre-Commit Validation)
 
 ---
 
+<!-- stages: 4 -->
 ## Anti-Pattern #7: Silent Fallbacks & Fake Data
 
 **Problem**: Code uses hardcoded defaults, fake data, or silent fallback behavior when required dependencies/config missing.
@@ -138,6 +147,7 @@ python scripts/check-fallbacks.py --severity warning .
 
 ---
 
+<!-- stages: 4 -->
 ## Anti-Pattern #8: Unverifiable Claims & Assumed Facts
 
 **Problem**: Numbers in documentation/issues/CV without a verifiable source — estimates as facts, numbers copied without re-verification, "sounds right" as evidence.
@@ -152,6 +162,7 @@ python scripts/check-fallbacks.py --severity warning .
 
 ---
 
+<!-- stages: 1 -->
 ## Anti-Pattern #9: Single-Source Edits (Research Applied Singularly)
 
 **Problem**: Editing a multi-research artefact after consulting only ONE source. The edit silently overrides constraints baked in by every other source. Applies to any domain with multiple referenced docs.
@@ -172,6 +183,7 @@ python scripts/check-fallbacks.py --severity warning .
 
 ---
 
+<!-- stages: 4 -->
 ## Anti-Pattern #10: Duplicate Rules / Harnesses / Logic (Failure to Search Before Adding)
 
 **Problem**: Creating a new rule/helper/hook/component without checking whether one already exists. Applies to ANY artefact. **Skimming and assuming "it's not there" is the failure mode.**
@@ -191,26 +203,16 @@ python scripts/check-fallbacks.py --severity warning .
 
 ---
 
+<!-- stages: 4 -->
 ## Anti-Pattern #11: Stopping to Ask vs Applying Without False-Positive Check
 
-**11a — Stopping to ask**: After finding clear violations, stopping to ask "want me to apply?" wastes a round-trip. Rules already authorise the fix.
+**See AP #14c (main agent verifies swarm output against source) + AP #13 (User authorisation NEVER bypasses workflow).**
 
-**11b — Applying without false-positive check**: Running audit → immediately editing without verifying the "violation" isn't intentional architectural design (defence-in-depth, intentional verbosity, intentional graceful degradation) silently breaks architectural decisions.
-
-**Evidence**: 2026-04-08 — agent presented 12 STANDARDS.md findings and stopped to ask. Rule: dispatch swarm first, then apply; never stop to ask for standards-mandated fixes.
-
-**Prevention**:
-- ✓ DO: Dispatch a swarm sized to full coverage (per STANDARDS Subagent Orchestration Discipline) to confirm each violation is NOT architectural design before fixing. Apply immediately once confirmed. Treat audit + sweep + fix + commit as one flow.
-- ✗ DON'T: Ask permission for standards-mandated fixes. Apply without false-positive sweep. Skip sweep "to save time".
-
-**Self-Healing**: Fix applied to intentional design → revert + add inline architectural-design comment so future audits skip it.
-
-**Enforcement**: Audit-then-fix flows must include a swarm false-positive sweep. Ralph Review Tier 3 (Opus) checks every audit-driven commit against architectural-design comments.
-
-**Scope distinction (vs Plan Mode by Default)**: STANDARDS.md "Plan Mode by Default" governs *task initiation* (must qualify for immediate execution under 5-min/10-line/reversible criteria, or plan first). AP #11 governs *within-task audit findings* where the standards already mandate the fix. Different scopes, no contradiction. When a task is in execution mode and an audit surfaces a documented violation, apply the fix; do not stop and re-plan.
+[Historical: AP #11a = stopping-to-ask for standards-mandated fixes; AP #11b = applying without false-positive sweep against intentional architectural design. Both behaviours subsumed under AP #14c's source-verification discipline + AP #13's "Proceed ≠ Bypass" rule. Scope distinction vs Plan Mode (task-initiation vs within-task audit findings) covered by STANDARDS.md "Plan Mode by Default" + execution-mode contract. `git log --grep="AP #11"` for full history.]
 
 ---
 
+<!-- stages: 4 -->
 ## Anti-Pattern #12: No Observability (Code Without Logs, Metrics, or Audit Trails)
 
 **Problem**: Code that runs without structured logs, metrics, or audit trails. (Silent fallbacks → AP #7. This is about *absence of instrumentation*.) Every silent decision boundary is a future incident.
@@ -227,6 +229,7 @@ python scripts/check-fallbacks.py --severity warning .
 
 ---
 
+<!-- stages: 4 -->
 ## Anti-Pattern #13: Misinterpreting User Authorisation as License to Bypass Process
 
 **Problem**: "okay" / "proceed" / "yes" / "go ahead" treated as license to skip sweeps, Ralph reviews, or other mandated steps. The agent ships shortcuts the user never authorised.
@@ -245,6 +248,7 @@ python scripts/check-fallbacks.py --severity warning .
 
 ---
 
+<!-- stages: 4 -->
 ## Anti-Pattern #14: Stingy / Single-Layer / Trusted-Without-Verification Subagent Use
 
 **14a — Stingy count**: 2-3 subagents when 10-20 needed. Misses 40-60% of issues. Stinginess masquerades as efficiency.
@@ -271,6 +275,9 @@ python scripts/check-fallbacks.py --severity warning .
 
 ---
 
+<!-- impact-roi-carve-out -->
+
+<!-- stages: always -->
 ## Anti-Pattern #15: Voice Prose Without iamhoi Markers
 
 **The pattern**: Writing or editing prose in the operator's voice (CV bullet, LinkedIn About, cover letter paragraph, blog post, profile narrative) without wrapping it in `<!-- iamhoi --> ... <!-- iamhoiend -->` markers. The marker-driven voice guard is default-SKIP — untagged prose ships unprotected, and the next AI-tells contamination won't be caught by pre-commit or CI.
@@ -289,6 +296,7 @@ python scripts/check-fallbacks.py --severity warning .
 
 ---
 
+<!-- stages: 4 -->
 ## Anti-Pattern #16: Fire-and-Forget Script Execution
 
 **The pattern**: Launching a script / command / subprocess / deployment / test run / commit / push / background process and immediately moving on without verifying it completed, succeeded, or produced the expected effect. Treats "started" as "done". Bypasses every observability surface the codebase has been instrumented with.
@@ -315,6 +323,7 @@ python scripts/check-fallbacks.py --severity warning .
 
 ---
 
+<!-- stages: 4 -->
 ## Anti-Pattern #17: Premature Stopping Mid-Work
 
 **Problem**: Agent stops mid-phase to ask permission, wait for user confirmation, or "check in" when there's no blocker and context is nowhere near the stop threshold. Caused by 200K-era habits ("stop at phase boundary to compact") bleeding into 1M-context sessions, plus over-application of the Claude Code baseline safety prompt ("transparently communicate the action and ask for confirmation before proceeding") to routine work.
@@ -346,6 +355,7 @@ Phase checkpoints post a comment to the Issue — they DO NOT pause work. Post t
 
 ---
 
+<!-- stages: 4 -->
 ## Anti-Pattern #18: Smoke-Tested Pipeline Shipped Without End-to-End Sample Run (Workflow-Tier validation)
 
 > **Three-Tier placement** (STANDARDS.md "Three-Tier Testing Framework"): this AP is the **Workflow Tier** gate — the assembled component (pipeline / orchestration / CLI-wiring) runs end-to-end. The distinct **E2E / System Tier** (the whole system, real DB + real downstream consumers, environmental drift) is **AP #26 "E2E System Verification"**. The **Unit Tier** primitive is the call-seam check (STANDARDS.md "Test-Prod Call Coverage Discipline"). The three compose; none substitutes for another.
@@ -403,79 +413,38 @@ For any change that touches pipeline / backtest / SL1 / SL2 / orchestration / CL
 
 ---
 
+<!-- stages: 4 -->
 ## Anti-Pattern #19: Structural Question Answered By Grep Alone, Or Wrapper-Lane Result Trusted Without Source Check
 
-<!-- HISTORICAL-MCP-REFERENCES-START -->
-**Historical note (daemon-MCP epoch, pre-#445; the single retained naming-honesty marker for this AP)**: this AP originated when SST3 used the displaced upstream `code-review-graph` daemon-MCP, whose dead query syntax was `query callers_of` / `query impact`. Issue #445 replaced it with the stateless wrapper-lane (`bash dotfiles/scripts/sst3-code-*.sh`): no database, no embeddings (`sst3-code-search.sh` is keyword-only by design), no staleness (every call re-parses on disk), `file_count` not `total_nodes`. Everything below is wrapper-lane-native; documented grep / subagent fallback is the EXPECTED path, never a degradation.
-<!-- HISTORICAL-MCP-REFERENCES-END -->
+**Lineage note**: this AP originated under the deprecated daemon-MCP that #445 displaced; the canonical interface is now the stateless wrapper-lane (`bash dotfiles/scripts/sst3-code-*.sh`) — no database, no embeddings (`sst3-code-search.sh` is keyword-only by design), no staleness (every call re-parses on disk). Wrapper-lane queries are the documented first step; documented grep / subagent fallback is the EXPECTED path, never a degradation.
 
 **Pattern (two sides of one coin)**:
-- (a) **Under-use**: dispatching an Explore subagent or running a multi-pass grep to answer a purely structural question (who calls X? callers/callees? blast radius of editing Y? dead functions? tests for Z?) in a wrapper-lane-supported language (Python, TypeScript, TSX, JavaScript, Rust), when a single `bash dotfiles/scripts/sst3-code-*.sh` call would answer it authoritatively in sub-second time. This is the wrapper-lane instance of AP #10 ("Failure to Search Before Adding" / grep-before-writing) — AP #10 covers grep for existing files/rules, AP #19 extends the same discipline to wrapper-lane queries.
-- (b) **Over-trust**: taking a wrapper-lane result at face value — especially a "no results" response — without a source spot-check. Silent failure modes include: unsupported-language drop (YAML/SQL/shell edits are invisible to the ast-grep engine), cross-language boundary (Py→HTTP→Rust contract), and keyword-fallback masquerading as a semantic match (`sst3-code-search.sh` is ripgrep/ast-grep keyword-only — there are no embeddings; synonym-sweep before any "no match" conclusion). This is the wrapper-lane instance of AP #11b ("Applying without false-positive check") + AP #14c ("Main agent verifies swarm output against source") — those APs cover audit findings and subagent output respectively; AP #19 extends the same verification discipline to wrapper-lane tool output.
+- (a) **Under-use**: dispatching an Explore subagent or running a multi-pass grep to answer a purely structural question (who calls X? callers/callees? blast radius of editing Y? dead functions? tests for Z?) in a wrapper-lane-supported language (Python, TypeScript, TSX, JavaScript, Rust), when a single `bash dotfiles/scripts/sst3-code-*.sh` call would answer it authoritatively in sub-second time. This is the wrapper-lane instance of AP #10 ("Failure to Search Before Adding" / grep-before-writing).
+- (b) **Over-trust**: taking a wrapper-lane result at face value — especially a "no results" response — without a source spot-check. Silent failure modes include: unsupported-language drop (YAML/SQL/shell edits are invisible to the ast-grep engine), cross-language boundary (Py→HTTP→Rust contract), and keyword-fallback masquerading as a semantic match (`sst3-code-search.sh` is ripgrep/ast-grep keyword-only — there are no embeddings; synonym-sweep before any "no match" conclusion). This is the wrapper-lane instance of AP #11b ("Applying without false-positive check") + AP #14c ("Main agent verifies swarm output against source").
 
-**Why it happens**:
-- Under-use: agents default to the subagent pattern from muscle memory even though the wrapper-lane IS the documented first step at every decision point (STANDARDS.md "Structural Code Queries", WORKFLOW.md Stage 1, Leader.md, SST3-solo.md) — the muscle-memory default, not a documentation gap, is the root cause.
-- Over-trust: structured JSON reads as authoritative; a clean exit code alone does not prove language coverage or that a "no results" is real (the three-signal contract — exit code + stdout NDJSON + stderr sentinel — exists precisely because single-signal trust is the failure mode).
-
-**Evidence (file:line citations — 12 subagent-only moments that must NOT be demoted by a "wrapper-first" rule)**:
+**12 subagent-only moments (the wrapper-lane carve-out scope — STANDARDS.md "Structural Code Queries" references this list as canonical)**:
 1. Voice Content Protection + AI-tells — STANDARDS.md "Voice Content Protection (Marker-Driven)" + `../scripts/voice_rules.py`
-2. Intentional-vs-accidental architecture — STANDARDS.md "Subagent Orchestration Discipline" + ANTI-PATTERNS.md AP #11b
-3. Research Applied Collectively (cross-lens) — STANDARDS.md "Research Must Be Applied Collectively, Never Singularly" (Rule #9)
-4. Chat-history scope-drift / opposite-scoping — `WORKFLOW.md:41-42` (Stage 3)
-5. False-positive sweep for confirmed violations — `ANTI-PATTERNS.md:203`, `user-review-checklist.md:71-77`
-6. Scope vs audit 100% alignment — `WORKFLOW.md:39`, `issue-template.md:121-126`
-7. Overengineering / out-of-scope detection — `WORKFLOW.md:40`, `issue-template.md:223`
-8. Design rationale explanation — STANDARDS.md "Use Existing Before Building" (document why existing solutions rejected), `user-review-checklist.md:106-107`
+2. Intentional-vs-accidental architecture — STANDARDS.md "Subagent Orchestration Discipline" + AP #11b false-positive sweep
+3. Research Applied Collectively (cross-lens) — STANDARDS.md "Research Must Be Applied Collectively, Never Singularly"
+4. Chat-history scope-drift / opposite-scoping — WORKFLOW.md Stage 3
+5. False-positive sweep for confirmed violations — AP #11, `user-review-checklist.md` §7
+6. Scope vs audit 100% alignment — WORKFLOW.md Stage 3, `issue-template.md` AC section
+7. Overengineering / out-of-scope detection — WORKFLOW.md Verification Loop, `issue-template.md` Cleanup Requirements
+8. Design rationale explanation — STANDARDS.md "Use Existing Before Building"
 9. Factual claims provenance validation — STANDARDS.md "Factual Claims Must Have Provenance" + "User Assertion = Immediate Source Verification"
-10. YAML/JSON/SQL/shell/TOML/Dockerfile/Jinja/HTML/CSS semantic content audits — STANDARDS.md "Structural Code Queries — Wrapper-Lane First, Subagent Fallback" (unsupported-languages list)
-11. Markdown voice-prose AI-tells — STANDARDS.md "Voice Content Protection (Marker-Driven)", ANTI-PATTERNS.md AP #15
-12. Acceptance-criteria prose → code file:line evidence mapping — `WORKFLOW.md:82`, `user-review-checklist.md:9-15`
+10. YAML/JSON/SQL/shell/TOML/Dockerfile/Jinja/HTML/CSS semantic audits — STANDARDS.md "Structural Code Queries" unsupported-languages list
+11. Markdown voice-prose AI-tells — STANDARDS.md "Voice Content Protection (Marker-Driven)", AP #15
+12. AC prose → code file:line evidence mapping — WORKFLOW.md Stage 4, `user-review-checklist.md` §1
 
-**How to apply**:
-- Before answering a structural question: run the STANDARDS.md "Structural Code Queries" pre-query gate. If it passes, use the wrapper-lane (`bash dotfiles/scripts/sst3-code-callers.sh` / `sst3-code-callees.sh` / `sst3-code-impact.sh` / `sst3-code-subclasses.sh` / `sst3-code-search.sh`) FIRST. If the target language is unsupported (Markdown, YAML, JSON, SQL, TOML, shell, HTML, Jinja, Dockerfile, Go, Java, …), use subagents — there is no rebuild step (the lane is stateless; every call re-parses on disk).
-- **Mechanical per-query spot-check (not judgment)**: after EVERY `sst3-code-callers.sh` / `sst3-code-callees.sh` / `sst3-code-impact.sh` / `sst3-code-subclasses.sh` call, Read one result's source line and record `spot-check: <file:line>` in the RESULT block. After every `sst3-code-search.sh` call, Read TWO results (keyword-only match — ripgrep/ast-grep, no embeddings — so the false-positive risk is higher). "I'll spot-check the important ones" is not compliance — every query gets a check.
-- **At parallel-subagent scale (≥5 concurrent subagents — round-5 TB-8 N48)**: subagents STILL embed per-query spot-checks in their RESULT blocks (rule unchanged). But the main agent verifies ONE spot-check per SUBAGENT on receipt (not one per query). Only findings that DRIVE A SCOPE CHANGE require main-agent per-query verification before acting. This reduces main-agent verification load from O(N_subagents × N_queries) to O(N_subagents) + O(scope-changing-findings). Preserves rigour where it matters; removes ritual where it does not. Field evidence: agent5 found per-query main-agent verification breaks at 9 concurrent subagents (2026-04-20).
-- "No matches" in an area that includes unsupported-language files (YAML/SQL/shell/TOML/Dockerfile/Jinja/HTML/CSS) → explicitly broaden to subagent exploration before drawing a negative conclusion. The ast-grep engine is blind to non-code.
-- RESULT block discipline (per STANDARDS.md "Subagent Orchestration Discipline"): when the wrapper-lane was used, the RESULT block **MUST** record the wrapper + target, `last_updated` (repo-HEAD time, not a freshness signal), spot-check source file:line, and result count. When the wrapper-lane was unavailable or unsupported, the RESULT block MUST record WHY it was skipped. For `sst3-code-search.sh` the RESULT block MUST also list the synonym terms swept so reviewers don't misread a keyword match as semantic similarity.
+**How to apply, dynamic-dispatch 5 subtypes, Ralph tier-split enforcement, RESULT-block discipline, fallback recipes, `mcp_graph_available` field rule, "wrapper-lane available" precise definition**: canonical procedure lives in STANDARDS.md "Structural Code Queries" (pre-query gate + three-signal contract + raw-tool cross-validation moments + AI-agent fallback heuristic + RESULT-block first-line rule + Issue #456 exit-127 semantics); `../reference/tool-selection-guide.md` "Decision Tree: Code-Understanding Queries" (4-quadrant matrix); `../dotfiles/docs/guides/code-query-playbook.md` (dynamic-dispatch 5-subtype belt-and-braces at L454, fallback recipes, synonym sweeps, cadence). Ralph haiku/sonnet/opus review files contain per-tier under-use + over-trust enforcement criteria (haiku=under-use evidence gate, sonnet=under-use+over-trust logic check, opus=full compliance).
 
-**Do / Don't**:
-- ✓ DO: run the wrapper-lane (`bash dotfiles/scripts/sst3-code-callers.sh` / `sst3-code-impact.sh`) for structural questions in supported languages **FIRST** when the pre-gate passes, grep only as fallback when the wrapper returns insufficient detail — not the reverse. Grep-first-then-wrapper-confirm wastes passes and returns less precise evidence (string match vs AST CALLS edge).
-- ✓ DO: pass the wrapper its documented `<symbol> <lang>` arguments; for an ambiguous bare name, narrow with the path the symbol lives in and confirm via a spot-check read (File+Function name collisions are easy to forget under time pressure).
-- ✓ DO: spot-check EVERY wrapper-lane result by reading source — mechanical, not a judgment call (per-query, not per-batch)
-- ✓ DO: document the wrapper-lane call (wrapper, target, `last_updated`, result count, spot-check file:line) in the RESULT block
-- ✓ DO: explicitly broaden to subagent when "no results" lands in an area with unsupported-language files
-- ✓ DO: keep `sst3-code-impact.sh` scope to one hop by default; deeper blast-radius requires a subagent walk (the Phase-A wrapper-lane exposes no depth parameter)
-- ✓ DO: cross-check a `sst3-code-search.sh` "no match" with a synonym sweep before concluding the symbol is absent — the engine is keyword-only (ripgrep/ast-grep), there are no embeddings
-- ✗ DON'T: dispatch Explore subagents for who-calls / blast-radius questions in supported languages when the wrapper-lane is available
-- ✗ DON'T: trust wrapper JSON / a clean exit code as authoritative without a source spot-check
-- ✗ DON'T: silently skip wrapper-lane checks when available — document the skip reason
-- ✗ DON'T: apply a "wrapper-first" rule to any of the 12 subagent-only moments above
-- ✗ DON'T: invoke `sst3-code-large.sh` during Sanity Check on unchanged-function-size diffs (lint noise)
-- ✗ DON'T: trust `sst3-code-callers.sh` / `sst3-code-callees.sh` results when the target file uses dynamic dispatch. Five known subtypes (round-5 5× corroboration: N2+N16 to_thread / N24 f-string / N41 framework decorators):
-  1. **async indirection**: `asyncio.to_thread(func, ...)`, `asyncio.ensure_future(func, ...)`, `map(func, ...)`, `functools.partial(func, ...)`
-  2. **dict-of-Callable registries** and `getattr(obj, name)()` lookups
-  3. **f-string-constructed identifiers** + `getattr`: e.g. `handler = getattr(self, f"handle_{event_type}")` — grep the prefix (`handle_`) not the full name
-  4. **decorator-based routing**: FastAPI `@router.get/post/put/delete/patch`, Flask `@app.get/post/route`, Celery `@celery.task` / `@task`, Django `@path` registrations, pytest `@pytest.fixture`/`@pytest.mark.parametrize`
-  5. **class-based dispatch**: generic `__call__`, `__getitem__` indirection, metaclass-registered handlers
-  Grep the target file for these patterns as a belt-and-braces (Python, e.g. `grep -E "asyncio.to_thread|asyncio.ensure_future|functools.partial|@router|@app\.|@celery|getattr"`). Field-tested: 2 independent round-4 agents hit silent-miss on `to_thread` — the wrapper returned 1 caller, reality was 3. Round-5 adds f-string + FastAPI `@router` as distinct subtypes.
-- ✗ DON'T: use `sst3-code-search.sh` on verb-phrases / multi-word queries (keyword fallback returns garbage — split into literal-identifier sweeps)
-
-**Enforcement — split by tier** (Haiku is surface-check speed, Sonnet+Opus do deep reasoning):
-- **Ralph Tier 1 (Haiku) — under-use evidence gate**: for any structural question in a wrapper-lane-supported language with the wrapper-lane available, the RESULT block MUST show at least ONE wrapper-lane evidence line (wrapper + target + result count + spot-check file:line) OR a documented skip reason (one of: unsupported language, wrapper-lane unavailable per the precise definition below, subagent has no bash-tool access per the wrapper-lane-access bullet below). Attestation alone ("wrapper-lane was attempted") is INSUFFICIENT — evidence or documented skip required. This catches the muscle-memory default-back-to-grep failure mode.
-- **Ralph Tier 2 (Sonnet) — under-use + over-trust logic check**: if the wrapper-lane was used, was at least one result spot-checked by reading source (evidence: file:line in the RESULT block)? If the wrapper-lane was available but not used for a structural question, FAIL.
-- **Ralph Tier 3 (Opus) — full AP #19 compliance**: includes Sonnet checks plus: no false-negative from "no results" in areas with unsupported-language files; no false confidence from structured JSON; the wrapper `last_updated` (repo-HEAD time) recorded in RESULT.
-- Subagent-only moments listed in STANDARDS.md "Structural Code Queries" section are explicitly out of AP #19 scope — they are correctly solved by subagents.
-- **"Wrapper-lane available" is defined precisely**: `bash dotfiles/scripts/sst3-code-status.sh` exits 0 and emits valid JSON `{last_updated, file_count, source_languages}`. The lane is stateless — every call re-parses on disk; there is no persistent index, no embeddings, no staleness check. A wrapper that exits non-zero (typically exit 127 = inner engine missing per the documented stderr contract) counts as "unavailable" for Ralph FAIL purposes — document the reason in RESULT and proceed with subagent fallback. **Exit 127 semantics (post Issue #456)**: means the engine is **genuinely missing on disk** (npm/cargo/pipx install never ran). Pre-#456 the same code ALSO fired when the engine was on disk but PATH was not propagated to non-interactive shells; that PATH-propagation gap is now closed by `sst3-bash-utils.sh` self-bootstrap (see STANDARDS.md "Structural Code Queries — Non-interactive shell PATH bootstrap"). If exit 127 fires post-fix, run `scripts/install.sh` — do NOT add custom PATH workarounds.
-- **Subagent wrapper-lane access (post Issue #445)**: under the wrapper-lane, graph queries are bash-tool calls (no MCP server). Whether subagents inherit the main agent's bash-tool set is harness-dependent — treat as unknown-per-session until empirically verified per dispatch. **Every subagent RESULT block that discusses graph queries MUST include `mcp_graph_available: yes|no` as the first line** (field name retained for cross-tier compatibility; under wrapper-lane this is effectively `wrapper_invokable: yes|no`). **Wrapper-lane semantics (Issue #445)**: under the wrapper-lane this field is **always `no`** — wrappers are bash-tool calls, not MCP-protocol calls; subagents do not inherit the bash-tool set in the same way. Documented fallback (grep + manual file reads) is the EXPECTED path, not a degradation. Ralph Tier 1 uses this field with the documented-fallback evidence: `no` + valid fallback evidence = PASS; `no` + no fallback evidence = FAIL (silent skip). (The daemon-era `yes`/"had access" lazy-fallback verdict has no wrapper-lane counterpart — the field is always `no` — so this is its wrapper-lane-native restatement, kept single-source-consistent with haiku-review.md:98-99 + sonnet-review.md:171.)
-
-**Self-Healing**: If you catch yourself reaching for `Agent(Explore)` on a who-calls question in a supported language with the wrapper-lane available → stop, run `bash dotfiles/scripts/sst3-code-callers.sh` first, narrow the subagent prompt with the result. If you catch yourself trusting a "no results" without spot-checking → read one matching file from the area and confirm, then proceed.
+**Self-Healing**: caught reaching for `Agent(Explore)` on a who-calls question in a supported language with the wrapper-lane available → stop, run `bash dotfiles/scripts/sst3-code-callers.sh` first, narrow the subagent prompt with the result. Caught trusting a "no results" without spot-checking → read one matching file from the area and confirm, then proceed.
 
 **Cross-reference**: AP #10 (grep-before-writing), AP #11b (false-positive sweep), AP #14c (main agent verifies swarm output against source). AP #19 extends those disciplines to wrapper-lane tool output.
 
-**See also**: `STANDARDS.md` "Structural Code Queries" (canonical rule + pre-query gate), `../reference/tool-selection-guide.md` "Decision Tree: Code-Understanding Queries" (4-quadrant matrix + edge cases + invocation reference), `../dotfiles/docs/guides/code-query-playbook.md` (operational recipe: fallback recipes, synonym sweeps, cadence).
-
 ---
 
+<!-- stages: 4 -->
 ## Anti-Pattern #20: Comment-Only Progress Tracking Without Checkbox+Evidence
 
 **Pattern**: Reporting Acceptance Criteria completion via narrative comment ("Phase 2 done, all tests pass") instead of invoking `mcp__github-checkbox__update_issue_checkbox(issue_number, checkbox_text, evidence)` per checkbox. The Issue body — the permanent scope contract — remains a sea of `[ ]` while completion lives only in comment history, which is easy to re-read out of order, hard to audit, and impossible to reconcile against original scope without manual cross-referencing.
@@ -529,6 +498,7 @@ The manual `mcp__github-checkbox__update_issue_checkbox` invocation is the canon
 
 ---
 
+<!-- stages: 2 -->
 ## Anti-Pattern #21: Autonomous Follow-up Issue Creation
 
 **Pattern**: during Stage 5 adversarial audit (or any Layer-2 subagent review), the swarm identifies speculative future-failure-modes and autonomously creates a follow-up GitHub issue bundling them as "medium/low severity follow-ups" without explicit user direction.
@@ -543,6 +513,7 @@ The manual `mcp__github-checkbox__update_issue_checkbox` invocation is the canon
 
 ---
 
+<!-- stages: 4 -->
 ## Anti-Pattern #22: Cross-Repo `cd` Operations Leak CWD State
 
 **Pattern**: scripts that operate on multiple repos use bare `cd <other-repo>` to change directory before running git or other commands. The CWD remains in the new repo for any subsequent commands in the same shell, leaking state to whatever runs next (subagent, parent process, parallel hook).
@@ -563,6 +534,7 @@ Bare `cd <path>` without subshell-protection or trailing `cd -` is **prohibited*
 
 ---
 
+<!-- stages: 4 -->
 ## Anti-Pattern #23: Curator-Bounded Audit Recall
 
 **Problem**: Skill-canonical audit subagents given a curated rule list ("verify A, B, C") miss rules outside the curator's enumeration. The audit's recall is bounded by the curator's memory — and the curator IS the Leader agent, which is precisely the entity the audit is delegated AWAY from.
@@ -595,9 +567,12 @@ Bare `cd <path>` without subshell-protection or trailing `cd -` is **prohibited*
 
 ---
 
+<!-- stages: 4 -->
 ## Anti-Pattern #24: Marker-Substring Changes Without Full Emit-Site Enumeration
 
 **Problem**: When introducing, modifying, or removing a marker substring (error-message partition string, counter name, diagnostic flag, feature-gate literal, status-enum value, log-line prefix), implementing the change at the obvious emission point WITHOUT enumerating and auditing every other site that emits / reads / references / asserts that substring. The scope-incomplete change lands with one of two failure modes: (a) **orphaned/stale references** in test fixtures, mocks, guard clauses, or downstream aggregation logic that silently skip the new wording; (b) **non-deterministic split** where some emission paths use the new substring and others retain the old one, creating downstream inconsistency that surfaces only under certain load patterns.
+
+**doc-emit-site extension (#498 F-17 — dotfiles#468 evidence)**: marker substring changes apply to BOTH code emit sites AND documentation emit sites. dotfiles#468 evidence: a `13/13` invariant count appeared in 5 different documentation locations (CLAUDE.md homelab section, phase5-gate.ps1 banner, two runbook references, and one Issue-body example block); a phase-count update changed the *.ps1 emitter but missed the 5 doc references, leaving stale `13/13` quotes scattered across the canon. Stage 1 enumeration MUST grep `--include='*.md'` `--include='*.txt'` alongside the code globs (the doc-emit class is in scope, not an afterthought); Stage 4 Gate 1 count-drift check MUST cover doc references too. doc-emit-sites fail the same way code-emit-sites fail: silent inconsistency, surfaced only at the next audit.
 
 **Evidence**: project-a#1450 + #1451 — error-marker partition introduction. Implementer changed the emission site without running `grep -rn -F` over the codebase, missing 2-3 downstream references per feature. Stage 4 sample passed locally because the sample exercised the changed emission path; downstream aggregation logic that referenced the OLD marker silently dropped the new emissions. Surfaced only at production observation. Issue #1448 follow-up: same class of bug, different feature (status enum partition). See `dotfiles/SST3-metrics/leader-feedback/feedback-project-a-1450.md` + `feedback-project-a-1451.md` for the authoritative trail. Filed as #477 Theme 2 (this Issue, Phase 4).
 
@@ -640,6 +615,7 @@ Bare `cd <path>` without subshell-protection or trailing `cd -` is **prohibited*
 
 ---
 
+<!-- stages: 4 -->
 ## Anti-Pattern #25: Twisting operator-supplied Content
 
 **The pattern**: Integrating operator-supplied content (a rough paragraph, sentence, point he wrote) into a draft — blog, LinkedIn, CV, cover letter — and silently reshaping its interpretive frame while "polishing": adding qualifiers ("at that size", "by comparison", "fundamentally"), dropping his hedges ("probably", "just"), or reframing a comparison as a verdict (`costs vs value` → `costs outweigh value`). The surface words can be near-identical; the reader's interpretation is not. The marker-driven voice guard (AP #15) catches banned WORDS — it is structurally blind to semantic FRAME drift.
@@ -658,6 +634,7 @@ Bare `cd <path>` without subshell-protection or trailing `cd -` is **prohibited*
 
 ---
 
+<!-- stages: 4 -->
 ## Anti-Pattern #26: E2E System Verification
 
 **The pattern**: Closing a change with whole-system blast radius (cross-component, schema, contract, or environment change) on the strength of Unit-Tier + Workflow-Tier tests alone — without exercising the WHOLE system end to end against the real environment. The Workflow Tier (AP #18) proves a component's internal wiring; it does NOT prove all components together survive the real DB, the real downstream consumers, and the real environment. This is the **E2E / System Tier** — the operator's "driving test": the engine bench-testing fine (Workflow) does not mean the car passes a driving test (E2E).
@@ -676,6 +653,7 @@ Bare `cd <path>` without subshell-protection or trailing `cd -` is **prohibited*
 
 ---
 
+<!-- stages: 4 -->
 ## Pattern Detection
 
 Monitor for these anti-patterns:
@@ -686,6 +664,7 @@ Monitor for these anti-patterns:
 5. **Shortcuts**: Direct commits bypassing Solo workflow
 6. **Pre-Commit Validation**: Commits without Verification Loop completion
 
+<!-- stages: always -->
 ## Escalation Protocol
 
 When anti-pattern detected:

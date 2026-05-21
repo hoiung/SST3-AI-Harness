@@ -83,13 +83,26 @@ _BLOCKLIST_SECTION_HEADER_RE = re.compile(r"^# \[([a-zA-Z0-9_-]+)\]\s*$")
 def path_scrub(text: str, ctx: dict) -> str:
     """Rewrite `../dotfiles/SST3/<subdir>/` cross-repo refs for mirror context.
 
-    In mirrors, SST3 content is at `<mirror>/<subdir>/` (no `SST3/` prefix),
-    so `../dotfiles/SST3/ralph/foo.md` → `../ralph/foo.md` (the sibling's
-    `ralph/foo.md`) from the perspective of a mirror script.
-
+    For depth-1 mirror sources (e.g. `standards/STANDARDS.md`):
+    `../dotfiles/SST3/ralph/foo.md` → `../ralph/foo.md` (resolves to mirror `ralph/foo.md`).
     `SST3/<subdir>/` (in-repo refs in dotfiles) → `<subdir>/` in mirrors.
     """
     out = _PATH_SCRUB_RE.sub(r"../\1/", text)
+    out = _SST3_SELF_RE.sub(r"\1/", out)
+    return out
+
+
+def path_scrub_depth2(text: str, ctx: dict) -> str:
+    """Variant of path_scrub for depth-2 mirror sources (#498 Ralph T3).
+
+    For depth-2 mirror sources (e.g. `standards/stage-4/foo.md`):
+    `../dotfiles/SST3/ralph/x.md` → `../../ralph/x.md` (resolves to mirror `ralph/x.md`).
+
+    `path_scrub` would emit `../ralph/x.md` which resolves to mirror
+    `standards/ralph/x.md` (broken — `ralph/` is at mirror root, not nested under
+    `standards/`). One extra `../` segment is required for depth-2 sources.
+    """
+    out = _PATH_SCRUB_RE.sub(r"../../\1/", text)
     out = _SST3_SELF_RE.sub(r"\1/", out)
     return out
 
@@ -338,6 +351,7 @@ TRANSFORMS: dict[str, TransformFn] = {
     "blocklist_subset": blocklist_subset,
     "issue_url_scrub": issue_url_scrub,
     "path_scrub": path_scrub,
+    "path_scrub_depth2": path_scrub_depth2,
     "private_path_scrub": private_path_scrub,
     "private_repo_issue_scrub": private_repo_issue_scrub,
     "private_term_scrub": private_term_scrub,

@@ -10,8 +10,8 @@
 # Engine:  ripgrep. Exit 127 + stderr contract on missing engine.
 # Note:    Generic version of check-no-code-review-graph.sh (Stage 5 hard-coded
 #          one specific token; this lets the user pass any displaced tool name).
-#          HISTORICAL-MCP-REFERENCES blocks are NOT skipped — caller decides
-#          via path filtering.
+#          No marker-block exemption is applied — caller decides via path
+#          filtering (e.g. omit docs/guides/ where historical-archive prose lives).
 
 set -euo pipefail
 export LC_ALL=C

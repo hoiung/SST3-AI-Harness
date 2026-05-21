@@ -8,173 +8,92 @@ Medium-depth validation. Catches 30% of issues missed by Haiku.
 
 ## Checklist
 
-### Evidence Quality
-- [ ] Evidence proves completion (not just claims)
-- [ ] Evidence matches actual work done
-- [ ] Evidence is verifiable (file paths, commits, outputs)
-- [ ] No "completed" checkboxes without evidence
-- [ ] Any quantified claim (counts, ratios, durations, capacities) in documentation or issue body: source identified (command, reference, or calculation). "Seems reasonable" is not a source.
-- [ ] No numbers copied from other documents without re-verification against current state
-
-### Scope Alignment
-- [ ] **PREREQUISITE: Read the full Issue body line-by-line BEFORE this section.** Don't skim. Don't trust prior summaries. The Issue body is the source of truth for scope.
-- [ ] Implementation matches Issue scope exactly
-- [ ] No scope drift (adding unrequested features)
-- [ ] No scope shortfall (missing requested features)
-- [ ] All phases completed per Acceptance Criteria
+### Evidence Quality / Scope Alignment
+- [ ] Evidence proves completion (file paths, commits, outputs), matches actual work done, verifiable; no narrative-only "completed" checkboxes
+- [ ] Quantified claims (counts, ratios, durations, capacities) backed by source (command, reference, calculation); "seems reasonable" is not a source
+- [ ] **PREREQUISITE**: Read the full Issue body line-by-line BEFORE this section. The Issue body is the source of truth for scope.
+- [ ] Implementation matches Issue scope exactly; no scope drift; no scope shortfall; all phases per Acceptance Criteria
 
 ### Governance — Checkbox-MCP Coverage Gate (AP #20)
-- [ ] **Governance enforcement gate**: run `mcp__github-checkbox__get_issue_checkboxes` on the issue and cross-reference against phase completions. **Any phase-complete-but-checkbox-unchecked state = FAIL (AP #20 violation)**. If the tool is deferred, load via `ToolSearch(select:mcp__github-checkbox__get_issue_checkboxes)` per `../standards/STANDARDS.md` "MCP Tool Schema Loading" — bootstrap before running the gate. Rule: `../standards/ANTI-PATTERNS.md` **AP #20**; canonical evidence patterns: `../reference/tool-selection-guide.md` Example 2.
+- [ ] **Governance enforcement gate**: run `mcp__github-checkbox__get_issue_checkboxes` on the issue and cross-reference against phase completions. **Any phase-complete-but-checkbox-unchecked state = FAIL (AP #20 violation)**. If the tool is deferred, load via `ToolSearch(select:mcp__github-checkbox__get_issue_checkboxes)` per STANDARDS.md "MCP Tool Schema Loading". Canonical: AP #20, tool-selection-guide.md Example 2.
 
-### Fail Fast Policy
-- [ ] No silent fallbacks (errors fail loudly)
-- [ ] No fake defaults (missing config = error, not default)
-- [ ] No swallowed exceptions
-- [ ] Error messages are actionable
-
-### Observability (AP #12 — STANDARDS.md "Observability")
-- [ ] Every decision boundary has a structured log (key=value or JSON, not free-text prose)
-- [ ] Every state transition logs before/after values and trigger
-- [ ] Every external call (DB/API/file/subprocess) logs inputs, duration, outcome
-- [ ] Quantifiable behaviour has metrics (counters, durations, success/failure ratios)
-- [ ] State changes touching production data / money / user-visible behaviour have an append-only audit trail (actor + timestamp + reason)
-- [ ] No `print()` as logging strategy (use structured logger)
-- [ ] No empty `except:` blocks, bare `pass` on exception, silent `return None` on error, or `continue` on unexpected state
-- [ ] Logs are searchable (consistent field names, no log-and-pray)
+### Fail Fast Policy / Observability (AP #12)
+- [ ] No silent fallbacks, no fake defaults, no swallowed exceptions; error messages actionable
+- [ ] Every decision boundary + state transition + external call logs structured (key=value or JSON, not free-text prose); quantifiable behaviour has metrics; production/money/user-visible state changes have append-only audit trail
+- [ ] No `print()` as logging; no empty `except:`, bare `pass` on exception, silent `return None` on error, or `continue` on unexpected state; logs searchable (consistent field names)
 
 ### State-Machine Mutation Correctness (Conditional, #477 AC 3.1 — Theme 3)
-- [ ] **Scope**: Does this implementation introduce or modify code that uses counters, flags, state enums, queues, semaphores, or any variable that gates a downstream decision? If YES, next checkbox is mandatory. If NO, mark "N/A — no state machines in scope."
-- [ ] **Mutation-site audit** (if scope=YES): For every variable identified above, list all mutation sites (`grep -n '<var>\\s*[+\\-*/]?=\\|<var>\\s*=\\s*[^=]' <file>`) and trace every code path to confirm exactly one mutation per logical event. Specifically inspect `try`/`except` patterns: if `state += 1` (or any state mutation) occurs in the try-block AND the except-handler may reach the same state variable, confirm the except-handler's path is mutually exclusive (the try-block raised before completing the mutation) OR the double-mutation is intentional and documented inline. Authority duplication (two code paths claiming "I own this transition") = FAIL.
+- [ ] **Scope**: introduces or modifies counters / flags / state enums / queues / semaphores / variables gating downstream decisions? If YES, next checkbox mandatory. If NO, mark "N/A — no state machines in scope."
+- [ ] **Mutation-site audit** (if scope=YES): for every state variable, list mutation sites (`grep -n '<var>\\s*[+\\-*/]?=\\|<var>\\s*=\\s*[^=]' <file>`) and confirm exactly one mutation per logical event. Try/except: if `state += 1` occurs in try-block AND except-handler reaches same variable, confirm mutual exclusivity OR document intentional double-mutation inline. Authority duplication = FAIL.
 
 ### Test-Prod Call Coverage (Theme 9, #477 AC 3.4) — Unit Tier seam check (#484 T4.2)
 
-> Distinct from AP #18 (end-to-end pipeline sample) and from the regression-test gate (broader coverage). This angle verifies the **call-site seam** between new prod code and tests — the specific bug class where a function compiles, lints, and ships but is never exercised by any test.
->
-> **Three-Tier placement**: this is the **Unit Tier** enforcement primitive (the cog/piston QC — does a test exercise this single unit at all). Canonical: STANDARDS.md "Three-Tier Testing Framework" → Unit Tier + "Test-Prod Call Coverage Discipline". Not a Ralph "Tier" — this file is `# Tier 2: Sonnet Review`; "Unit Tier" here is the *test* tier per P0.1, not a relabel of the review tier.
+> Unit Tier enforcement primitive. Canonical: STANDARDS.md "Three-Tier Testing Framework" → Unit Tier + "Test-Prod Call Coverage Discipline".
 
-- [ ] For every new public function/method added in this phase, name the test file that imports + invokes it (`grep -rnE 'from <new-module> import|<new-module>\\.<callable>' tests/`). Empty grep on a new public callable = FAIL (test seam missing).
-- [ ] For every new response-payload field added (API/JSON/dict key), name the test that asserts the field's presence + value (`grep -rnE '<field-name>' tests/`). Field with no test assertion = FAIL.
-- [ ] For every new config key read by code (YAML/env/dict), name the test that exercises the read path (`grep -rnE '<config-key>' tests/`). Config read with no test = FAIL.
+- [ ] Every new public function/method: name test file importing + invoking it (`grep -rnE 'from <new-module> import|<new-module>\\.<callable>' tests/`). Empty grep on new public callable = FAIL.
+- [ ] Every new response-payload field (API/JSON/dict key): name test asserting field presence + value (`grep -rnE '<field-name>' tests/`). Field with no test = FAIL.
+- [ ] Every new config key (YAML/env/dict): name test exercising read path (`grep -rnE '<config-key>' tests/`). Config read with no test = FAIL.
 
-Cross-reference: STANDARDS.md "Test-Prod Call Coverage Discipline".
+### Code Reuse / Codebase Hygiene
+- [ ] Searched codebase before creating new modules (Glob/Grep/Explore) — **evidence required**: 2-3 grep patterns or Glob queries actually run + result counts
+- [ ] No duplicate modules created; references existing modules where applicable
+- [ ] No dead/obsolete/orphaned code (failed/rescoped approaches); no commented-out "old" code; no unused imports; no leftover temp/WIP patterns
 
-### Code Reuse
-- [ ] Searched codebase before creating new modules (Glob/Grep/Explore) — **evidence required**: name 2-3 grep patterns or Glob queries actually run, with results count
-- [ ] No duplicate modules created
-- [ ] References existing modules where applicable
+### STANDARDS.md Violation Scan — Logic (per-tier escalation lens)
 
-### Codebase Hygiene
-- [ ] No dead code (unreachable, never-called functions)
-- [ ] No obsolete code (deprecated, superseded by new implementation)
-- [ ] No orphaned code (from failed/rescoped approaches)
-- [ ] No commented-out "old" code blocks
-- [ ] No unused imports/dependencies
-- [ ] No leftover temp/WIP patterns
+> Categories canonical in [`_common-culprits.md`](_common-culprits.md). Sonnet's logic lens: trace code paths for each category at trace-level depth.
 
-### STANDARDS.md Violation Scan (Logic)
+- [ ] **5-culprits trace-level audit**: same calculation logic in multiple files / inline math depending on business rules / R-multiples + thresholds + retry counts + timeout values + buffer sizes in code / functions never called + imports never used + feature flags for completed features / `.get(key, {})` chains hiding missing data + empty handlers + `or default` masking config errors. For each: extract candidate? Co-located YAML config? Call graph traced? Loud failure on error path?
 
-> Trace code paths for the 5 common culprits. Category names + framing canonical in [`_common-culprits.md`](_common-culprits.md) (#406 F3.4).
+### Cross-Boundary Contracts (Issue #1407 post-mortem) — Trace-Level
 
-**1. Duplicate Code (DRY/Modularity)**
-- [ ] No same calculation logic in multiple files
-- [ ] No repeated parsing/formatting patterns
-- [ ] Check: Could this be extracted to shared utility?
+> Logic-depth checks requiring cross-file tracing.
 
-**2. On-the-fly Calculations (Hardcoded Settings)**
-- [ ] No inline math that depends on business rules (e.g., `price * 1.1` for markup)
-- [ ] No date/time calculations with hardcoded offsets
-- [ ] Check: Should this formula be in config YAML?
+- [ ] **SQL/Schema**: for every new/modified SQL query: list columns in WHERE/SELECT, open migration for that table, confirm all columns exist. Trace SQL return values — if None/empty, verify WHERE literals match actual DB data. Query driving control flow has values cross-checked against DB schema.
+- [ ] **Null/None propagation**: nullable parameters (`Optional[T]`) — trace every call site; guard exists IN function, not assumed from callers. Frontend null-safety: every `.toFixed()` on nullable has null check.
+- [ ] **Config wiring (bidirectional)**: every new YAML/config key is read by application code (`config.get('key')`); zero-reference keys = dead config = LMCE violation.
+- [ ] **Lifecycle wiring**: each recovery/drain/replay function called at EACH lifecycle entry point (startup, reconnect, restart) — verified separately, not assumed.
+- [ ] **Data correction completeness**: bugs corrupting data → repair step covers ALL existing affected rows; count query confirms zero remaining bad rows.
+- [ ] **Cross-function contracts**: every try/except in diff → confirm wrapped function has reachable `raise` path (sentinel returns = dead code). Hot paths: count DB round-trips, flag duplicate-table-same-row queries.
 
-**3. Hardcoded Settings**
-- [ ] No R-multiples, percentages, thresholds in code
-- [ ] No retry counts, timeout values, buffer sizes
-- [ ] Check: Is there a co-located YAML config this should be in?
-
-**4. Obsolete/Dead Code (LMCE)**
-- [ ] No functions that are never called (trace call graph)
-- [ ] No imports that are never used
-- [ ] No feature flags for completed/removed features
-
-**5. Silent Fallbacks (Fail Fast)**
-- [ ] No `.get(key, {})` chains that hide missing data
-- [ ] No `try/except: pass` or `catch(e) { }` empty handlers
-- [ ] No `or default` that masks configuration errors
-- [ ] Check: Does error path fail loudly with actionable message?
-
-**6. Cross-Boundary Contracts — Trace-Level (Issue #1407 post-mortem)**
-
-> Logic-depth checks requiring cross-file tracing. These catch the bugs that syntactic scans miss.
-
-**SQL/Schema Contracts**
-- [ ] For every new/modified SQL query: list columns in WHERE/SELECT, open the migration for that table, confirm all columns exist
-- [ ] Trace SQL query return values — if a query returns None/empty, verify the WHERE literal values match actual DB data (e.g., `side='SELL'` not `side='SLD'` if DB normalizes on insert)
-- [ ] Any query driving control flow (`if result:` / `if not result:`) has its column values cross-checked against DB schema
-
-**Null/None Propagation**
-- [ ] For functions with nullable parameters (`Optional[T]` or `T | None`): trace every call site — are callers guaranteed non-None, or must the function guard internally?
-- [ ] Any function called at 2+ locations with a nullable input: verify the guard exists IN the function, not assumed from callers
-- [ ] Frontend null-safety: trace API fields that can be null through to display/formatting — every `.toFixed()` on a nullable must have a null check
-
-**Config Wiring (Bidirectional)**
-- [ ] For every new YAML/config key: verify it is read by application code (grep key name → `config.get('key')` or `config['key']`)
-- [ ] Config keys with zero code references = dead config = LMCE violation. Remove or wire.
-
-**Lifecycle Wiring**
-- [ ] For each recovery/drain/replay function: list ALL lifecycle entry points (startup, reconnect, restart) and verify it is called at EACH one
-- [ ] "Called at reconnect" does NOT imply "called at startup" — verify separately
-
-**Data Correction Completeness**
-- [ ] For bugs that corrupt/mis-set data: verify a repair step exists covering ALL existing affected rows, not just future ones
-- [ ] Run count query to confirm zero remaining bad rows after repair
-
-**Cross-Function Behavioral Contracts**
-- [ ] For every try/except in the diff: open the wrapped function and confirm it has a reachable `raise` path. If it returns sentinel values (None, False), the try/except is dead code.
-- [ ] Hot paths (fill handlers, order processors): count DB round-trips — flag any path querying the same row more than once
-
-### Bash Output Discipline (#406 F4.9)
-- [ ] If you ran any bash command producing > 200 lines (pytest, git diff, log tail, etc.), you wrapped it with `../scripts/tee-run.sh <label> -- <cmd>`. Return only the tee path + verdict in your RESULT block; do NOT paste the full output back to the main agent.
+### Bash Output Discipline
+> Canonical: [`_bash-output-discipline.md`](_bash-output-discipline.md). Apply checkbox here.
 
 ### AP #18 — Sample Invocation Gate (Workflow Tier validation gate, #484 T4.2)
 
-> **Three-Tier placement**: the **Workflow Tier** gate — the assembled engine runs, wiring/cross-module propagation works. Canonical: STANDARDS.md "Three-Tier Testing Framework" → Workflow Tier; ANTI-PATTERNS.md AP #18 "Smoke-Tested Pipeline Shipped Without End-to-End Sample Run (Workflow-Tier validation)". A pure-Unit change need not fire this; a workflow/wiring change must. Not a Ralph "Tier" relabel (file is `# Tier 2: Sonnet Review`).
+> Workflow Tier — assembled engine runs, wiring/cross-module propagation works. Canonical: STANDARDS.md "Three-Tier Testing Framework" → Workflow Tier; AP #18.
 
-- [ ] Scope check: does this change touch pipeline / backtest / SL1 / SL2 / orchestration / CLI-wiring / cross-module function-arg propagation? If **yes** → the next checkbox is mandatory. If **no** → document the scope-skip reason here.
-- [ ] If in-scope: evidence of a real-CLI sample invocation exists — either a log file path (e.g. `logs/sample_<issue>_validation.log`), or an Issue comment with exit code + DB row-count + contamination-audit verdict. Exit code 0 alone is NOT sufficient (we have history of exit-0 runs writing zero rows). The proof must show rows landed + downstream consumers succeeded.
-- [ ] If in-scope: any mock used in the fix's tests uses explicit `call_args.kwargs["<key>"] == <expected>` assertions — NOT a `**kwargs`-swallowing mock that would pass regardless of whether the code actually propagated the arg.
+- [ ] Scope check: touches pipeline / backtest / SL1 / SL2 / orchestration / CLI-wiring / cross-module function-arg propagation? If yes → next mandatory. If no → document scope-skip reason.
+- [ ] If in-scope: real-CLI sample invocation evidence — log file path (e.g. `logs/sample_<issue>_validation.log`) OR Issue comment with exit code + DB row-count + contamination-audit verdict. Exit code 0 alone NOT sufficient (exit-0 with zero rows is a known regression). Proof: rows landed + downstream consumers succeeded.
+- [ ] If in-scope: mocks use explicit `call_args.kwargs["<key>"] == <expected>` assertions — NOT `**kwargs`-swallowing mocks that pass regardless of propagation.
 
 ### E2E — System Verification Gate (E2E Tier system gate, #484 T4.2)
 
-> **Three-Tier placement**: the **E2E Tier** gate — the whole car passes a driving test end-to-end, no breakage, results as intended. Distinct from the Workflow Tier above: the Workflow Tier proves the component's wiring; the E2E Tier proves the *whole system* under real conditions the component-level run cannot encode (real-DB schema drift, downstream-consumer rejection of the real contract, environmental assumptions only the live system reveals). Canonical: STANDARDS.md "Three-Tier Testing Framework" → E2E Tier; ANTI-PATTERNS.md AP #26 "E2E System Verification". Not a Ralph "Tier" relabel (file is `# Tier 2: Sonnet Review`). BUILD: an E2E test exists for the system path regardless of this change's scope. USE (this gate fires): when the change affects how whole components connect end-to-end — multi-component / cross-repo / orchestration / persistent-state that spans the pipeline / a contract a real downstream consumer reads. A single-unit or single-workflow change does not fire it; document the scope-skip reason.
+> E2E Tier — whole system passes a driving test end-to-end. Canonical: STANDARDS.md "Three-Tier Testing Framework" → E2E Tier; AP #26.
 
-- [ ] Scope check: does this change affect the end-to-end system path (multiple components together / cross-repo contract / orchestration / persistent-state spanning the pipeline / a real downstream consumer's contract)? If **yes** → next checkbox mandatory. If **no** → document the scope-skip reason here ("N/A — Unit/Workflow-Tier-only change").
-- [ ] If in-scope: evidence of an E2E/system verification exists — the change exercised against the real system (real DB + real downstream consumer + live invocation), not a component-isolated sample. The proof must show the downstream consumer accepted the real contract and the system produced the intended result end-to-end (schema/enum/contract drift surfaced if present). A Workflow-Tier sample log alone is NOT sufficient for a system-scope change — they compose, neither substitutes (the operator's rule: "3 forms as they work together").
+- [ ] Scope check: affects end-to-end system path (multiple components / cross-repo contract / orchestration / persistent-state spanning pipeline / real downstream consumer)? If yes → next mandatory. If no → "N/A — Unit/Workflow-Tier-only change".
+- [ ] If in-scope: E2E/system verification evidence — exercised against real system (real DB + real downstream consumer + live invocation), not component-isolated sample. Proof: downstream consumer accepted real contract; system produced intended result end-to-end.
 
 ### Voice-Frame Preservation (semantic) — Conditional, #484 V2.2
 
-> Distinct from the lexical voice guard (`check-ai-writing-tells.py` / banned words) and from AP #18. This angle catches a **semantic frame shift** in AI-integrated operator-supplied content — the twist failure mode (AP #25 / STANDARDS.md "Polish vs Twist (Semantic Frame Preservation)"). Subagent-only; no programmatic detector is architecturally possible (`voice_rules.py` has no source-vs-draft channel; the canonical example has 0% lexical separability). This is an *angle*, NOT a Ralph "Tier" — the file is already `# Tier 2: Sonnet Review`; do not relabel it "Tier N".
+> Distinct from lexical voice guard (`check-ai-writing-tells.py`) and from AP #18. Catches **semantic frame shift** in AI-integrated operator-supplied content (twist failure mode — AP #25 / STANDARDS.md "Polish vs Twist").
 
-- [ ] **Scope**: does this change's diff integrate operator-supplied source content (a rough paragraph / sentence / point he wrote) into voice-bearing prose (blog / CV / LinkedIn / cover letter) AND is `invoked_skill ∈ {blog, voice-doc-repo}`? If **no** → mark "N/A — no operator-supplied prose in-diff" and skip the next checkbox. If **yes** → next checkbox mandatory.
-- [ ] **Twist check (if scope=YES)**: for each in-diff prose hunk, identify the operator-supplied source phrasing (this conversation / corpus / research), then test each polished output line against the STANDARDS.md "Polish vs Twist" TWIST-forbidden checklist — qualifier added that changes interpretation / comparison reframed as a verdict (`costs vs value` → `costs outweigh value`) / hedge dropped or added / analytical lens imposed. Return PASS/FAIL **per hunk** with the source phrasing + the polished output + which TWIST rule fired. Any FAIL hunk = section FAIL. The test is whether the addition changes the reader's interpretation. Polish (grammar / flow / connectors) is allowed and expected — only a frame shift fails this angle.
+- [ ] **Scope**: diff integrates operator-supplied source content into voice-bearing prose AND `invoked_skill ∈ {blog, voice-doc-repo}`? If no → "N/A — no operator-supplied prose in-diff". If yes → next mandatory.
+- [ ] **Twist check (if scope=YES)**: for each in-diff prose hunk, identify operator-supplied source phrasing; test polished output against STANDARDS.md "Polish vs Twist" TWIST-forbidden checklist (qualifier added changes interpretation / comparison reframed as verdict / hedge dropped or added / analytical lens imposed). Return PASS/FAIL **per hunk**. Any FAIL = section FAIL.
 
-### Required when wrapper-lane available: Wrapper-Lane Checks
+### Wrapper-Lane Checks (Required when available)
 
-**Rollout note**: this check became required with Issue #419. Reviews in-flight at Issue #419 merge-time are grandfathered UNTIL the branch's next push; any review dispatched after that push follows the full "Required when available" rule.
+> Doc-only exemption: [`_doc-only-exemption.md`](_doc-only-exemption.md). Preconditions: [`_wrapper-lane-preconditions.md`](_wrapper-lane-preconditions.md). Fallback: [`_fallback-clause.md`](_fallback-clause.md).
 
-**Documentation-only PR exemption**: if the PR diff touches ONLY Markdown / YAML / JSON / TOML / shell (unsupported languages per STANDARDS.md "Structural Code Queries"), skip this section entirely. Document `[GRAPH: skipped — doc-only PR]` in RESULT and return PASS on graph checks. Proceed to standard Sonnet logic checks on the doc content.
-
-Preconditions (code-touching PRs, run once): `bash dotfiles/scripts/sst3-code-status.sh` exits 0 and emits valid JSON. Wrapper-lane is stateless — every query re-parses on disk; there is no staleness check. If wrapper exits non-zero, skip to fallback clause below. **Post Issue #456**: exit 127 means the engine is genuinely missing on disk (not "on disk but PATH-not-propagated", which is now closed by `sst3-bash-utils.sh` self-bootstrap). Run `scripts/install.sh` if encountered.
-
-- [ ] For each modified function: `bash dotfiles/scripts/sst3-code-callers.sh <function_name> <lang>` → list all call sites; verify each handles the changed signature / behaviour (subagent reads each caller to verify intent — wrapper narrows, subagent confirms).
-- [ ] For each modified function: outgoing-call audit (callees) — `bash dotfiles/scripts/sst3-code-callees.sh <function_name> <lang>` → list every callee inside the function body; for each, verify the contract handled (null-safety, config access, signature compatibility). When the language is unsupported by the callees wrapper (anything other than Python / TypeScript / TSX / JavaScript / Rust), dispatch a semantic subagent and document its RESULT block.
-- [ ] `bash dotfiles/scripts/sst3-code-search.sh '<pattern>' <lang>` for duplicate implementations: search for new calculation / parsing / schema-handling logic in codebase — confirm it doesn't already exist.
-- [ ] **Sync-lane (diff-triggered, #484 W6.3)**: if the diff changes any `docs/research/*` file or its frontmatter, run `bash dotfiles/scripts/sst3-sync-related-code.sh` (or `sst3-doc-frontmatter.sh <changed-research.md>`) and confirm the research doc's `related_code` paths still resolve + the frontmatter required fields are intact. Record exit code in RESULT. This is diff-triggered, NOT `graph_applicable`-gated (canonical: WORKFLOW.md Stage 1 "Doc-lane is diff-triggered, NOT graph-gated"). Skip-clean if no `docs/research/*` change in the diff.
-- [ ] **AP #19 under-use + over-trust check**: (a) **under-use**: every subagent RESULT block discussing graph queries starts with `mcp_graph_available: yes|no` (AP #19 "Subagent wrapper-lane access" bullet — Issue #445 wrapper-lane epoch: this field is always `no`, wrappers are bash-tool calls not MCP-protocol calls; documented grep + manual-read fallback is the EXPECTED path). If `no` + grep fallback evidence = PASS (acceptable — documented fallback is the requirement). (b) **over-trust**: if the wrapper-lane was used, one result spot-checked by reading source — record the spot-check file:line in the RESULT block.
-
-**Fallback clause (retry-aware, evidence-required)**: if first graph call fails, retry once. If second fails, the RESULT block MUST include the Explore-subagent's RESULT block demonstrating manual call-graph audit was actually executed (e.g. "Layer 1 subagent checked 5 call sites, 3 caller contracts verified compatible, 2 flagged for semantic review"). Main RESULT references it as `[graph unavailable: <reason>] [subagent fallback: <subagent-id>]`. Documenting only `[graph unavailable]` without the subagent RESULT block = silent skip = FAIL.
+- [ ] For each modified function: `bash dotfiles/scripts/sst3-code-callers.sh <function_name> <lang>` → list all call sites; verify each handles changed signature/behaviour (subagent reads each caller for intent).
+- [ ] For each modified function: outgoing-call audit (callees) — `bash dotfiles/scripts/sst3-code-callees.sh <function_name> <lang>` → list every callee; verify contract handled (null-safety, config access, signature compatibility). Unsupported language → dispatch semantic subagent.
+- [ ] `bash dotfiles/scripts/sst3-code-search.sh '<pattern>' <lang>` for duplicate implementations: search for new calculation/parsing/schema-handling logic — confirm not already existing.
+- [ ] **Sync-lane (diff-triggered)** per [`_doc-only-exemption.md`](_doc-only-exemption.md) — run `sst3-sync-related-code.sh` / `sst3-doc-frontmatter.sh` if `docs/research/*` changed.
+- [ ] **AP #19 under-use + over-trust check**: every subagent RESULT block starts with `mcp_graph_available: yes|no` per [`_wrapper-lane-preconditions.md`](_wrapper-lane-preconditions.md). If wrapper-lane used, one result spot-checked by reading source — record spot-check file:line in RESULT.
 
 ## Pass Criteria
 
-ALL checkboxes above verified with evidence (graph-backed + source spot-check, OR documented fallback + subagent RESULT block showing manual audit was performed). If graph was available (per definition above) and not used for a structural question, FAIL. If doc-only PR exempted via the short-circuit above, PASS. If unavailable / stale / unsupported-language WITH subagent-backed fallback evidence = PASS.
+ALL checkboxes above verified with evidence (wrapper-lane + source spot-check, OR documented fallback + subagent RESULT block per `_fallback-clause.md`). Wrapper-lane available + not used for a structural question = FAIL. Doc-only PR exempted per `_doc-only-exemption.md` = PASS. Unavailable / stale / unsupported-language WITH subagent-backed fallback evidence = PASS.
 
 ## On Pass
 

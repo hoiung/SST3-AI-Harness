@@ -8,99 +8,43 @@ Fast, cheap surface validation. Catches 60% of issues.
 
 ## Checklist
 
-### File Structure
-- [ ] All new files in correct locations per STANDARDS.md
-- [ ] No temp files committed (**"temp file" = anything under `temp/`, `C:/temp/`, `$SST3_TEMP/`, or matching `*.tmp`/`*.bak`**)
-- [ ] Files named per conventions
-
-### Checkboxes
-- [ ] All "Expected Behavior" checkboxes have evidence
-- [ ] All "Acceptance Criteria" checkboxes have evidence
-- [ ] No unchecked mandatory checkboxes
+### File Structure / Checkboxes / Commits / Debug Code
+- [ ] All new files in correct locations per STANDARDS.md; named per conventions; no temp files (`temp/`, `C:/temp/`, `$SST3_TEMP/`, `*.tmp`, `*.bak`)
+- [ ] All "Expected Behavior" + "Acceptance Criteria" checkboxes have evidence; no unchecked mandatory checkboxes
+- [ ] All commits on current solo branch reference issue number (#X); format `type: description (#issue)`; no WIP/temp commits
+- [ ] No `console.log`, `print()` debug statements, debug flags enabled, or commented-out old code
 
 ### Governance — Checkbox-MCP Evidence Audit (AP #20)
-- [ ] **Checkbox-MCP evidence audit**: fetch the issue body (via `mcp__github__get_issue` or `mcp__github-checkbox__get_issue_checkboxes`; ToolSearch-bootstrap if deferred) and parse the `## Proof of Work` section — the canonical audit signal per `../standards/STANDARDS.md` "Governance Evidence Signal (Canonical)". Sample 3 random `[x]` boxes from the issue body; for each, verify a matching entry exists in Proof of Work AND the evidence text matches a `mcp__github-checkbox__update_issue_checkbox` invocation pattern (file:line / commit / command output / subagent RESULT block). **Fail if any checked box has narrative-only evidence OR lacks a Proof of Work entry**. Do NOT use `get_issue_events` timeline events — self-edit-suppressed per STANDARDS.md canonical-signal section. Rule + evidence patterns: `../reference/tool-selection-guide.md` Example 2; canonical loading via ToolSearch: `../standards/STANDARDS.md` "MCP Tool Schema Loading"; failure mode: `../standards/ANTI-PATTERNS.md` **AP #20**.
+- [ ] **Checkbox-MCP evidence audit**: fetch issue body via `mcp__github__get_issue` or `mcp__github-checkbox__get_issue_checkboxes` (ToolSearch-bootstrap if deferred per STANDARDS.md "MCP Tool Schema Loading"); parse `## Proof of Work` section. Sample 3 random `[x]` boxes; verify each has a matching PoW entry AND the evidence text matches a `mcp__github-checkbox__update_issue_checkbox` invocation pattern (file:line / commit / command output / subagent RESULT). **Fail if any checked box has narrative-only evidence OR lacks a Proof of Work entry**. Do NOT use `get_issue_events` timeline (self-edit-suppressed per STANDARDS.md). Canonical: STANDARDS.md "Governance Evidence Signal (Canonical)", AP #20, tool-selection-guide.md Example 2.
 
-### Commits (current branch only — don't audit pre-branch history)
-- [ ] All commits on the current solo branch reference issue number (#X)
-- [ ] Commit format: `type: description (#issue)`
-- [ ] No "WIP" or "temp" commits
+### STANDARDS.md Violation Scan — Surface (per-tier escalation lens)
 
-### Debug Code
-- [ ] No console.log statements
-- [ ] No print() debug statements
-- [ ] No debug flags left enabled
-- [ ] No commented-out old code
+> Categories canonical in [`_common-culprits.md`](_common-culprits.md). Haiku's surface lens: scan for the syntactic surface signature of each category.
 
-### STANDARDS.md Violation Scan (Surface)
+- [ ] **5-culprits surface scan**: copy-pasted code blocks / magic numbers + hardcoded URLs+paths / inline math + hardcoded thresholds / commented-out code + TODO referencing old approaches / `except: pass` + `|| default` patterns hiding required config. Flag occurrences with file:line. Legitimate optional defaults (argparse `default=`, function default args for non-required tunables) are NOT violations.
 
-> Scan for obvious violations of the 5 common culprits. Category names + framing canonical in [`_common-culprits.md`](_common-culprits.md) (#406 F3.4).
+### Cross-Boundary Contracts (Issue #1407 post-mortem) — Surface
 
-**1. Duplicate Code (DRY/Modularity)**
-- [ ] No copy-pasted code blocks visible
-- [ ] No repeated function signatures with same logic
+- [ ] SQL WHERE values match actual DB enum/column values; new SQL queries only reference columns existing in target table; new YAML keys consumed by code (`.get()` or `[]`); nullable params guarded before arithmetic / `.toFixed()` / `float()` / `Decimal()`; recovery/replay/drain wired to ALL lifecycle events (startup AND reconnect, not just one); try/except blocks wrap functions that actually raise; no duplicate DB queries within same function; data-bug fixes repair existing bad rows (not just future data).
 
-**2. On-the-fly Calculations (Hardcoded Settings)**
-- [ ] No magic numbers in calculations (e.g., `* 0.5`, `+ 100`)
-- [ ] No inline formulas that should be in config
+### Bash Output Discipline
+> Canonical: [`_bash-output-discipline.md`](_bash-output-discipline.md). Apply checkbox here.
 
-**3. Hardcoded Settings**
-- [ ] No embedded URLs, paths, credentials
-- [ ] No hardcoded thresholds, limits, timeouts
+### Wrapper-Lane Surface Checks
 
-**4. Obsolete/Dead Code (LMCE)**
-- [ ] No commented-out code blocks
-- [ ] No TODO/FIXME referencing old approaches
+> Doc-only exemption: [`_doc-only-exemption.md`](_doc-only-exemption.md) (run FIRST — short-circuits CODE checks). Preconditions: [`_wrapper-lane-preconditions.md`](_wrapper-lane-preconditions.md).
 
-**5. Silent Fallbacks (Fail Fast)**
-- [ ] No `catch` blocks that swallow errors silently
-- [ ] No `|| default` patterns hiding missing config (**legitimate optional defaults — argparse `default=`, function default args for non-required tunables — are NOT violations; only flag patterns hiding required config**)
-
-**6. Cross-Boundary Contracts (Issue #1407 post-mortem)**
-
-> Surface checks for code that touches DB, config, or other functions
-
-- [ ] SQL WHERE clauses use values matching actual DB enum/column values (e.g., `'SELL'` not `'SLD'` if DB normalizes)
-- [ ] New SQL queries only reference columns that exist in the target table (cross-check migration file)
-- [ ] New config YAML keys are consumed by code (grep key name — must appear in at least one `.get()` or `[]` access)
-- [ ] Function parameters that can be None/null are guarded before arithmetic, `.toFixed()`, `float()`, or `Decimal()`
-- [ ] JS/React: no `.toFixed()` or `Number()` called on values that can be null without a null guard
-- [ ] Recovery/replay/drain functions are wired to ALL lifecycle events (startup AND reconnect) — not just one
-- [ ] try/except blocks: the wrapped function can actually raise (check its implementation — if it returns sentinel values, try/except is dead code)
-- [ ] No duplicate DB queries within the same function (same table + same WHERE hit twice without mutation between)
-- [ ] If fix addresses a data bug: existing bad data rows also repaired (not just future data fixed)
-
-### Bash Output Discipline (#406 F4.9)
-- [ ] If you ran any bash command producing > 200 lines (pytest, git diff, log tail, etc.), you wrapped it with `../scripts/tee-run.sh <label> -- <cmd>`. Return only the tee path + verdict in your RESULT block; do NOT paste the full output back to the main agent.
-
-### Preferred: Wrapper-Lane Checks (run when wrapper-lane invocable)
-
-**Rollout note**: "Preferred" became the wording with Issue #419. Reviews in-flight at Issue #419 merge-time are grandfathered UNTIL the branch's next push; any review dispatched after that push follows the full wording below.
-
-**Documentation-only PR exemption** (run FIRST — short-circuits the CODE checks below): if the PR diff touches ONLY documentation / non-code files (Markdown, YAML, JSON, TOML, shell scripts, other unsupported languages per STANDARDS.md "Structural Code Queries"), skip the CODE wrapper checks (`sst3-code-*`). Document the skip reason in RESULT: `[GRAPH: skipped — doc-only PR]`. This is a PASS path, not a fallback. **EXCEPTION (#484 W6.3 — doc-lane is diff-triggered, NOT graph-gated)**: a doc-only PR is NOT exempt from the DOC lane — the doc-lane checkbox below still runs because the diff touches `*.md`/frontmatter (canonical rule: WORKFLOW.md Stage 1 "Doc-lane is diff-triggered, NOT graph-gated"). Run it, then proceed to standard Haiku surface checks.
-
-- [ ] **Doc-lane (diff-triggered, #484 W6.3 — runs whenever the diff touches `*.md`/frontmatter, regardless of `graph_applicable` / doc-only-exemption)**: run `bash dotfiles/scripts/sst3-doc-lint.sh <changed.md...>` + `bash dotfiles/scripts/sst3-doc-links.sh <changed.md...>` on the diff's changed docs. **Both are triage REPORTERS, not zero-gates** — they emit one NDJSON object per finding (the repo has no `.markdownlint*` config, so canonical docs carry hundreds of default MD013/MD060 findings — e.g. STANDARDS.md ≈548; that pre-existing baseline is NOT this gate's concern). **Run-proof contract (#484 Stage-5 — FIXED)**: BOTH wrappers now emit an unconditional stderr sentinel regardless of exit code — `sst3-doc-links: scanned N path(s), M broken link(s)` and `sst3-doc-lint: scanned N path(s), M finding(s)` — and on an engine crash emit a loud `ENGINE CRASHED (exit=N)` line + a non-zero exit (2), NOT a silent exit 0. So a clean run (exit 0, sentinel present, stdout may be empty) is mechanically distinguishable from "didn't run" (no sentinel / `ENGINE CRASHED`). **RESULT MUST confirm the `scanned N path(s)` sentinel is present; its absence or an `ENGINE CRASHED` line is a FAIL, not clean.** Regression-locked by the `doc-lint-sentinel` self-test fixture. Triage rule: a finding is a FAIL only if it is **net-new on a doc this diff changed** (a dead/borked link the diff introduced, or a markdown-structure break the diff added) — fix it or justify it in RESULT. Record the run + the net-new-finding triage in RESULT. Skip-clean only if the diff touches no doc file.
-
-Preconditions (code-touching PRs, run once per review): `bash dotfiles/scripts/sst3-code-status.sh` exits 0 and emits valid JSON `{last_updated, file_count, source_languages}`. The wrapper-lane is stateless — there is no staleness check; every query re-parses on disk. If the wrapper exits non-zero (missing inner engine), skip to the fallback clause below. **Post Issue #456**: exit 127 means the engine is genuinely missing on disk (not "on disk but PATH-not-propagated", which is now closed by `sst3-bash-utils.sh` self-bootstrap). Run `scripts/install.sh` if encountered.
-
+- [ ] **Doc-lane (diff-triggered, #484 W6.3 — runs regardless of `graph_applicable` / doc-only-exemption whenever the diff touches `*.md`/frontmatter)**: run `bash dotfiles/scripts/sst3-doc-lint.sh <changed.md...>` + `bash dotfiles/scripts/sst3-doc-links.sh <changed.md...>` on the diff's changed docs. **Both are triage REPORTERS, not zero-gates**: emit one NDJSON object per finding. **Run-proof contract (#484 Stage-5 — FIXED)**: BOTH wrappers emit an unconditional stderr sentinel — `sst3-doc-links: scanned N path(s), M broken link(s)` and `sst3-doc-lint: scanned N path(s), M finding(s)` — and on engine crash emit a loud `ENGINE CRASHED (exit=N)` line + non-zero exit (2). A clean run (exit 0, sentinel present) is mechanically distinguishable from "didn't run". **RESULT MUST confirm the `scanned N path(s)` sentinel is present; its absence or an `ENGINE CRASHED` line is a FAIL.** Triage: a finding is a FAIL only if **net-new on a doc this diff changed**. Skip-clean if no doc file in diff.
 - [ ] `bash dotfiles/scripts/sst3-code-large.sh 100 <lang>` — any new/modified function approaching 200 lines?
 - [ ] `bash dotfiles/scripts/sst3-code-impact.sh <base-branch>` — any unexpected downstream impacts in callers?
 - [ ] Orphaned-function scan: for each modified function, `bash dotfiles/scripts/sst3-code-callers.sh <name> <lang>` — zero callers in the same module = orphan candidate (subagent confirms intent).
 
-**Fallback clause (retry-aware, evidence-required)**: if first graph call fails, retry once. If second fails, or unsupported-language, the RESULT block MUST include ONE of:
-- (A) Graph evidence: `last_updated`, number of results per query, spot-check source file:line; OR
-- (B) Subagent-fallback evidence: an Explore subagent's RESULT block showing the manual call-graph / orphan audit was actually performed, referenced in main RESULT as `[subagent fallback: Explore / <subagent-id>]` with concrete findings (e.g. "checked 5 call sites, all compatible").
-Documenting "[graph unavailable]" without EITHER (A) or (B) is a silent skip = FAIL. A documented fallback WITH subagent evidence = PASS.
-
-### MCP access discrimination (AP #19 "Subagent wrapper-lane access" bullet)
-
-For every subagent RESULT block that discusses graph queries: check the FIRST line is `mcp_graph_available: yes|no`. Missing = FAIL. **Semantics (Issue #445 wrapper-lane epoch)**: under the wrapper-lane this field is always `no` — wrappers are bash-tool calls, not MCP-protocol calls, and subagents do not inherit the bash-tool set the same way; documented grep + manual-read fallback is the EXPECTED path. Use the field to discriminate:
-- `mcp_graph_available: no` + grep fallback evidence = PASS (acceptable — subagent had no MCP access OR transport disconnected mid-stream; either way fallback evidence is the requirement).
-- `mcp_graph_available: no` + NO grep / subagent fallback evidence = FAIL (silent skip — claimed a structural answer with neither wrapper-lane evidence nor documented fallback).
+### Fallback + MCP discrimination
+> Fallback clause: [`_fallback-clause.md`](_fallback-clause.md). AP #19 `mcp_graph_available: yes|no` first-line rule in [`_wrapper-lane-preconditions.md`](_wrapper-lane-preconditions.md). Apply both here.
 
 ## Pass Criteria
 
-ALL checkboxes above verified with evidence (structural via graph where supported, semantic/fallback via subagent). RESULT block documents graph-call outputs + any fallback reasons. Silent skip of graph checks when graph was available = FAIL. Doc-only PR exemption via the short-circuit above = PASS.
+ALL checkboxes above verified with evidence (structural via wrapper-lane where supported, semantic/fallback via subagent per `_fallback-clause.md`). RESULT block documents wrapper calls + fallback reasons. Silent skip of wrapper checks when available = FAIL. Doc-only PR exemption per `_doc-only-exemption.md` = PASS.
 
 ## On Pass
 

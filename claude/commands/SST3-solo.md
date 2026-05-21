@@ -2,7 +2,14 @@
 
 ## Mandatory Reading
 
-Read these files in order BEFORE starting:
+**Post-#498 Phase 4 — per-stage loader**: prefer `bash scripts/load-stage-rules.sh always` at session start over reading STANDARDS.md in full. The loader emits the always-load carve-out subset (privacy / voice / destructive-op / MCP-Tool-Schema-Loading) at ~16K bytes vs the full ~50K canonical. Per-stage subsets (`load-stage-rules.sh <N>`) load when entering Stage N. AC 4.9 invariant: `grep -F 'load-stage-rules.sh always' .claude/commands/SST3-solo.md` returns ≥1.
+
+Default per-session reading set:
+1. `bash scripts/load-stage-rules.sh always` — always-load canonical subset.
+2. Current repository's `CLAUDE.md` (entire file).
+3. `../workflow/WORKFLOW.md` (entire file — defines the 5-stage workflow).
+
+Fallback (when the loader is unavailable on this clone):
 1. `../standards/STANDARDS.md` (entire file)
 2. Current repository's `CLAUDE.md` (entire file)
 3. `../workflow/WORKFLOW.md` (entire file — defines the 5-stage workflow)
@@ -31,7 +38,7 @@ On each SST3-solo invocation, run this block ONCE (not per subagent dispatch).
 
 **Per-Stage Feedback Capture (canonical: STANDARDS.md §Per-Stage Feedback Capture)**: at session start, if a feedback file exists for the in-flight Issue (per the `solo/issue-N-*` branch), the agent reads any prior `## Stage <N>` blocks to recover stage-level context after compact. Reconstruction-marker convention applies for stages where observations cannot be recovered.
 
-**MANDATORY wrapper-lane self-test + status CHECK** — runs unconditionally. The wrapper-lane is MCP-independent: the legacy `code-review-graph` MCP was evicted in #445; the controlled-experiment re-enable path is documented only in `docs/guides/code-query-playbook.md` HISTORICAL-MCP-REFERENCES and is NOT a runtime branch here.
+**MANDATORY wrapper-lane self-test + status CHECK** — runs unconditionally. The wrapper-lane is MCP-independent: the legacy daemon-MCP was evicted in #445; for the displaced lineage see `git log --grep="#445"` (NOT a runtime branch).
 
 Run `sst3-self-test.sh` **FIRST**, then the status CHECK. The wrapper-lane is stateless; there is no staleness or build step. "MANDATORY" refers to the CHECK being unconditionally attempted, NOT to halting the workflow when the tool is unavailable — fallback is documented and Ralph-acceptable. This mirrors the unconditional self-test/status leg in `WORKFLOW.md` Stage 1 and `Leader.md` (the #484 W6.2 three-way consistency contract).
 
@@ -138,15 +145,12 @@ Describe the task you need to complete:
 
 ## Verification Loop (MANDATORY)
 
+> Canonical: ../workflow/WORKFLOW.md "## Verification Loop" — run that loop here. The SST3-solo-specific gates below extend it; the generic checks (Overengineering / Architecture reuse / Code duplication / Fallback policy) live in the canonical and MUST NOT be restated here (Cut #3, AC 1.6).
+
 **Layer 2 — Pre-Verification-Loop baseline (MANDATORY)**: if the tool is deferred, `ToolSearch(query="select:mcp__github-checkbox__get_issue_checkboxes,mcp__github-checkbox__update_issue_checkbox")` first. Then run `mcp__github-checkbox__get_issue_checkboxes` and confirm every Tier A phase-complete box is `[x]` with canonical evidence (file:line / commit / command / subagent RESULT per `../reference/tool-selection-guide.md` Example 2). Close any lingering `[ ]` box NOW via `update_issue_checkbox` with canonical evidence — do NOT defer to the loop below. The loop enters from a clean baseline. (Complements Layer 1 at phase-boundary; the expanded bullet below is Layer 3 final-check.)
 
-Repeat until ALL pass:
 - [ ] **Layer 3 — All Tier A checkboxes closed via MCP with canonical evidence**: (1) `ToolSearch(query="select:mcp__github-checkbox__get_issue_checkboxes,mcp__github-checkbox__update_issue_checkbox")` if deferred; (2) run `mcp__github-checkbox__get_issue_checkboxes`; (3) for each Tier A `[ ]`-but-done box, invoke `update_issue_checkbox(issue_number, exact_checkbox_text, evidence)` with canonical evidence (file:line / commit / command / subagent RESULT comment-id per `../reference/tool-selection-guide.md` Example 2); (4) re-run `get_issue_checkboxes`, confirm all Tier A `[x]`. Tier B batched-closures applied here are acceptable per AP #20 Phase 9 cadence. (`../workflow/WORKFLOW.md` is canonical — Verification Loop rule lives there; procedure expanded here per skill-execution requirement, not duplicated.)
 - [ ] **Per-stage feedback gate** (canonical: STANDARDS.md §Per-Stage Feedback Capture): every `/Leader` stage executed within this session has its `## Stage <N>` block written to the per-issue feedback file with all 10 fields populated (or with documented `[reconstructed-post-compact: ...]` markers + `reconstructed_stages: [N]` frontmatter). Pre-commit hook `sst3-metrics-feedback-present` is the enforcing layer — if the hook fires loud during commit, the file is incomplete; fix and re-stage.
-- [ ] Overengineering check: simpler solution exists?
-- [ ] Architecture reuse check: duplicated instead of reused?
-- [ ] Code duplication check: needs deduplication?
-- [ ] Fallback policy check: silent failures?
 - [ ] **Wiring check**: All changed code actually called by existing functions/processes? Structural layer: `bash dotfiles/scripts/sst3-code-callers.sh <function> <lang>` + `bash dotfiles/scripts/sst3-code-impact.sh <base-branch>` when graph available (per STANDARDS.md "Structural Code Queries" pre-query gate). Semantic layer: subagent verifies each caller handles the new contract. YAML / shell / unsupported-language keys still grep-based. **Raw-tool counter-query (#447 Phase 5 — wrapper-lane recall delta gate)**: when the wiring check uses any `sst3-code-*.sh` output to declare "no orphans" or "all callers accounted for", a Layer-3 subagent MUST cross-validate ONE call site with the raw equivalent (grep / direct ast-grep) before sign-off. Wrapper says 0 callers + raw says ≥1 = wrapper recall miss = FAIL the wiring check until reconciled.
 - [ ] **Three-Tier test gate (Unit / Workflow / E2E)** — per WORKFLOW.md "Verification Loop" canonical tier checkboxes (#484 T4.4): BUILD = all 3 tiers' tests exist; USE = scope-matched fire (entire-system → all 3; workflow → Unit+Workflow; single-unit → Unit). The project test suite ("no regressions") = the union of the checked-in Unit + Workflow + E2E tests, not any single tier (STANDARDS.md glossary). WORKFLOW.md is canonical — do NOT re-define here.
 - [ ] **Quality scan**: No inefficiencies, no bottlenecks, no memory leaks, no dead code, STANDARDS.md compliant

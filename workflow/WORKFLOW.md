@@ -1,11 +1,15 @@
 # SST3 Solo Workflow
 
+> Wrapper-lane replaced the deprecated daemon-MCP in #445 (history: `git log --grep="#445"`).
+
 **Subagents**: research, read, audit, plan, verify. NEVER write code, create issues, or implement. **Main agent**: collates findings, writes /tmp, creates issues, implements, commits, merges.
 
+<!-- stages: 4 -->
 ## The 5-Stage Sequential Workflow
 
 **CRITICAL**: ORDER-DEPENDENT. No skipping, no reordering.
 
+<!-- stages: 1 -->
 ### Stage 1 — Research (Subagent Swarm → /tmp)
 
 - [ ] Check `docs/research/` for existing research on this domain first
@@ -20,6 +24,7 @@
 - [ ] Output /tmp file for user review before proceeding to Stage 2
 - [ ] Per-stage feedback per STANDARDS.md §Per-Stage Feedback Capture — write the Stage 1 block before declaring complete
 
+<!-- stages: 1,2 -->
 ### Stage 2 — Issue Creation (Main Agent from /tmp Research)
 
 - [ ] Use `../templates/issue-template.md` — NEVER create issues from scratch
@@ -39,6 +44,7 @@
 - [ ] No such thing as high priority or low priority — all must be fixed
 - [ ] Per-stage feedback per STANDARDS.md §Per-Stage Feedback Capture — write the Stage 2 block before declaring complete
 
+<!-- stages: always -->
 ### Stage 3 — Triple-Check (Subagents Verify Scope)
 
 - [ ] Scope vs audit doc = 100% captured, nothing missing, no gaps
@@ -46,15 +52,11 @@
 - [ ] Check against chat history — don't forget things discussed and agreed on
 - [ ] Verify no tendency to scope the opposite of what was agreed
 - [ ] Check for dead/obsolete/legacy code cleanup opportunities
-- [ ] Same quality mantras repeated:
-  - No inefficiencies, fix optimisation opportunities
-  - Reliable and robust (not prone to breakage or failing)
-  - Dedupe duplicate codes, no bottlenecks, fast and safe, no memory leaks
-  - Clean up dead obsolete legacy codes
-  - Follows STANDARDS.md
+- [ ] <a id="quality-mantras"></a> **Stage-3 Quality Mantras Checkbox (5-item operational subset of [STANDARDS.md Quality Mantras (Doctrinal)](../standards/STANDARDS.md#quality-mantras))** <!-- subset of STANDARDS.md Quality Mantras (Doctrinal) -->: confirm the Stage-3 audit applied no-inefficiencies / reliable+robust / dedupe / no-bottlenecks-and-leaks / follows-STANDARDS.md. The doctrinal 9-item list is canonical at STANDARDS.md; this subset is the operational checkbox shape Stage 3 runs.
 - [ ] All scope goes in issue BODY — never in comments (comments are temporal, body is permanent)
 - [ ] Per-stage feedback per STANDARDS.md §Per-Stage Feedback Capture — write the Stage 3 block before declaring complete
 
+<!-- stages: 4 -->
 ### Stage 4 — Implementation + Merge + User Review
 
 - [ ] Implement all phases from issue Acceptance Criteria
@@ -71,6 +73,7 @@
 - [ ] User approves
 - [ ] Per-stage feedback per STANDARDS.md §Per-Stage Feedback Capture — write the Stage 4 block (per-Ralph-tier sub-bullets in `worked` + `ralph_restarts` in `friction`) before declaring complete
 
+<!-- stages: 1,4,5 -->
 ### Stage 5 — Post-Implementation Review (Subagent Swarm)
 
 - [ ] Review against issue body scope, goal alignment, and design doc
@@ -88,6 +91,7 @@
 - [ ] **Task-close drain gate (#493 Phase 2 — Leader.md step 7a.1)**: `bash scripts/leader-stage5-drain-check.sh <issue-number> [--repo <repo>]` exit 0 mandatory before sign-off. Detects D1-D5 residue (uncommitted task-touched files / self-created stash / self-opened worktree / un-pushed commits / unfinished propagation tail). Sits BETWEEN the 7a.0 sweep and the 7a completeness-check in Leader.md Stage 5 sequence; Layer B failsafe replays in `.github/workflows/stage5-completeness.yml`.
 - [ ] Per-stage feedback per STANDARDS.md §Per-Stage Feedback Capture — write the Stage 5 block before declaring complete
 
+<!-- stages: 5 -->
 ### Stage 5 Layer-B Failsafe — DOTFILES_READ_TOKEN (closes #473 via #477 Phase 8)
 
 **Why it exists**: Layer-B failsafe `.github/workflows/stage5-completeness.yml` checks out canonical `dotfiles` (private) on every Stage 5 sign-off via `actions/checkout`. The default `secrets.GITHUB_TOKEN` is repo-scoped; cross-repo private-repo checkout returns `Repository not found` and the workflow silently FAILs across all 7 consumer repos. **Path A choice rationale**: a fine-grained PAT (`DOTFILES_READ_TOKEN`) scoped to `Contents:Read` on `dotfiles` ONLY is the minimum-scope fix — no `repo` write, no other-repo access, no organization-wide GitHub App overhead.
@@ -108,6 +112,7 @@
 
 The token's blast radius is bounded to "read public + private file contents of `dotfiles` master branch" — equivalent to the read access an authorized collaborator would have on the canonical repo. Compromise impact: same as a clone of the dotfiles repo at the moment the token was leaked. Compromise response: regenerate per the Recovery procedure above.
 
+<!-- stages: 4 -->
 ## Verification Loop
 
 - [ ] **Scope completeness gate**: Enumerate every Acceptance Criteria checkbox from issue body. For EACH one: state file:line that implements it. Any checkbox without file:line = NOT DONE. Do NOT proceed until all checkboxes have evidence.
@@ -131,10 +136,12 @@ The token's blast radius is bounded to "read public + private file contents of `
 - [ ] **Raw-tool cross-validation gate (#447 Phase 5)**: if any Verification-Loop check above used `../scripts/sst3-code-*.sh` output as load-bearing evidence (callers count, large-fn list, dead-code candidates, blast-radius, untested-py results), dispatch ONE Layer-3 subagent to run the raw equivalent (grep / direct ast-grep / find / git log) and compute delta. Wrapper says 0 + raw says ≥1 = wrapper recall miss = FAIL the originating check until reconciled. Wrapper says N + raw says M with `|N-M|/max(N,M) > 0.2` = wrapper-lane SUSPECT, file a `solo/wrapper-fix-<bug>` Issue. The 20% bound is empirical (#445 R4 wrappers landed at 0% delta on structural angles).
 - [ ] **Mirror-lane verification (#460 Phase 8 W5 — AP #9 single-source-edits enforcement)**: when ANY change touches a canonical file with mirror entries in `SST3/drift-manifest.json` (`vendored_files` lane B) OR the SST3 section above the boundary marker in CLAUDE.md (template lane A), BOTH lanes must be exercised. Lane A: `python3 scripts/propagate-template.py --all --dry-run` exit 0 (no SST3 section drift across consumers). Lane B: `python3 scripts/propagate-mirrors.py --dry-run` exit 0 + `python3 scripts/propagate-mirrors.py --validate` exit 0 (no mirror drift, no missing manifest entries). Failure on either lane blocks Gate 1 until reconciled. Skip-clean when the diff touches no canonical-mirror-tracked surface.
 
+<!-- stages: 4 -->
 ## Per-Stage Feedback Capture
 
 Canonical: STANDARDS.md §Per-Stage Feedback Capture (the single source of truth — schema, channel-separation rule, FP-handling rule, DRIFT ALERT spec, activation-sha gate, post-compact reconstruction protocol, 3-layer enforcement). When creating a new per-issue feedback file, copy the write-time template `../templates/leader-feedback-template.md` (canonical frontmatter + `## Stage N — <Title>` H2 headings + 10 `**field**:` lines) — never hand-roll the structure (the bare-heading halt class, dotfiles#486/#488). Each stage above ends with a per-stage feedback bullet. Aggregator + reporter + shape-match: see `../scripts/leader-feedback-aggregate.sh --report | --summarize | --shape-match | --staleness`. Pre-commit hook `sst3-metrics-feedback-present` is Layer A; persistent sentinels under `.sentinels/` (gitignored) are Layer B; the per-stage bullets above are Layer C.
 
+<!-- stages: 4 -->
 ## Branch & Commit Discipline
 
 Worktree-per-agent is canonical (dotfiles#488 Fix-A). A clone has one HEAD/index; a concurrent agent's branch-create otherwise moves yours. The authoritative trigger is the CLAUDE.md "Branch Safety (CRITICAL — DO NOT VIOLATE)" anchor (the `EnterWorktree` tool only activates from a user/CLAUDE.md/memory directive). `NEVER switch branches` mid-implementation remains the in-worktree invariant — correct *inside* an isolated worktree.
@@ -159,14 +166,17 @@ git push origin <solo-branch>
 #   ExitWorktree action:remove; git push origin --delete <solo-branch>; git fetch --prune
 ```
 
+<!-- stages: 4 -->
 ## Context Management
 
 **Context**: 1M window (Opus/Sonnet), 200K (Haiku). Handover at 80% (800K of 1M, 160K of 200K) — stop threshold, not routine. Warn at 70%, work until 80%. Content budget ~42K. Research budget <30% Stage 1.
 
+<!-- stages: 4 -->
 ## Quality Standards
 
 See STANDARDS.md (mandatory read). Key rule labels: Quality First, JBGE, LMCE, Fail Fast, Fix Everything, Investigate Before Coding, Wiring Verification, Never Replace — ADD Alongside.
 
+<!-- stages: 2 -->
 ## Templates
 
 - **Issue Creation**: `../templates/issue-template.md`
@@ -174,11 +184,14 @@ See STANDARDS.md (mandatory read). Key rule labels: Quality First, JBGE, LMCE, F
 - **User Review**: `../templates/user-review-checklist.md`
 - **Chat Handover**: `../templates/chat-handover.md`
 
+<!-- stages: 4 -->
 ## Checkpoint Format
 
 Post to Issue after each phase:
 
 ```markdown
+
+<!-- stages: 4 -->
 ## Phase X Checkpoint
 
 **Completed**:

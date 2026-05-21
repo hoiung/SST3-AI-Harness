@@ -1,5 +1,6 @@
 # Engineering Standards
 
+<!-- stages: 4 -->
 ## Foundational Philosophy
 
 **Quality First**: SST3 sets the execution standard for all projects built with it.
@@ -10,8 +11,10 @@
 
 **Clarity > Brevity** (Issue #141): Prune based on quality (JBGE + LMCE), never to hit a number. Clear instructions prevent rework.
 
+<!-- stages: always -->
 ## Core Principles
 
+<!-- stages: 4 -->
 ## Achieving Quality
 
 **Quality Attributes Table**: AI-optimized reference for execution standards
@@ -51,7 +54,7 @@
 **Don't Explain Claude to Claude** (Issue #119): Document YOUR rules/decisions/patterns. Not model capabilities or standard practices. ✓ "Ralph Tier 1 uses haiku for surface checks" ✗ "Haiku is fast"
 
 **LMCE** (Lean, Mean, Clean, Effective): JBGE defines *what* to keep; LMCE defines *how* to deliver it.
-- **Lean**: Remove if removable without breaking. Keep only if ROI > 1x.
+- **Lean**: Remove if removable without breaking. Keep only if ROI > 1x — EXCEPT rules guarding irreversible-impact actions (public-repo privacy leak, force-push to main, branch/data deletion, secret exposure, voice contamination). These are kept by **impact-ROI not count-ROI**; cite the rule + the incident, never delete. Sections in this regime carry an `<!-- impact-roi-carve-out -->` HTML comment marker (Cut #5, AC 1.10/1.11).
 - **Mean**: Actionable commands. Strip "consider", "might", "it's important".
 - **Clean**: Findable in <30 seconds. No >10-line blocks without headers/bullets.
 - **Effective**: Root cause, not symptoms. Simplest permanent solution.
@@ -78,8 +81,27 @@ See: `ANTI-PATTERNS.md` for top 5 recurring problems (Issue #79)
 
 **Compression, not deletion** (Issue #124): preserve all functional content.
 
+<a id="quality-mantras"></a>
+
+<!-- stages: 2 -->
+### Quality Mantras (Doctrinal — 9 items)
+
+These 9 mantras are the canonical authoring + audit criteria invoked verbatim from every Stage of /Leader, the issue template's Quality Mantras section, and the user-review-checklist. WORKFLOW.md Stage-3 surfaces a 5-item operational subset; the doctrinal list lives only here.
+
+- No inefficiencies, fix optimisation opportunities
+- Reliable and robust (not prone to breakage or failing)
+- Dedupe duplicate codes
+- No bottlenecks
+- Runs super fast and safe
+- No memory leaks using preventions
+- Follows STANDARDS.md
+- No false positives — everything real gets fixed
+- No such thing as high priority or low priority — all must be fixed
+
+<!-- stages: 4 -->
 ## Engineering Practices
 
+<!-- stages: 4 -->
 ### Use Existing Before Building
 - Research existing libraries/packages FIRST
 - Evaluate: popularity, maintenance, license, security
@@ -88,6 +110,7 @@ See: `ANTI-PATTERNS.md` for top 5 recurring problems (Issue #79)
 
 See: `../workflow/WORKFLOW.md` (Stage 1 — Research) for detailed library research process.
 
+<!-- stages: 4 -->
 ### Critical Thinking & Honest Analysis
 
 **Critical Thinking**: AI must challenge ideas with evidence, not validate blindly.
@@ -99,15 +122,39 @@ See: `../workflow/WORKFLOW.md` (Stage 1 — Research) for detailed library resea
 
 See: ../workflow/WORKFLOW.md (Stage 1 — Research) for research-specific critical thinking
 
+<!-- stages: 4 -->
 ### Never Assume — Always Check
 
-**Principle**: Read the actual source before drawing conclusions. Assumptions cause silent errors.
+**Principle**: Read the actual source before drawing conclusions. Assumptions cause silent errors. User assertion + handover claim are NOT exceptions — they trigger source verification, not source bypass.
 
 **DO**: Read before editing. Check actual values. Verify function/pattern exists before referencing.
-**DON'T**: State file contents without reading. Assume variable names or API shapes from memory. Skip verification.
+**DON'T**: State file contents without reading. Assume variable names or API shapes from memory. Skip verification. Say "you're right" before checking. Validate user assertions without grepping source.
 
 **Pattern**: When in doubt → Read first, conclude after.
 
+**User Assertion = Immediate Source Verification** (merged sub-rule; also covers handover claims and post-compact recovery summaries)
+
+**Principle**: User assertion = verify source IMMEDIATELY. Do not debate; do not validate without checking. Source file is ground truth.
+
+**Rules**:
+1. **User asserts → grep source immediately**, with multiple synonyms and partial-figure variants. Don't grep just `676K`; grep `676|redhill|3fp|digital realty`.
+1b. **Handover claim → grep source immediately** (Theme 1, #477): same discipline applies to claims sourced from prior-research handovers, post-compact recovery summaries, or memory entries — not just user assertions. When entering a session with a handover that names file:lines / counts / table sizes / function-existence assertions, the main agent extracts 3-5 headline claims and verifies each via raw-grep / direct read BEFORE dispatching the Stage 1 swarm. Document drift in the research file as "handover claim X corrected from Y to Z before swarm dispatch". Memory ≠ source of truth; a handover is a starting hypothesis, not a frozen contract. Cross-reference: Leader.md Stage 1 step 1a.5 (PRE-SWARM SOURCE-VERIFICATION GATE for handover claims); ANTI-PATTERNS.md AP #14d (Scope-gap blindness — Stage 1 research specific).
+2. **Never say "you're right" before checking**. Verification is the response, not validation.
+3. **Never debate or push back** based on a subagent's earlier finding. The subagent could have missed it.
+4. **Trust structured data** (tables, PO lists, project enumerations) over narrative paraphrases or subagent summaries.
+5. **Report verbatim with line numbers**. No editorial. If the source genuinely contradicts the user, quote the source verbatim and let them decide.
+6. **Cross-check swarm subagent claims against source before applying ANY removal or change**. Two swarm subagents disagreeing → read MASTER directly. Don't pick the "safer" recommendation.
+
+**Anti-patterns**:
+- ❌ "You're right!" followed by an edit you made without checking
+- ❌ Removing a claim because a subagent said "not in MASTER" without grepping yourself
+- ❌ Trusting v2 swarm output over v1 swarm output without reading source
+- ❌ Grepping a single narrow term and concluding "not found"
+- ❌ Debating with the user from memory ("I'm sure I checked that")
+
+**Enforcement**: Every fact-removal, every dollar-figure change, every date change, every claim deletion must be preceded by a direct source read. The swarm recommends; you verify; the source decides.
+
+<!-- stages: 4 -->
 ### Factual Claims Must Have Provenance
 
 **Principle**: No number without a source. Every quantified claim in documentation, issue bodies, commit messages, or review comments must be backed by a verifiable source.
@@ -134,28 +181,7 @@ See: ../workflow/WORKFLOW.md (Stage 1 — Research) for research-specific critic
 
 **Enforcement**: Ralph Review Tier 2 (Sonnet) — Evidence Quality section. User Review Checklist — Gap Analysis section.
 
-### User Assertion = Immediate Source Verification
-
-**Principle**: User assertion = verify source IMMEDIATELY. Do not debate; do not validate without checking. Source file is ground truth.
-
-**Rules**:
-1. **User asserts → grep source immediately**, with multiple synonyms and partial-figure variants. Don't grep just `676K`; grep `676|redhill|3fp|digital realty`.
-1b. **Handover claim → grep source immediately** (Theme 1, #477): same discipline applies to claims sourced from prior-research handovers, post-compact recovery summaries, or memory entries — not just user assertions. When entering a session with a handover that names file:lines / counts / table sizes / function-existence assertions, the main agent extracts 3-5 headline claims and verifies each via raw-grep / direct read BEFORE dispatching the Stage 1 swarm. Document drift in the research file as "handover claim X corrected from Y to Z before swarm dispatch". Memory ≠ source of truth; a handover is a starting hypothesis, not a frozen contract. Cross-reference: Leader.md Stage 1 step 1a.5 (PRE-SWARM SOURCE-VERIFICATION GATE for handover claims); ANTI-PATTERNS.md AP #14d (Scope-gap blindness — Stage 1 research specific).
-2. **Never say "you're right" before checking**. Verification is the response, not validation.
-3. **Never debate or push back** based on a subagent's earlier finding. The subagent could have missed it.
-4. **Trust structured data** (tables, PO lists, project enumerations) over narrative paraphrases or subagent summaries.
-5. **Report verbatim with line numbers**. No editorial. If the source genuinely contradicts the user, quote the source verbatim and let them decide.
-6. **Cross-check swarm subagent claims against source before applying ANY removal or change**. Two swarm subagents disagreeing → read MASTER directly. Don't pick the "safer" recommendation.
-
-**Anti-patterns**:
-- ❌ "You're right!" followed by an edit you made without checking
-- ❌ Removing a claim because a subagent said "not in MASTER" without grepping yourself
-- ❌ Trusting v2 swarm output over v1 swarm output without reading source
-- ❌ Grepping a single narrow term and concluding "not found"
-- ❌ Debating with the user from memory ("I'm sure I checked that")
-
-**Enforcement**: Every fact-removal, every dollar-figure change, every date change, every claim deletion must be preceded by a direct source read. The swarm recommends; you verify; the source decides.
-
+<!-- stages: 1 -->
 ### Research Must Be Applied Collectively, Never Singularly
 
 **Principle**: Every change must integrate ALL relevant sources in the same pass. Single-source edits silently override constraints from every other source. (Applies to: code, CV, config, any multi-source artefact.)
@@ -171,6 +197,7 @@ See: ../workflow/WORKFLOW.md (Stage 1 — Research) for research-specific critic
 
 **See ANTI-PATTERNS.md #9** for evidence, root cause, worked examples, and self-healing.
 
+<!-- stages: 4 -->
 ### Subagent Orchestration Discipline
 
 **Principle**: Use MANY subagents in LAYERS, cross-checking from different angles. Verify every finding against source. Document proof method inline.
@@ -214,39 +241,7 @@ See: ../workflow/WORKFLOW.md (Stage 1 — Research) for research-specific critic
 
 **Enforcement**: Leader.md Stage 1 step 2a (Layer-2 adversarial gap-finder MANDATORY). ANTI-PATTERNS.md AP #14d (Scope-gap blindness — Stage 1 research specific).
 
-#### Acceptance Criteria Measurability Gate (Theme 10, #477)
-
-**Principle**: Every Acceptance Criteria checkbox MUST have an explicit verification command/method that is **falsifiable** (binary pass/fail). Unfalsifiable ACs leak through Stage 2 audit because subagents can rubber-stamp ambiguity ("looks reasonable") — the gate MUST fire BEFORE swarm dispatch, not after.
-
-**Failure mode**: subjective ACs ("cleaner architecture", "better performance", "improved coverage") get marked `[x]` at Stage 4 with vibes-based evidence. Stage 5 audit can't reject them because there's no falsifiable test to fail. The contract becomes infinitely flexible.
-
-**Reject (unfalsifiable)** — examples observed in #477 prior-feedback aggregation:
-- "subsystem length ≤500 lines" — line counts not bound to a specific file/path
-- "improved coverage" — no metric, no threshold, no source of truth
-- "cleaner architecture" — subjective, no test
-- "better performance" — no baseline, no measurement, no pass/fail
-- "more maintainable" — no proxy metric (cyclomatic complexity, file count, dep count)
-- "reduce duplication" — no count of duplicates eliminated
-
-**Accept (falsifiable)**:
-- ``wc -l <specific-file>`` returns N where N ≤ 500 (file path explicit)
-- ``pytest tests/<specific>.py`` exit 0 (or specific test count)
-- ``grep <pattern> <specific-file>`` returns ≥N matches (pattern + file explicit)
-- ``coverage report --include=<file>`` returns ≥N% (N stated)
-- ``radon cc <file> -a`` returns avg ≤B (or per-function rank ≤C)
-- File at `<specific-path>:<line-range>` contains the named text/structure (verbatim)
-- Command + expected output recorded inline in the AC
-
-**Enforcement**:
-- Leader.md Stage 2 step 4e (AC verifiability sweep — author runs before subagent dispatch).
-- issue-template.md "AC Verifiability Gate" subsection (template-time gate).
-- Stage 3 sanity-check subagent angle: any AC without falsifiable verification = block issue creation until rewritten.
-
-**Apply rule**: ACs without falsifiable verification get rewritten in-place OR moved to Cleanup Requirements with rationale BEFORE subagent dispatch. Do NOT pass unfalsifiable ACs into the Stage 3 swarm — subagents anchor on whatever scope they receive.
-
-**Verify**: ``grep -cE '^- \[ \] \*?\*?\(?[0-9]+\.[0-9]+' <issue-draft>`` returns count of ACs; spot-check 3-5 random ACs and confirm each carries either a verification command (`grep`/`wc`/`pytest`/`exit 0`) OR a verbatim file:line target. Document any reject→rewrite in the per-stage feedback file Stage 2 `worked` field.
-
-**Self-gate Tier A ACs** (dotfiles#495 FRAG-2): Self-gate Tier A ACs (AC whose verification literal IS the Stage-5 sign-off of the Issue containing them — i.e. self-referential closure dependency) MUST be tagged `<!-- self-gate-ac: <reason> -->` on the line IMMEDIATELY preceding the checkbox; see `../templates/issue-template.md` `### Self-Gate AC Marker` for the canonical convention. Without the tag the cadence hook treats the AC as a normal Tier A and blocks Phase-N+1 commits per AP #20.
+**See "AC Verifiability — pre-Stage-3 sub-gate" under "Workflow Validation Gate" below** — the Acceptance Criteria Measurability rule is merged into Workflow Validation Gate as its pre-Stage-3 half. Cut #8 / AC 1.18 (#498).
 
 #### Scope Snippet Rule (#406 F5.1)
 
@@ -257,6 +252,8 @@ When dispatching ≥10 subagents on an issue, the main agent writes a **frozen s
 Every swarm subagent ends its return with a fenced block:
 
 ```
+
+<!-- stages: 4 -->
 ## RESULT
 - verdict: pass|fail|unknown
 - files_touched: [...]
@@ -267,6 +264,7 @@ Every swarm subagent ends its return with a fenced block:
 
 Main agent parses the RESULT block; subagent prose body is informational. Reduces typical 4-8K-token return per subagent to ~500 tokens with zero signal loss because every claim already has provenance per Rule 5 above. **When a subagent discusses graph queries, prepend `mcp_graph_available: yes|no` as the FIRST line** — AP #19 "Subagent wrapper-lane access" bullet (Ralph Tier 1 uses this with documented-fallback evidence: `no`+evidence=PASS, `no`+no-evidence=FAIL). **Wrapper-lane disposition (Issue #445)**: under the wrapper-lane, this field is always `no` — wrappers are bash-tool calls, not MCP-protocol calls, and subagents do not inherit the bash-tool set from the main agent in the same way. Documented fallback (grep + manual file reads) is the expected path under wrapper-lane, not a degradation. Ralph Tier 1 sees `no` + valid fallback evidence → PASS, not FAIL.
 
+<!-- stages: 4 -->
 ### Bash Output Budgets (#406 F4.7)
 
 Default flags for the 10 commands SST3 runs hot. Provenance: each row backed by file:line in the audit findings of #406. The `tee-run.sh` wrapper (`../scripts/tee-run.sh <label> -- <cmd>`) provides recovery for any compressed output: full log saved to `~/.cache/sst3/tee/`, last 200 lines printed.
@@ -286,6 +284,7 @@ Default flags for the 10 commands SST3 runs hot. Provenance: each row backed by 
 
 Rule of thumb: any single Bash invocation that produces > 200 lines should be wrapped with `../scripts/tee-run.sh <label> -- <cmd>` so the agent gets the tail and the full log is recoverable.
 
+<!-- stages: 4 -->
 ### Structural Code Queries — Wrapper-Lane First, Subagent Fallback
 
 For structural code questions (callers, callees, imports, inheritance, blast radius, dead code, large functions, test coverage) in a language the wrapper-lane parses (Python, TypeScript, TSX, JavaScript, Rust — the five languages ast-grep is wired for in the wrappers), prefer **wrapper-lane** bash queries (`bash dotfiles/scripts/sst3-code-*.sh`) over subagent exploration — when the pre-query gate passes:
@@ -299,7 +298,7 @@ For structural code questions (callers, callees, imports, inheritance, blast rad
 
 The wrapper-lane is **NOT a replacement** for subagents. See ANTI-PATTERNS.md AP #19 for the full list of 12 subagent-only moments (voice, intent, cross-document, non-code audits, etc.) that MUST NOT be demoted by a "wrapper-first" rule.
 
-**Naming-honesty note (Issue #445 Stage 5)**: the lane is called "wrapper-lane", not "graph". There is no graph database, no SQLite, no Tree-sitter store, no embeddings. Every query re-parses on disk via ast-grep + ripgrep + git. Field names in the wrapper JSON output reflect what is actually computed (`file_count`, not `total_nodes`); historical names from the displaced upstream MCP appear only inside HISTORICAL-MCP-REFERENCES blocks.
+**Naming-honesty note (Issue #445 Stage 5)**: the lane is called "wrapper-lane", not "graph". There is no graph database, no SQLite, no Tree-sitter store, no embeddings. Every query re-parses on disk via ast-grep + ripgrep + git. Field names in the wrapper JSON output reflect what is actually computed (`file_count`, not `total_nodes`); displaced daemon-MCP lineage: see `git log --grep="#445"`.
 
 **Non-interactive shell PATH bootstrap (Issue #456)**: wrappers self-augment PATH via `../scripts/sst3-bash-utils.sh` (sourced by 31 of 38 end-user wrappers) so engines under `~/.cargo/bin`, `~/.local/bin`, `~/.npm-global/bin` resolve from `bash --noprofile --norc -c '...'` (the shape Claude Code's Bash tool spawns). Without this bootstrap, `.bashrc` early-returns on non-interactive shells and engines on disk are invisible. The 8 exempt wrappers (system-PATH-only + the meta-validator that self-bootstraps inline) are listed in `../scripts/.bash-utils-exempt-list`; the `check-wrapper-bash-utils-source` pre-commit hook (declared BEFORE `sst3-self-test`) catches future drift at commit time.
 
@@ -311,6 +310,7 @@ See also `../reference/tool-selection-guide.md` "Decision Tree: Code-Understandi
 
 **AI-agent fallback heuristic (#447 Phase 5; semantics clarified by Issue #456)**: when a wrapper exits 127 / 1 / 2, the agent MUST — (1) look up the failed query type in `../dotfiles/docs/guides/code-query-playbook.md` "Raw Fallback Recipes" table, run the listed raw command, and record the substitution + raw command + result count in the RESULT block; (2) if no table row matches the query, escape to subagent-only mode per AP #19 12-moments carve-out, citing "no fallback recipe" as the escape reason; (3) NEVER silently substitute raw output for wrapper output without recording the substitution — silent fallback hides recall delta which is the exact signal Phase 5 cross-validation depends on. **Exit 127 semantics post-#456**: means the engine is genuinely missing on disk (npm/cargo/pipx install never ran). Pre-#456 the same code ALSO fired when the engine was on disk but PATH was not propagated to non-interactive shells; that case is now closed by `sst3-bash-utils.sh` self-bootstrap. Run `scripts/install.sh` to install missing engines — do NOT add custom PATH workarounds in the calling agent.
 
+<!-- stages: 3 -->
 ### Double-Guardrail Principle (N32 — user-authoritative)
 
 **Principle**: every `/Leader` invocation verifies work against BOTH guardrails — the cross-cutting SST3 canonical (STANDARDS.md + ANTI-PATTERNS.md + WORKFLOW.md + project CLAUDE.md) AND the invoked-skill's domain canonical. Skill-specific rules are NOT suggestions; they are load-bearing canonical, equal in authority to SST3 standards within the skill's domain. Single-guardrail `/Leader` runs on non-SST3-infrastructure work operate with half their guardrails missing.
@@ -361,7 +361,10 @@ Coverage = `canonicals_walked` matches `skill_canonical_files` (no separate coun
 
 **Prevents**: AP #23 (curator-bounded audit recall). **Stage refs**: Leader.md Stage 2 author + Stage 3 subagent + Stage 5 subagent. Multi-skill dispatch (split >5K tokens) lives in Leader.md Stage 3.
 
+<!-- stages: 4 -->
 ### Contract Verification — Three Contracts (Issue #1407 post-mortem)
+
+> **Canonical: stage-4/contract-verification.md** — physical extract per dotfiles#498 AC 4.1+4.2; this section retains the cross-reference anchor while the consolidated source-of-truth lives in the linked extract.
 
 Every change that crosses a boundary must verify all three contracts:
 
@@ -383,7 +386,10 @@ Every change that crosses a boundary must verify all three contracts:
 
 **Enforcement**: All three contracts are checked in the Verification Loop (Stage 4) and Ralph Review (all 3 tiers).
 
+<!-- stages: 4 -->
 ### Fail Fast, No Silent Fallbacks
+
+> **Canonical: stage-4/observability-fail-fast.md** — physical extract per dotfiles#498 AC 4.1+4.2; this section retains the cross-reference anchor while the consolidated source-of-truth lives in the linked extract.
 
 **Principle**: Fail loudly at startup. Silent fallbacks hide bugs. Fix root cause. Error indicators must be unmistakable (cannot be confused with valid data).
 
@@ -395,7 +401,10 @@ Every change that crosses a boundary must verify all three contracts:
 
 **See ANTI-PATTERNS.md #7** for full DO/DON'T list, code examples, detection patterns, and the Issue #269 post-mortem.
 
+<!-- stages: 4 -->
 ### Observability — No Code Without Logs, Metrics, and Audit Trails
+
+> **Canonical: stage-4/observability-fail-fast.md** — physical extract per dotfiles#498 AC 4.1+4.2; this section retains the cross-reference anchor while the consolidated source-of-truth lives in the linked extract.
 
 **Principle**: Logs, metrics, and audit trails are mandatory at write time. If a system can run silently, it will — and you'll have no signal when it produces the wrong answer.
 
@@ -409,6 +418,7 @@ Every change that crosses a boundary must verify all three contracts:
 
 **See ANTI-PATTERNS.md #12** for the no-observability failure mode and self-healing.
 
+<!-- stages: 4 -->
 ### Monitor, Don't Fire-and-Forget
 
 **Principle**: When you launch a script / command / subprocess / deployment / test run / commit / push / background process, you own it from launch to completion. "Started" is not "done". Tail the logs, check the exit code, verify the expected output, confirm the side effects landed. The user repeatedly asking "did it work?" is the failure signal.
@@ -428,6 +438,7 @@ AP #12 builds the observability surfaces; AP #16 enforces reading them.
 
 **See ANTI-PATTERNS.md #16** for the failure mode.
 
+<!-- stages: 4 -->
 ### Not Done Until Working
 
 **Principle**: NOT complete until ALL scope requirements verified WORKING.
@@ -441,6 +452,7 @@ AP #12 builds the observability surfaces; AP #16 enforces reading them.
 
 **Enforcement**: Verification Loop requires explicit "fully working" before proceeding.
 
+<!-- stages: 4 -->
 ### No Hardcoded Settings
 
 **Principle**: All configurable values must be in external config files. Hardcoded values cause inconsistency and block reuse.
@@ -471,6 +483,9 @@ AP #12 builds the observability surfaces; AP #16 enforces reading them.
 **Error Format** (from pre-commit hook):
 **Impact**: Issue #383 identified 309 hardcoded values in frontend code. Pre-commit hook prevents future violations.
 
+<!-- impact-roi-carve-out -->
+
+<!-- stages: always -->
 ### Voice Content Protection (Marker-Driven)
 
 **Principle**: Any prose written in the operator's voice in any repo (CV, LinkedIn, cover letters, blog posts, profile docs) MUST be wrapped in `<!-- iamhoi -->` ... `<!-- iamhoiend -->` markers so the marker-driven voice guard can scan it. Default = SKIP. Untagged prose is silently unprotected.
@@ -495,6 +510,7 @@ AP #12 builds the observability surfaces; AP #16 enforces reading them.
 
 ---
 
+<!-- stages: 3 -->
 ### Polish vs Twist (Semantic Frame Preservation)
 
 **Principle**: When integrating operator-supplied content (a paragraph, sentence, point, rough thought) into any draft — blog, LinkedIn, CV, cover letter, anywhere — polish it for flow but preserve his meaning AND his interpretive frame. He writes rough thoughts to AI specifically to have them turned into publishable prose, so editing is mandatory; verbatim copy-paste defeats the point, and so does twisting. The marker-driven voice guard (above) catches banned WORDS — it is structurally blind to a semantic FRAME shift. This subsection is the semantic-frame companion to that lexical guard. The instinct to "improve / sharpen / tighten" must be bounded: fire ONLY on AI-drafted prose that integrates operator-supplied source, never on the load-bearing nouns / verbs / hedges the operator actually wrote.
@@ -536,6 +552,9 @@ AP #12 builds the observability surfaces; AP #16 enforces reading them.
 
 ---
 
+<!-- impact-roi-carve-out -->
+
+<!-- stages: always -->
 ### Public Repo Secret Detection
 
 **Principle**: Public repos (`ebay-seller-tool`, `SST3-AI-Harness`, `hoiboy-uk`) must never contain secrets, business identifiers, or private filesystem paths. Repos opt in via `.public-repo` marker file at root.
@@ -565,6 +584,7 @@ The opaque-token mechanism for hash-redacting literal business identifiers in pu
 
 ---
 
+<!-- stages: 4 -->
 ### No Backwards-Compatibility Hacks
 
 **Principle**: When code is removed or refactored, delete it completely.
@@ -577,6 +597,7 @@ The opaque-token mechanism for hash-redacting literal business identifiers in pu
 
 ---
 
+<!-- stages: always -->
 ### Fix Everything — No Scope/Language Excuses
 
 **Principle**: Fix ALL problems found. No deferrals, no scope/language excuses.
@@ -586,12 +607,14 @@ The opaque-token mechanism for hash-redacting literal business identifiers in pu
 
 ---
 
+<!-- stages: 4 -->
 ### Investigate Before Coding
 
 **Principle**: Investigate → root cause → plan → alignment → THEN code. Use subagents to research; main agent collates and plans.
 
 ---
 
+<!-- stages: 4 -->
 ### Before Fixing Any Function — Verify the Live Code Path
 
 **Principle**: A fix applied to a function nobody calls is not a fix. Prove the function is on the live code path before editing it.
@@ -607,18 +630,21 @@ The opaque-token mechanism for hash-redacting literal business identifiers in pu
 
 ---
 
+<!-- stages: 4 -->
 ### Fix Big Problems First
 
 **Principle**: Fix PRODUCTION/architecture problems before infrastructure issues. A stuck repair loop beats a pytest timeout.
 
 ---
 
+<!-- stages: 4 -->
 ### Never Replace — ADD Alongside
 
 **Principle**: When adding config values, NEVER replace existing user-set values. Add new ones alongside. ASK if an existing value seems wrong. (Evidence: scheduler incident — refresh ran 2 hrs late.)
 
 ---
 
+<!-- stages: 4 -->
 ### Solo Branch Merge Safety
 
 **Principle**: Solo branches merge to main via the worktree-first server-side fast-forward pattern (dotfiles#488 AC 1.3) — `git push origin <solo-branch>` then `git push origin <solo-branch>:master` from inside the isolated worktree. On non-fast-forward rejection (origin/master advanced concurrently), `git fetch origin master` then `git rebase origin/master` *inside the worktree*, then retry — bounded ≤3 attempts. NEVER `--force` / `--force-with-lease`. NEVER shared-tree branch-switch — no `git checkout main`, no `pull main` instruction in the merge procedure (those would mutate every concurrent agent's HEAD on the shared clone).
@@ -627,13 +653,17 @@ The opaque-token mechanism for hash-redacting literal business identifiers in pu
 
 ---
 
+<!-- stages: 4 -->
 ### Test Live Operations
 
 **Principle**: After fixing operational infrastructure (services, restarts, systemd), trigger a live end-to-end smoke test. Don't just verify imports. (Evidence: crash-loop undetected because restart never triggered.)
 
 ---
 
+<!-- stages: 4 -->
 ### Wiring Verification
+
+> **Canonical: stage-4/verification-loop.md** — physical extract per dotfiles#498 AC 4.1+4.2; this section retains the cross-reference anchor while the consolidated source-of-truth lives in the linked extract.
 
 **Principle**: After ANY fix/enhance/refactor, verify changed code is wired into existing functions and processes.
 
@@ -641,12 +671,14 @@ The opaque-token mechanism for hash-redacting literal business identifiers in pu
 
 ---
 
+<!-- stages: 4 -->
 ### E2E Tests Must Reuse Production Code
 
 **Pointer**: folded into ANTI-PATTERNS.md AP #26 "E2E System Verification" (single source of truth — the E2E/System Tier). The reuse principle (E2E tests reuse production code paths — calculators, order gateways, price validation — never build parallel logic; search production code before writing any test helper) lives there + in STANDARDS.md "Three-Tier Testing Framework" → E2E Tier.
 
 ---
 
+<!-- stages: 4 -->
 ### Exhaustive Line-by-Line Audit
 
 **Principle**: Audits are line-by-line per directory using separate subagents, NOT grep pattern skims. Each subagent gets a focused area. Covers: scope review, wiring check, inefficiency scan, memory leaks, STANDARDS.md compliance.
@@ -655,6 +687,7 @@ The opaque-token mechanism for hash-redacting literal business identifiers in pu
 
 ---
 
+<!-- stages: 4 -->
 ### SST3 is Enforcement, Not Honor System
 
 **Principle**: 5-stage workflow and verification checkpoints are mandatory, not suggestions. Follow in order.
@@ -671,6 +704,7 @@ The opaque-token mechanism for hash-redacting literal business identifiers in pu
 
 **Flow**: Research Gate ✓ → Issue written → Triple-Check Gate ✓ → Implement → Verification Loop ✓ → Ralph Review ✓ → Merge → user-review-checklist ✓ → Close
 
+<!-- stages: 4 -->
 ### Minimal Comments
 
 **Write AI-readable code**:
@@ -683,6 +717,7 @@ The opaque-token mechanism for hash-redacting literal business identifiers in pu
 
 Comment WHY for non-obvious business logic (e.g., `time.sleep(2)` for IBKR rate-limit). Never comment WHAT.
 
+<!-- stages: 4 -->
 ### Plan Mode by Default
 
 **Principle**: Default state is plan-only. No file ops, no subagents, no commands until execution trigger.
@@ -693,6 +728,7 @@ Comment WHY for non-obvious business logic (e.g., `time.sleep(2)` for IBKR rate-
 
 **Enforcement**: Ambiguous requests → stay in Plan Mode, ask for clarification.
 
+<!-- stages: 4 -->
 ## Tool Standardization
 
 | Category | Python | JavaScript/TypeScript |
@@ -705,6 +741,7 @@ Document tool choices in CLAUDE.md.
 
 See: `../workflow/WORKFLOW.md` (Stage 1 — Research) for library research process.
 
+<!-- stages: 4 -->
 ## MCP Tool Schema Loading (Deferred Tools + ToolSearch)
 
 **What it is**: The Claude Code harness may defer MCP tool schemas — tools appear as NAMES ONLY in the agent's active tools (no parameter schema). Calling a deferred tool directly returns `InputValidationError`. Detection: the `ToolSearch` tool is listed in the agent's available tools, and MCP tool names appear in a `<system-reminder>` block labelled "deferred tools".
@@ -740,6 +777,7 @@ ToolSearch(query="select:mcp__<server>__<tool>")
 
 **Canonical invocation points**: `../dotfiles/.claude/commands/Leader.md` Guardrails block + `../dotfiles/.claude/commands/SST3-solo.md` Governance Enforcement section reference this rule. `../ralph/{haiku,sonnet,opus}-review.md` enforce it at review time.
 
+<!-- stages: 4 -->
 ## Governance Evidence Signal (Canonical)
 
 Canonical audit signal for verifying that `mcp__github-checkbox__update_issue_checkbox` was actually invoked (AP #20 compliance) is the **`## Proof of Work` section in the issue body** — NOT the GitHub timeline `edited` event log.
@@ -766,10 +804,12 @@ Canonical audit signal for verifying that `mcp__github-checkbox__update_issue_ch
 
 **Canonical scope boundary**: this section is THE canonical source for which signal Ralph / external audits use. `../ralph/{haiku,sonnet,opus}-review.md` reference this section and do NOT duplicate the procedure. `../reference/tool-selection-guide.md` Example 2 remains canonical for per-deliverable evidence-quality patterns (what to write INTO the Proof of Work entry). This section is canonical for what to DO WITH Proof of Work entries at audit time.
 
+<!-- stages: 4 -->
 ## Task-Close Drain Gate (Canonical)
 
 Every Stage-5 task close must verify residue drained or waived — `bash scripts/leader-stage5-drain-check.sh <issue>` exit 0 mandatory before sign-off. The gate fires on five classes (D1: uncommitted task-touched files / D2: self-created stash / D3: self-opened worktree / D4: un-pushed commits / D5: unfinished propagation tail — dotfiles-scoped). Either drain the residue and re-run, or pass an explicit `--waive-residue <class>:<reason>` flag per class to record the operator's deliberate exception. Layer-A pre-flight (Leader.md step 7a.1, between the 7a.0 sweep and the 7a completeness check) + Layer-B GHA failsafe (`.github/workflows/stage5-completeness.yml`) replay the same gate server-side; both layers are mandatory. Parallel to the completeness-gate principle (#460 W4) but enforces "the task left no residue", not "the feature is complete". Introduced in #493 Phase 2.
 
+<!-- stages: 4 -->
 ## Per-Stage Feedback Capture (Canonical)
 
 Canonical telemetry mechanism for the SST3 5-stage `/Leader` workflow. Each `/Leader` stage close writes a 10-field feedback record so we accumulate observed patterns across runs (which stage routinely catches what bug class, which subagent angles are wasted, which corrections came from the user vs the agent self-caught).
@@ -851,7 +891,7 @@ Inline per-bullet markers go AFTER the bullet text using HTML comments — e.g. 
 
 **Enforcement (3 layers)**:
 - **Layer A**: pre-commit hook `sst3-metrics-feedback-present` (compact-resilient — survives context loss). Bypass for genuine emergencies: `SKIP=sst3-metrics-feedback-present git commit ...`.
-- **Layer B**: persistent sentinel files in the gitignored `.sentinels/` subfolder catch Stages 1+2 (which don't produce commits). Auto-release after 24h staleness so compact-resume cycles can re-acquire.
+- **Layer B**: persistent sentinel files in the gitignored `.sentinels/` subfolder catch Stages 1+2 (which don't produce commits). Auto-release after 24h staleness so compact-resume cycles can re-acquire. Layer B sentinels also catch compact-before-commit gaps — if `/Leader N` completes work that gets compacted before the per-stage feedback commit lands, the `.sentinels/` marker survives compaction and is detected at next session start, so the post-compact agent sees the unflushed feedback rather than silently bypassing it (#498 F-22).
 - **Layer C**: skill-body sign-off line in `../dotfiles/.claude/commands/Leader.md` for each of the 5 stages — the redundant-by-design third layer (AP #20 case proved skill-body alone leaks).
 
 **Hook-failure protocol**: `feedback_parser.py` exits 1 with single-line stderr `feedback_parser: <human-readable error> at <file>:<line>`. NEVER raises stack trace. NEVER prints debug noise. The error must be diagnosable from the single line.
@@ -860,7 +900,10 @@ Inline per-bullet markers go AFTER the bullet text using HTML comments — e.g. 
 
 **Canonical scope boundary**: this section is THE canonical source for what / how / why feedback records exist. `../dotfiles/.claude/commands/Leader.md` SIGN-OFF lines reference this section for the per-stage write step. `../dotfiles/.claude/commands/SST3-solo.md` references this section at Per-Session Initialization and Verification Loop. `../workflow/WORKFLOW.md` references this section in each stage trailer. `../dotfiles/CLAUDE.md` is the single place where the literal `SST3-metrics/leader-feedback/...` storage path lives — the workflow files are mirrored to public repos and use this section reference only.
 
+<!-- stages: always -->
 ### Cross-Repo Cohabitation Protocol (#469 Phase 4 — closes dotfiles#449 stage=5)
+
+> **Canonical: stage-4/cohabitation-protocol.md** — physical extract per dotfiles#498 AC 4.1+4.2; this section retains the cross-reference anchor while the consolidated source-of-truth lives in the linked extract.
 
 When a sister repo's `/Leader` run writes feedback that references both the sister repo's work AND a dotfiles-side artefact change, both repos may end up needing entries in their own canonical paths but only ONE can be merged at a time (due to branch-safety rule "NEVER switch branches"). The 4-step cohabitation protocol:
 
@@ -873,7 +916,10 @@ When a sister repo's `/Leader` run writes feedback that references both the sist
 
 **Aggregator self-validates per-file** (#469 Phase 1 hook-order fix): `leader-feedback-aggregate.sh` calls `validate_record()` per-file BEFORE `--emit-ndjson` parse — single point of enforcement at the aggregator boundary, eliminating the pre-commit hook-order timing window without touching `.pre-commit-config.yaml`. Belt-and-braces with the parser's strict-mode emit-ndjson which validates at the CLI layer too.
 
+<!-- stages: 4 -->
 ### Multi-Agent Multi-Worktree Concurrency Contract
+
+> **Canonical: stage-4/cohabitation-protocol.md** — physical extract per dotfiles#498 AC 4.1+4.2; this section retains the cross-reference anchor while the consolidated source-of-truth lives in the linked extract.
 
 **Principle** (dotfiles#495 / dotfiles#488 worktree-first canonical): the SST3 harness supports multiple agents working in parallel via EnterWorktree-isolated worktrees on the same clone, provided each agent operates on its own solo branch in its own worktree. This section is the explicit scope contract.
 
@@ -901,6 +947,7 @@ When a sister repo's `/Leader` run writes feedback that references both the sist
 - Cleanup mechanic: this STANDARDS.md `**Branch and Worktree Cleanup**` section
 - Cohabitation distinction: this STANDARDS.md `### Cross-Repo Cohabitation Protocol` section above
 
+<!-- stages: 4 -->
 ### Canonical field-line format vs Banned legacy formats
 
 The parser strictly requires `**field**:` bare bold form. Banned legacy formats (parser rejects since #469 Phase 3 strict mode):
@@ -917,6 +964,7 @@ Continuation lines for multi-line values: bare bullets at column 0, no leading `
 
 **Codepath-split note** (#469 Phase 3): pre-Phase-3 the parser had two effective code paths — `parse_record()` (lax, used by `--emit-ndjson`) and `validate_record()` (strict, used by default + by aggregator pre-Phase-1). Files with missing FM fields / wrong heading levels / forward-pref trips silently emitted 0 NDJSON lines via the lax path. Post-Phase-3: both paths run validate first; CLI consumers and Python module consumers see identical strictness. This single-validate-then-emit codepath is the cure for the silent-skip class. Coining a new Anti-Pattern from one instance is premature per Pass-1 hostile FP sweep — if the codepath-split pattern recurs in another tool, operator can authorise the AP separately per AP #21 (no autonomous Issue creation).
 
+<!-- stages: 4 -->
 ## Path Portability
 
 **Environment Variables**:
@@ -937,6 +985,7 @@ cd ../dotfiles  # from DevProjects/[repo]
 - Use relative paths (e.g., `../dotfiles/SST3/...`) for cross-repo references
 - Never hardcode `C:\Users\username` in documentation
 
+<!-- stages: 4 -->
 ## DevProjects Directory Structure
 
 ```
@@ -954,6 +1003,7 @@ C:/temp/                  ← Shared temp folder
 
 **Key Implications**: DevProjects/ is local only. Each repo is independent. SST3 lives in dotfiles/, referenced via `../dotfiles/SST3/`. Temp: `C:/temp/{repo}-{issue}-{description}.ext`.
 
+<!-- stages: 4 -->
 ### Architecture Validation
 
 **CRITICAL: DevProjects/ MUST NOT be a git repository.**
@@ -962,6 +1012,7 @@ C:/temp/                  ← Shared temp folder
 
 **If fails**: `cd .. && mv .git .git.DISABLED.{issue-number}` → remove duplicate files from DevProjects/ root → document → add to pre-commit hooks. See Issue #172.
 
+<!-- stages: 4 -->
 ### DevProjects Cleanliness Enforcement
 
 **Pre-commit hook** `check-devprojects-clean` validates DevProjects/ before every commit:
@@ -980,6 +1031,7 @@ C:/temp/                  ← Shared temp folder
 
 **Reference:** Issue #249
 
+<!-- stages: 4 -->
 ## Documentation Requirements
 
 | Document | When Required | Max Size |
@@ -988,6 +1040,7 @@ C:/temp/                  ← Shared temp folder
 | Inline comments | Complex logic only | Minimal |
 | GitHub Issues | All decisions | N/A |
 
+<!-- stages: 4 -->
 ### README Standards
 
 **Philosophy**: READMEs follow both [Core Philosophy](#foundational-philosophy) principles:
@@ -1007,7 +1060,10 @@ C:/temp/                  ← Shared temp folder
 
 **Per-Stage Feedback / Telemetry**: see canonical section "Per-Stage Feedback Capture (Canonical)" earlier in this file. The previous `SST3-metrics/retrospectives/` lifecycle (per-Issue retrospective files, quarterly review trigger) was superseded in #448 — `archive/retrospective-template.md` produced zero retrospectives across its lifetime; the new per-stage capture mechanism replaces it with 3-layer enforcement, dynamic stage discovery, and a closure-loop on improvements.
 
+<!-- stages: 4 -->
 ### File Housekeeping
+
+> **Canonical: stage-4/file-housekeeping.md** — physical extract per dotfiles#498 AC 4.1+4.2; this section retains the cross-reference anchor while the consolidated source-of-truth lives in the linked extract.
 
 **Delete vs Archive**:
 - **Delete**: Temp files, build artifacts, failed experiments with no learnings
@@ -1042,6 +1098,7 @@ C:/temp/                  ← Shared temp folder
 
 **Removal Reporting** (Issue #119): When removing content, post a brief summary (`File: section (-X tokens/lines) — Removed: X, Kept: Y`) so user can approve deletions quickly.
 
+<!-- stages: 4 -->
 ## "READ IN FULL" Warning Criteria
 
 Add if: sequential checklists, interdependent instructions, skipping causes failures, order matters.
@@ -1051,12 +1108,15 @@ Skip if: pure reference/lookup, independent sections, spot-check only.
 
 **Cleanup Empty Folders**: After archiving/deleting files, remove empty directories
 
+<!-- stages: 4 -->
 ### Issue #108 Lesson: Why Housekeeping Repetition is Intentional
 
 Housekeeping in 3 places (during work, after merge, STANDARDS.md) is intentional — each is a different execution context. Compressing them caused file sprawl (Issue #108). Prevention > Cure.
 
+<!-- stages: 4 -->
 ## Code Quality
 
+<!-- stages: 4 -->
 ### DO
 - [ ] Set up pre-commit hooks (scripts/check-propagation.py, scripts/auto-stage-tracked-folders.py)
 - [ ] Write tests for critical paths (85% bug catch rate at Verification Loop)
@@ -1064,6 +1124,7 @@ Housekeeping in 3 places (during work, after merge, STANDARDS.md) is intentional
 - [ ] Require PR review before merging
 - [ ] Run automated tests in CI/CD
 
+<!-- stages: 4 -->
 ### DON'T
 - [ ] Skip tests for "simple" changes
 - [ ] Bypass pre-commit hooks (scripts/check-propagation.py, scripts/auto-stage-tracked-folders.py)
@@ -1071,7 +1132,10 @@ Housekeeping in 3 places (during work, after merge, STANDARDS.md) is intentional
 - [ ] Merge without passing tests
 - [ ] Ignore linter warnings
 
+<!-- stages: 4 -->
 ## Three-Tier Testing Framework
+
+> **Canonical: stage-4/three-tier-testing.md** — physical extract per dotfiles#498 AC 4.1+4.2; this section retains the cross-reference anchor while the consolidated source-of-truth lives in the linked extract.
 
 > **Source of truth**: the operator's verbatim framing of the three tiers (the car analogy + the BUILD-vs-USE clarification), recorded in the originating Issue's verbatim Source block. This section transcribes that framing; it does NOT paraphrase it into any one project's failure-mode list. On any conflict the verbatim Source block wins. (Meta: the anti-twist rule — "Polish vs Twist (Semantic Frame Preservation)" / ANTI-PATTERNS.md AP #25 — applies to this section's own wording.)
 
@@ -1082,6 +1146,7 @@ SST3 **builds and uses three co-equal test tiers** that work together (they comp
 - **Workflow Tier** = many cogs / processes / parts working together as a component — like the car engine working. Ensures the whole component works; finds problems that need fixing, and wiring.
 - **E2E Tier** = the system: all components working together systematically end to end — like taking the car for a driving test. Everything works together, no breakage, results as expected and intended; finds problems that need fixing systematically, and wiring.
 
+<!-- stages: 4 -->
 ### Unit Tier
 - **Scope**: a single unit — one function / cog / calculation / part on its own.
 - **What it catches**: wrong calculations, wrong output for a given input, the part not behaving as designed/intended.
@@ -1090,6 +1155,7 @@ SST3 **builds and uses three co-equal test tiers** that work together (they comp
 - **Who writes it**: whoever changes the unit, in the same change.
 - **SST3 enforcement primitive**: the call-seam grep — "Test-Prod Call Coverage Discipline" (a new public callable / payload field / config key with no test exercising it = FAIL). That seam IS the cog-QC gate.
 
+<!-- stages: 4 -->
 ### Workflow Tier
 - **Scope**: a component — many units wired together (a pipeline, an orchestration path, a multi-step workflow).
 - **What it catches**: units individually fine but the COMPONENT broken — wiring gaps, cross-module arg propagation, a step that silently does nothing, mismatched contracts between parts.
@@ -1098,6 +1164,7 @@ SST3 **builds and uses three co-equal test tiers** that work together (they comp
 - **Who writes it**: whoever changes the workflow wiring.
 - **SST3 enforcement primitive**: ANTI-PATTERNS.md AP #18 "Smoke-Tested Pipeline Shipped Without End-to-End Sample Run (Workflow-Tier validation)" — smoke is necessary but NOT sufficient for component wiring.
 
+<!-- stages: 4 -->
 ### E2E Tier
 - **Scope**: the whole system — all components together, end to end, against the real environment (real DB, real downstream consumers, real interfaces).
 - **What it catches**: what only the full system reveals — real-DB schema drift, downstream-consumer rejection, environmental assumptions, integration regressions no single component test sees. The driving test.
@@ -1106,11 +1173,13 @@ SST3 **builds and uses three co-equal test tiers** that work together (they comp
 - **Who writes it**: whoever ships a change with whole-system blast radius.
 - **SST3 enforcement primitive**: ANTI-PATTERNS.md AP #26 "E2E System Verification".
 
+<!-- stages: 4 -->
 ### BUILD vs USE (load-bearing — preserve BOTH halves; do not collapse into one phrase)
 - **BUILD: always all 3 tiers.** Every change ships with Unit + Workflow + E2E tests. The tests must EXIST. There is no "this is only a unit, skip tier 2/3" exemption at authoring time.
 - **USE: situational, scope-matched.** Which tiers are *required to fire / pass* at the Verification Loop matches the change's scope: entire-system change → all 3; workflow-component change → Unit + Workflow (E2E may confirm); single-unit change → Unit (Workflow/E2E fire if they exercise the affected unit). Tiers **compose, never substitute** — a higher tier passing does not excuse a missing lower-tier test, and a lower tier passing does not prove the system.
 - **Why both halves**: building all 3 means the E2E Tier is THERE the day a future "small" change unexpectedly impacts the whole system. Using situationally means a one-line unit fix is not blocked by an unrelated E2E-tier flake. Drop BUILD → the safety net is absent when suddenly needed. Drop USE → every trivial fix drags the whole suite and people start skipping tests entirely.
 
+<!-- stages: always -->
 ### Scope-decision procedure (operationalises BUILD-vs-USE — which tiers must FIRE for this change)
 Run this at authoring time AND again at the Verification Loop:
 1. **Identify the blast radius.** One unit only? The wiring of a component? Cross-component / schema / contract / environment?
@@ -1122,6 +1191,7 @@ Run this at authoring time AND again at the Verification Loop:
 4. **When unsure, escalate one tier up.** Under-scoping the USE decision is the failure mode — a "small unit fix" that was really a contract change ships a regression the Unit Tier can never catch. Over-running a tier is cheap; missing one is the incident.
 5. **Record the tier decision** in the Verification-Loop evidence (which tiers fired, which were N/A + why). "All tests pass" without naming the tier scope is not evidence.
 
+<!-- stages: 4 -->
 ### Tier composition — never substitute (worked illustration, general)
 A change adds a new calculation, used by a pipeline step, consumed by a downstream system:
 - Unit GREEN, Workflow + E2E absent → the calculation is correct in isolation but nothing proves the step calls it right or the downstream accepts the result. **Not done.**
@@ -1130,12 +1200,15 @@ A change adds a new calculation, used by a pipeline step, consumed by a downstre
 - All 3 BUILT, USE scoped to the change → the correct tier gates the merge; the others stand ready for the day the blast radius grows. **Done.**
 Higher tiers do NOT substitute for lower (a passing system does not prove every unit); lower do NOT substitute for higher (correct units do not prove the wired system). They COMPOSE.
 
+<!-- stages: 4 -->
 ### Why three — not two, not four
 Three is canonical because it maps to the three real failure surfaces: a part is wrong (Unit), the parts are wired wrong (Workflow), the whole system meets reality wrong (E2E). Collapsing Workflow into Unit loses the wiring-gap class; collapsing E2E into Workflow loses the real-environment / real-downstream class. Adding a fourth tier (mutation / property / contract testing) is explicitly out of scope — those are *techniques applied within* a tier, not a fourth surface. the operator's 3-tier framing is the canonical taxonomy; do not split or merge it.
 
+<!-- stages: always -->
 ### Glossary: "regression test" vs the three tiers
 "**The project test suite**" — what the Stage 4 Verification Loop runs, and what "no regressions" refers to — is the **union of the checked-in Unit + Workflow + E2E tests**, not any single tier. "**Regression test**" is NOT a synonym for the Unit Tier, nor for any one tier: it is the property that the existing suite (all tiers together) still passes after a change. "**Smoke test**" is a fast subset (typically Unit-Tier-weighted) — necessary but NOT sufficient for the Workflow or E2E tiers (AP #18). Use a tier name when you mean a tier; say "the project test suite" / "regression run" when you mean "all checked-in tests still pass".
 
+<!-- stages: 4 -->
 ### Cost of skipping each tier (why BUILD is unconditional)
 - **Skip the Unit Tier** → boundary-input and calculation errors ship; the bug surfaces deep in a workflow or in production where it is expensive to localise back to the single wrong cog. The cheapest possible signal was simply never built.
 - **Skip the Workflow Tier** → every unit is correct in isolation but the component is mis-wired (a step that silently no-ops, an arg dropped across a module boundary, a contract mismatch between parts). Unit tests are structurally blind to this — it is exactly the #1424 class (component tests passed; the wiring did not).
@@ -1143,6 +1216,7 @@ Three is canonical because it maps to the three real failure surfaces: a part is
 - **Compounding**: a skipped lower tier also makes a higher-tier failure harder to localise (an E2E failure with no Unit/Workflow coverage gives no narrowing signal — you bisect the whole system by hand).
 - **The asymmetry**: building a tier costs minutes once; the absent tier costs an incident at the worst possible time, plus the localisation tax above. That asymmetry is precisely why BUILD is unconditional and USE (not BUILD) is the part that is scope-matched.
 
+<!-- stages: 4 -->
 ### Where this is enforced
 - **WORKFLOW.md Verification Loop** — the three named tier checkboxes, each encoding BUILD (tests exist) + USE (scope-matched fire). Canonical; this is where the gate actually lives.
 - **Leader.md Gate 1 + SST3-solo.md Verification Loop** — reference the WORKFLOW.md tiers; they do NOT re-define them (single-source).
@@ -1153,6 +1227,7 @@ Three is canonical because it maps to the three real failure surfaces: a part is
 
 ---
 
+<!-- stages: 4 -->
 ## Testing Priority
 
 Test in this order:
@@ -1177,7 +1252,14 @@ Test in this order:
 
 **Minimum coverage**: 85% for Stage 5 verification
 
+<!-- stages: 4 -->
 ### Workflow Validation Gate (AP #18 — MANDATORY)
+
+> **Canonical: stage-4/verification-loop.md** — physical extract per dotfiles#498 AC 4.1+4.2; this section retains the cross-reference anchor while the consolidated source-of-truth lives in the linked extract.
+
+This gate fires at TWO ends of the workflow:
+- **Pre-Stage-3 (AC Verifiability)**: every AC must be falsifiable (see "AC Verifiability — pre-Stage-3 sub-gate" below).
+- **Stage 4 (Sample Invocation)**: every implementation must pass real-CLI sample invocation against real DB (the AP #18 rule below).
 
 Unit + smoke tests are necessary but NOT sufficient for pipeline / backtest / CLI-wiring / cross-module propagation changes. Every such change MUST pass a **real-CLI sample invocation** against real DB before the issue closes.
 
@@ -1203,6 +1285,41 @@ Cross-link: the **three-signal contract policy** + **Raw-tool cross-validation R
 
 **Enforcement**: AP #18, Stage 4 Verification Loop, `issue-template.md` PREREQUISITE CHECKPOINT.
 
+#### AC Verifiability — pre-Stage-3 sub-gate (Theme 10, #477)
+
+**Principle**: Every Acceptance Criteria checkbox MUST have an explicit verification command/method that is **falsifiable** (binary pass/fail). Unfalsifiable ACs leak through Stage 2 audit because subagents can rubber-stamp ambiguity ("looks reasonable") — the gate MUST fire BEFORE swarm dispatch, not after.
+
+**Failure mode**: subjective ACs ("cleaner architecture", "better performance", "improved coverage") get marked `[x]` at Stage 4 with vibes-based evidence. Stage 5 audit can't reject them because there's no falsifiable test to fail. The contract becomes infinitely flexible.
+
+**Reject (unfalsifiable)** — examples observed in #477 prior-feedback aggregation:
+- "subsystem length ≤500 lines" — line counts not bound to a specific file/path
+- "improved coverage" — no metric, no threshold, no source of truth
+- "cleaner architecture" — subjective, no test
+- "better performance" — no baseline, no measurement, no pass/fail
+- "more maintainable" — no proxy metric (cyclomatic complexity, file count, dep count)
+- "reduce duplication" — no count of duplicates eliminated
+
+**Accept (falsifiable)**:
+- ``wc -l <specific-file>`` returns N where N ≤ 500 (file path explicit)
+- ``pytest tests/<specific>.py`` exit 0 (or specific test count)
+- ``grep <pattern> <specific-file>`` returns ≥N matches (pattern + file explicit)
+- ``coverage report --include=<file>`` returns ≥N% (N stated)
+- ``radon cc <file> -a`` returns avg ≤B (or per-function rank ≤C)
+- File at `<specific-path>:<line-range>` contains the named text/structure (verbatim)
+- Command + expected output recorded inline in the AC
+
+**Enforcement**:
+- Leader.md Stage 2 step 4e (AC verifiability sweep — author runs before subagent dispatch).
+- issue-template.md "AC Verifiability Gate" subsection (template-time gate).
+- Stage 3 sanity-check subagent angle: any AC without falsifiable verification = block issue creation until rewritten.
+
+**Apply rule**: ACs without falsifiable verification get rewritten in-place OR moved to Cleanup Requirements with rationale BEFORE subagent dispatch. Do NOT pass unfalsifiable ACs into the Stage 3 swarm — subagents anchor on whatever scope they receive.
+
+**Verify**: ``grep -cE '^- \[ \] \*?\*?\(?[0-9]+\.[0-9]+' <issue-draft>`` returns count of ACs; spot-check 3-5 random ACs and confirm each carries either a verification command (`grep`/`wc`/`pytest`/`exit 0`) OR a verbatim file:line target. Document any reject→rewrite in the per-stage feedback file Stage 2 `worked` field.
+
+**Self-gate Tier A ACs** (dotfiles#495 FRAG-2): Self-gate Tier A ACs (AC whose verification literal IS the Stage-5 sign-off of the Issue containing them — i.e. self-referential closure dependency) MUST be tagged `<!-- self-gate-ac: <reason> -->` on the line IMMEDIATELY preceding the checkbox; see `../templates/issue-template.md` `### Self-Gate AC Marker` for the canonical convention. Without the tag the cadence hook treats the AC as a normal Tier A and blocks Phase-N+1 commits per AP #20.
+
+<!-- stages: 4 -->
 ### Test-Prod Call Coverage Discipline (Theme 9, #477)
 
 **Tier: Unit Tier enforcement primitive.** The call-seam grep (every new public callable / response-payload field / config key must be exercised by a test) IS the cog-QC gate of the **Unit Tier** — see STANDARDS.md "Three-Tier Testing Framework". A unit that no test calls is a piston nobody QC'd.
@@ -1226,6 +1343,7 @@ Cross-link: the **three-signal contract policy** + **Raw-tool cross-validation R
 
 **Apply rule**: when phase work introduces a new public callable / response field / config key, the implementer runs the matching grep BEFORE closing the phase via MCP. Empty grep = test seam missing = FAIL the phase boundary; either add the test seam OR document explicit no-test-needed rationale (rare; usually only valid for trivial dataclasses or pure-data exports).
 
+<!-- stages: 4 -->
 ### Marker-Substring Discipline (Theme 2, #477)
 
 **Cross-reference**: full rule lives in `ANTI-PATTERNS.md` AP #24 ("Marker-Substring Changes Without Full Emit-Site Enumeration"). This subsection is the STANDARDS.md anchor — short paragraph + two-stage contract. (Sample-run anchor for #477 Phase 6 AC 6.7 — `STANDARDS.md` edited to exercise the post-commit `sst3-tier-a-auto-tick` hook end-to-end against the live #477 Issue body.)
@@ -1243,21 +1361,26 @@ Cross-link: the **three-signal contract policy** + **Raw-tool cross-validation R
 
 **Generalisation to pattern-classes (AP #14e — dotfiles#495)**: the same enumeration discipline applies when the change is not a single string literal but a regex/glob/pattern-class extension across multiple files (e.g. extending `^solo/issue-(\d+)-` to `^(?:solo/|worktree-solo\+)issue-(\d+)-` across cadence-gate + branch-guard + auto-tick + metrics-feedback + GHA branch triggers). Stage 1 enumerates every site of the class via `grep -rnE '<class-pattern>' SST3/ scripts/ claude/ tests/ .github/ --include='*.py' --include='*.sh' --include='*.yml' --include='*.md'`; classifies each match as (a) canonical-aligned, (b) intentionally narrower (with WHY), (c) BUG (silent class-blindness — in-scope AC, partial-fix not an option). Stage 4 Verification Loop re-runs the enumeration. See ANTI-PATTERNS.md AP #14e for evidence + the dotfiles#495 instantiation (parse_issue_from_branch + GHA branch trigger were two distinct sibling-fix-pattern misses in one Issue).
 
+<!-- stages: 4 -->
 ## Modularity Standards
 
+<!-- stages: 4 -->
 ### Single Responsibility
 Each file/function does ONE thing well.
 
+<!-- stages: 4 -->
 ### Clear Interfaces
 Each function/class: single responsibility, typed parameters, descriptive name. `calculate_price(item: Item, discount: float) -> Decimal` not `process_stuff(data)`.
 ```
 
+<!-- stages: 4 -->
 ### Component Isolation
 - Separate concerns into distinct modules
 - Use dependency injection
 - Avoid tight coupling
 - Follow DRY principle
 
+<!-- stages: 4 -->
 ### Checklist
 - [ ] One responsibility per function
 - [ ] Clear input/output contracts
@@ -1265,18 +1388,22 @@ Each function/class: single responsibility, typed parameters, descriptive name. 
 - [ ] Testable in isolation
 - [ ] Reusable components
 
+<!-- stages: 4 -->
 ### Finding Reusable Modules
 
 Before creating new code: search with Glob/Grep/Agent(Explore), check `docs/INDEX.md`, `docs/components/`. Extend existing — don't duplicate. If new: add documentation. See WORKFLOW.md Stage 1.
 
+<!-- stages: 4 -->
 ## Git Workflow
 
+<!-- stages: 4 -->
 ### Branch Naming
 `solo/issue-{number}-{description}` (Solo workflow — primary)
 `type/issue-number-description` (legacy format)
 
 Examples: `solo/issue-399-sst3-deep-cleanup`, `fix/80-auth-bug`, `docs/81-update-readme`
 
+<!-- stages: 4 -->
 ### Commit Format
 ```
 Brief description of change
@@ -1286,12 +1413,14 @@ Generated with Claude Code
 Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
+<!-- stages: 4 -->
 ### PR Checklist
 - [ ] Links to issue
 - [ ] Clear description
 - [ ] Tests pass
 - [ ] Code reviewed
 
+<!-- stages: 4 -->
 ### Issue & PR Naming Standards
 
 **Principle**: Titles must be self-contained and discoverable without context. Embedding issue/PR numbers causes confusion (documented in Issues #225, #294).
@@ -1307,6 +1436,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - Embed issue/PR numbers in title (e.g., "[#179]", "(Issue #42)")
 - Mix [Stage X] and [Phase X] (they serve different purposes)
 
+<!-- stages: 4 -->
 ### Marker Distinction (CRITICAL)
 
 | Marker | Scope | Example |
@@ -1323,7 +1453,7 @@ When you see `[Stage X]`, it's SST3 process work. `[Phase X]` is project feature
 
 **Enforcement**: Triple-Check Gate (Issues) and Verification Loop (PRs) validate naming. New items only; legacy exempt.
 
-
+<!-- stages: 4 -->
 ### PR Linking Convention
 
 **ALWAYS use**: `Related to #X`
@@ -1333,8 +1463,10 @@ When you see `[Stage X]`, it's SST3 process work. `[Phase X]` is project feature
 
 **Enforcement**: PR template pre-fills "Related to #". Verification Loop verifies format.
 
+<!-- impact-roi-carve-out -->
 **NEVER force push to main/master**
 
+<!-- stages: 4 -->
 ## Checklist Enhancement Process
 
 **Principle**: Enforcement gaps → add checkboxes to workflow checklists, not explanatory paragraphs. Checkboxes force execution; explanations get skipped.
@@ -1345,6 +1477,7 @@ When you see `[Stage X]`, it's SST3 process work. `[Phase X]` is project feature
 
 **Impact**: Issue #248 found 40+ enforcement gaps fixed this way.
 
+<!-- stages: 2 -->
 ## Template Accuracy Principle
 
 **Principle**: Templates must match workflow instructions exactly. Instruction conflicts with template → template is wrong.
@@ -1353,23 +1486,27 @@ When you see `[Stage X]`, it's SST3 process work. `[Phase X]` is project feature
 
 **Evidence**: Issue #248 — PR template had "Closes #X" in parentheses; workflow requires separate line.
 
+<!-- stages: 4 -->
 ## Enforcement
 
 1. **Automated Tools**: Pre-commit hooks, CI/CD pipeline, code analysis
 2. **PR Review**: Checklist verification, test coverage, standards compliance
 3. **Templates**: Issue templates, PR templates, project scaffolding
 
+<!-- stages: 4 -->
 ## Quick Reference
 
 **Before Committing**: Run tests, check linting/formatting, update docs
 **Before PR**: Link issue, describe changes, confirm tests pass, request review
 **Before Merging**: Address feedback, CI/CD green, update issue, no force push to main
 
+<!-- stages: 4 -->
 ## Keep Going Until Done
 
 Do not stop mid-work to ask permission, wait for confirmation, or "check in" when there is no real blocker. With a 1M context window, the run-length is the work, not the session. Stop only when one of these is actually true:
 
 1. **Context at 80%+** of the model window (800K of 1M, 160K of 200K). Warn at 70%, stop at 80%.
+<!-- impact-roi-carve-out -->
 2. **Irreversible destructive action** needs explicit user consent (force-push, `rm -rf`, `DROP TABLE`, branch deletion, overwrites of uncommitted work).
 3. **Genuinely stuck** after investigation — not as a first-response-to-friction reflex.
 4. **Task is complete.**
@@ -1380,12 +1517,14 @@ The 200K-era pattern of "stop at phase boundary to compact" no longer applies. T
 
 **Threshold update (2026-04-15):** previously "80% warn / 90% stop" from the 200K era. Now **70% warn / 80% stop**. 80%+ of 1M (>800K) is where degradation becomes severe; the 10-point earlier warning gives enough runway to wrap up cleanly. User rationale: *"shit gets bad after that, it should warn at 70%"*.
 
+<!-- stages: 4 -->
 ## Related Documentation
 
 - [Workflow Overview](../workflow/WORKFLOW.md) - 5-stage Solo workflow (Research → Issue → Triple-Check → Implement → Review)
 - [Self-Healing Guide](../reference/self-healing-guide.md) - Recovery mechanisms and self-healing protocols
 - [Anti-Patterns](ANTI-PATTERNS.md) - Common mistakes and how to avoid them
 
+<!-- stages: 1 -->
 ## External Research References
 
 Capture quality research once in `docs/research/` (project root, NOT SST3/). Create when 3+ external resources found.
